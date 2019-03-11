@@ -19,6 +19,7 @@
 ########################################################################################################################
 
 import numpy as np
+import pickle
 from helper_func import getCellID
 from helper_func import selTrials
 from helper_func import getData
@@ -49,7 +50,6 @@ if __name__ == '__main__':
 
     env = "2"
     timestamps = np.loadtxt(data_dir+"/"+s_exp+"/"+s_exp+"_"+env+".timestamps").astype(int)
-    print(timestamps)
 
     # select trials
     #-------------------------------------------------------------------------------------------------------------------
@@ -71,5 +71,8 @@ if __name__ == '__main__':
     # extract data
     data = getData(trial_IDs,cell_IDs,clu,res,timestamps)
 
-    # save data
-    np.save("temp_data/"+"res_"+s_exp+"_la_"+str(lightarm)+"_rt_"+str(ruletype)+"_et_"+str(errortrial)+".npy",data)
+    # save data as pickle
+    filename = "temp_data/"+"res_"+s_exp+"ct_"+str(cell_type_array)+"_la_"+str(lightarm)+"_rt_"+str(ruletype)+"_et_"+str(errortrial)
+    outfile = open(filename, 'wb')
+    pickle.dump(data,outfile)
+    outfile.close()
