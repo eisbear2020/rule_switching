@@ -12,17 +12,22 @@
 #
 #   Structure:
 #
+#       Computing
+#
 #       - getCellID: returns cell IDs of selected cell type
 #       - setTrials: returns trial IDs of trials that meet the conditions in trial_sel
 #       - getData: returns dictionary with data for selected trials and selected cells
+#       - getActivityMat: computes activity matrix (matrix with population vectors)
+#       - calcPopVectorEntropy: calculates shannon entropy for each population vector
 #
+#       Plotting
 #
 #
 ########################################################################################################################
 
 import numpy as np
-#import libr.lin as l
-
+import matplotlib.pyplot as plt
+import scipy.stats as sp
 
 def getCellID(data_dir, s_exp,cell_type_array):
 # returns cell IDs of selected cell type
@@ -84,6 +89,80 @@ def getData(trial_IDs, cell_IDs, clu, res,timestamps):
             data["trial" + str(trial_ID)]["cell"+str(cell_ID)] = cell_spikes_trial
 
     return data
+
+
+def getActivityMat(data,bin_interval,trial):
+# computes activity matrix: bin_interval in seconds --> sums up the activity within one time interval
+# rows: cells
+# columns: time bins
+
+    # find first and last firing for each trial
+    first_firing = np.inf
+    last_firing = 0
+
+    for key,value in data[trial].items():
+        if value:
+            first_firing = int(np.amin([first_firing, np.amin(value)]))
+            last_firing = int(np.amax([last_firing, np.amax(value)]))
+
+    # duration of trial (one time bin: 0.05ms)
+    dur_trial = (last_firing-first_firing)* 0.05*1e-3
+    nr_intervals = int(dur_trial/bin_interval)
+    size_intervals = int((last_firing-first_firing)/nr_intervals)
+
+    # binary matrix
+    act_mat = np.zeros([len(data[trial].keys()),nr_intervals])
+
+    # go through all cells
+    for cell_ID, [key,cell] in enumerate(data[trial].items()):
+        # go through all time intervals
+        for i in range(nr_intervals):
+            start_intv = first_firing+i*size_intervals
+            end_intv = first_firing+(i+1)*size_intervals
+            cell_spikes_intv = [x for x in cell if start_intv <= x < end_intv]
+            act_mat[cell_ID,i] = len(cell_spikes_intv)
+
+    return act_mat
+
+def calcPopVectorEntropy(act_mat):
+# calculates shannon entropy for each population vector in act_mat
+    pop_vec_entropy = np.zeros(act_mat.shape[1])
+    # calculate entropy
+    for i,pop_vec in enumerate(act_mat.T):
+        # add small value because of log
+        pop_vec_entropy[i] = sp.entropy(pop_vec+0.000001)
+    return pop_vec_entropy
+
+########################################################################################################################
+#
+# PLOTTING
+#
+########################################################################################################################
+
+
+def plotActMat(data,bin_interval):
+# plot activation matrix (matrix of population vectors)
+    plt.imshow(data, aspect = "auto")
+    plt.ylabel("CELL ID")
+    plt.xlabel("TIME BINS / " + str(bin_interval) + " s")
+    plt.title("CELL ACTIVATION / SPIKES PER TIME BIN")
+    a = plt.colorbar()
+    a.set_label("SPIKES")
+
+def plotEntropy(pop_vec_entropy,act_mat):
+
+    plt.plot(pop_vec_entropy)
+    plt.ylabel("ENTROPY")
+    plt.xlabel("TIME BINS")
+    plt.title("ENTROPY PER POPULATION VECTOR")
+    plt.xlim([0, pop_vec_entropy.shape[0]])
+
+    # #plt.subplots_adjust(hspace=0.5)
+    # plt.imshow(np.expand_dims(act_mat[np.argmax(pop_vec_entropy)],1),aspect="auto")
+    # plt.title("MAX ENTROPY POP. VECTOR, TIME BIN: "+str(np.argmax(pop_vec_entropy)))
+
+
+
 
 #
 # def linearize_whl(whl,tist):

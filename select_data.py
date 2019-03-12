@@ -39,7 +39,7 @@ if __name__ == '__main__':
     # p1: pyramidal cells of the HPC, p2 - p3: pyramidal cells of the PFC ,b1: interneurons of HPC
     # b2 - b3: interneurons of HPC
 
-    cell_type_array = ["p2", "p3"]
+    cell_type_array = ["p1"]
     cell_IDs = getCellID(data_dir, s_exp, cell_type_array)
 
     # select environment:
