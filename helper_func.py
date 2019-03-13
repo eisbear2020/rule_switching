@@ -18,7 +18,6 @@
 #       - setTrials: returns trial IDs of trials that meet the conditions in trial_sel
 #       - getData: returns dictionary with data for selected trials and selected cells
 #       - getActivityMat: computes activity matrix (matrix with population vectors)
-#       - calcPopVectorEntropy: calculates shannon entropy for each population vector
 #
 #       Plotting
 #
@@ -28,6 +27,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.stats as sp
+import matplotlib.colors as colors
+from sklearn.metrics import jaccard_similarity_score
+from sklearn.manifold import MDS
 
 def getCellID(data_dir, s_exp,cell_type_array):
 # returns cell IDs of selected cell type
@@ -58,7 +60,8 @@ def selTrials(timestamps, trial_sel):
     for trial_ID, trial in enumerate(timestamps):
         # check if trial agrees with conditions
         #start,centrebegin,centreend,goalbegin,goalend,startarm,goalarm,control,lightarm,ruletype,errortrial
-        if trial[9] in trial_sel["ruletype"] and trial[10] in trial_sel["errortrial"] and trial[8] in trial_sel["lightarm"]:
+        if trial[9] in trial_sel["ruletype"] and trial[10] in trial_sel["errortrial"] and \
+        trial[5] in trial_sel["startarm"] and trial[6] in trial_sel["goalarm"]:
             trial_intervals.append(trial_ID)
     return trial_intervals
 
@@ -133,6 +136,40 @@ def calcPopVectorEntropy(act_mat):
         pop_vec_entropy[i] = sp.entropy(pop_vec+0.000001)
     return pop_vec_entropy
 
+def multiDimScaling(act_mat,diff_meas,n_components):
+# returns fitted multi scale model using defined difference measure
+    if diff_meas == "jaccard":
+        # calculate difference matrix: Jaccard
+        D = np.zeros([act_mat.shape[1],act_mat.shape[1]])
+
+        # Jaccard similarity
+        for i,pop_vec_ref in enumerate(act_mat.T):
+            for j,pop_vec_comp in enumerate(act_mat.T):
+                D[i,j] = jaccard_similarity_score(pop_vec_ref,pop_vec_comp)
+
+        # want difference --> diff_jaccard = 1 - sim_jaccard
+        D = 1 - D
+        # plt.imshow(D)
+        # plt.colorbar()
+        # plt.show()
+
+    model = MDS(n_components=n_components, dissimilarity='precomputed', random_state=1)
+    return model.fit_transform(D)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ########################################################################################################################
 #
 # PLOTTING
@@ -140,27 +177,14 @@ def calcPopVectorEntropy(act_mat):
 ########################################################################################################################
 
 
-def plotActMat(data,bin_interval):
+def plotActMat(act_mat,bin_interval):
 # plot activation matrix (matrix of population vectors)
-    plt.imshow(data, aspect = "auto")
+    plt.imshow(act_mat, vmin=0, vmax=act_mat.max(), cmap='jet', aspect='auto')
     plt.ylabel("CELL ID")
     plt.xlabel("TIME BINS / " + str(bin_interval) + " s")
     plt.title("CELL ACTIVATION / SPIKES PER TIME BIN")
     a = plt.colorbar()
     a.set_label("SPIKES")
-
-def plotEntropy(pop_vec_entropy,act_mat):
-
-    plt.plot(pop_vec_entropy)
-    plt.ylabel("ENTROPY")
-    plt.xlabel("TIME BINS")
-    plt.title("ENTROPY PER POPULATION VECTOR")
-    plt.xlim([0, pop_vec_entropy.shape[0]])
-
-    # #plt.subplots_adjust(hspace=0.5)
-    # plt.imshow(np.expand_dims(act_mat[np.argmax(pop_vec_entropy)],1),aspect="auto")
-    # plt.title("MAX ENTROPY POP. VECTOR, TIME BIN: "+str(np.argmax(pop_vec_entropy)))
-
 
 
 

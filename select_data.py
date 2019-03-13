@@ -54,12 +54,19 @@ if __name__ == '__main__':
     # select trials
     #-------------------------------------------------------------------------------------------------------------------
 
-    lightarm = [2]
-    ruletype = [3]
+    startarm = [1]
+    goalarm = [3]
+    ruletype = [3] #3: light
     errortrial = [1]
 
-    trial_sel = {"lightarm": lightarm, "ruletype":ruletype, "errortrial": errortrial}
+    trial_sel = {"startarm": startarm,"goalarm": goalarm, "ruletype":ruletype, "errortrial": errortrial}
     trial_IDs = selTrials(timestamps,trial_sel)
+
+    # if no matching trials were found throw error
+    if not trial_IDs:
+        raise Exception("No matching trials found")
+
+
 
     # get data
     #-------------------------------------------------------------------------------------------------------------------
@@ -72,7 +79,8 @@ if __name__ == '__main__':
     data = getData(trial_IDs,cell_IDs,clu,res,timestamps)
 
     # save data as pickle
-    filename = "temp_data/"+"res_"+s_exp+"ct_"+str(cell_type_array)+"_la_"+str(lightarm)+"_rt_"+str(ruletype)+"_et_"+str(errortrial)
+    filename = "temp_data/"+"res_"+s_exp+"_"+env+"_"+"ct_"+str(cell_type_array)+"_sa_"+str(startarm)+"_ga_"+\
+               str(goalarm)+"_rt_"+str(ruletype)+"_et_"+str(errortrial)
     outfile = open(filename, 'wb')
     pickle.dump(data,outfile)
     outfile.close()
