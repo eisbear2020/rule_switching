@@ -18,6 +18,14 @@
 #       - setTrials: returns trial IDs of trials that meet the conditions in trial_sel
 #       - getData: returns dictionary with data for selected trials and selected cells
 #       - getActivityMat: computes activity matrix (matrix with population vectors)
+#       - calcPopVectorEntropy: calculates shannon entropy for each population vector in act_mat
+#       - multiDimScaling: returns fitted multi scale model using defined difference measure
+#
+#       Summarizing
+#
+#
+#
+#
 #
 #       Plotting
 #
@@ -25,11 +33,15 @@
 ########################################################################################################################
 
 import numpy as np
+import math
 import matplotlib.pyplot as plt
 import scipy.stats as sp
 import matplotlib.colors as colors
 from sklearn.metrics import jaccard_similarity_score
 from sklearn.manifold import MDS
+import matplotlib.cm as cm
+from collections import OrderedDict
+from scipy.spatial import distance
 
 def getCellID(data_dir, s_exp,cell_type_array):
 # returns cell IDs of selected cell type
@@ -152,14 +164,61 @@ def multiDimScaling(act_mat,diff_meas,n_components):
         # plt.imshow(D)
         # plt.colorbar()
         # plt.show()
+    elif diff_meas == "cos":
+        # calculate difference matrix: cosine
+        D = np.zeros([act_mat.shape[1], act_mat.shape[1]])
+
+        # cosine
+        for i, pop_vec_ref in enumerate(act_mat.T):
+            for j, pop_vec_comp in enumerate(act_mat.T):
+                    D[i, j] = distance.cosine(pop_vec_ref, pop_vec_comp)
+                    # if one of the vectors contains only zeros --> division by zero for cosine
+                    if math.isnan(D[i,j]):
+                        D[i, j] = 1
+
+
 
     model = MDS(n_components=n_components, dissimilarity='precomputed', random_state=1)
     return model.fit_transform(D)
 
 
 
+########################################################################################################################
+#
+# SUMMARIZING
+#
+########################################################################################################################
 
+def dimRedCompare(data_sets,data_sets_desc,param_dic):
+# compares results of two different conditions using dimensionality reduction
+    nr_trials_to_compare = np.inf
+    # comparing same number of trials even if one condition has more trials
+    for data_set in data_sets:
+        nr_trials_to_compare = min(len(data_set.keys()), nr_trials_to_compare)
 
+    # create figure instance
+    fig, ax = plt.subplots(nr_trials_to_compare, len(data_sets))
+
+    # go over all data sets
+    for dat_ID, (data, data_set_desc) in enumerate(zip(data_sets,data_sets_desc)):
+        ax[0, dat_ID].set_title(data_set_desc)
+        # go over several trials
+        for plot_ID, key in enumerate(data):
+            # compute equal number of trials for all conditions (for plotting)
+            if plot_ID > (nr_trials_to_compare-1):
+                break
+            act_mat = getActivityMat(data, param_dic["bin_interval"], key)
+            if param_dic["dr_method"] == "MDS":
+                mds = multiDimScaling(act_mat, param_dic["dr_method_p1"], param_dic["dr_method_p2"])
+                if param_dic["dr_method_p2"] == 2:
+                    plot2DscatterLines(ax[plot_ID, dat_ID], mds, param_dic["axis_lim"])
+                elif param_dic["dr_method_p2"] == 3:
+                    plot3DscatterLines(ax[plot_ID, dat_ID], mds, param_dic["axis_lim"])
+    fig.suptitle(param_dic["dr_method"]+" : "+param_dic["dr_method_p1"],fontweight='bold')
+    handles, labels = fig.gca().get_legend_handles_labels()
+    by_label = OrderedDict(zip(labels, handles))
+    fig.legend(by_label.values(), by_label.keys())
+    plt.show()
 
 
 
@@ -185,6 +244,42 @@ def plotActMat(act_mat,bin_interval):
     plt.title("CELL ACTIVATION / SPIKES PER TIME BIN")
     a = plt.colorbar()
     a.set_label("SPIKES")
+
+def plot2DscatterLines(ax,mds,axis_lim):
+# plots result of multidimensional scaling as scatter plot
+    colors = cm.rainbow(np.linspace(0, 1, mds.shape[0]-1))
+    for i,c in zip(range(0,mds.shape[0]-1),colors):
+        ax.plot(mds[i:i+2,0],mds[i:i+2,1],color=c)
+    #plt.title(title)
+    ax.scatter(mds[:, 0], mds[:, 1], color="grey")
+    ax.scatter(mds [0, 0], mds [0, 1],color="black", marker="x",label="start",zorder=200)
+    ax.scatter(mds[-1, 0], mds[-1, 1], color="black", label="end",zorder=200)
+    #plt.legend()
+    ax.set_xlim(axis_lim[0], axis_lim[1])
+    ax.set_ylim(axis_lim[2], axis_lim[3])
+    #plt.axis('equal')
+    # Turn off tick labels
+    ax.set_yticklabels([])
+    ax.set_xticklabels([])
+
+def plot3DscatterLines(ax,mds,axis_lim):
+# plots result of multidimensional scaling as scatter plot
+    colors = cm.rainbow(np.linspace(0, 1, mds.shape[0]-1))
+    for i,c in zip(range(0,mds.shape[0]-1),colors):
+        ax.plot(mds[i:i+2,0],mds[i:i+2,1],mds[i:i+2,2],color=c)
+    #plt.title(title)
+    ax.scatter(mds[:, 0], mds[:, 1], mds[:, 2], color="grey")
+    ax.scatter(mds [0, 0], mds [0, 1], mds[0, 2],color="black", marker="x",label="start",zorder=200)
+    ax.scatter(mds[-1, 0], mds[-1, 1], mds[-1, 2], color="black", label="end",zorder=200)
+    #plt.legend()
+    ax.set_xlim(axis_lim[0], axis_lim[1])
+    ax.set_ylim(axis_lim[2], axis_lim[3])
+    ax.set_zlim(axis_lim[4], axis_lim[5])
+    #plt.axis('equal')
+    # Turn off tick labels
+    ax.set_yticklabels([])
+    ax.set_xticklabels([])
+
 
 
 
