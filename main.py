@@ -28,47 +28,61 @@ from helper_func import plotActMat
 from helper_func import multiDimScaling
 from matplotlib.colors import ListedColormap, LinearSegmentedColormap
 from helper_func import plot2DscatterLines
-from helper_func import dimRedCompare
+from helper_func import dimRed2DCompare
+from helper_func import dimRed2D
+from helper_func import dimRed3DCompare
+from helper_func import dimRedCombined
+from collections import OrderedDict
+from helper_func import StateTransitionAnalysis
 
 if __name__ == '__main__':
 
     # params
     #-------------------------------------------------------------------------------------------------------------------
-    param_dic = {}
 
-
-    # HPC data, rule: 3 (light)
+    # HPC data, rule 3: light and rule 2: west
     file_name_rule_3 = "res_mjc189-1905-0517_2_ct_['p1']_sa_[1]_ga_[3]_rt_[3]_et_[1]"
     file_name_rule_2 = "res_mjc189-1905-0517_6_ct_['p1']_sa_[1]_ga_[3]_rt_[2]_et_[1]"
+    file_name_rule_switch = "res_mjc189-1905-0517_4_ct_['p1']_sa_[1]_ga_[3]_rt_[2, 3]_et_[1]"
 
+    # dictionary for all other parameters
+    param_dic = {}
+
+    # description of data
+    param_dic["data_descr"] = ["RULE LIGHT","RULE WEST"]
     # interval for binning in s
     param_dic["bin_interval"] = 0.1
 
-    # axis limit for plotting
-    # jaccard: [-0.2,0.2]
-    # cos: [-1,1]
-    axis_lim = np.zeros(6)
-    axis_lim[0] = axis_lim[2]= -1
-    axis_lim[1] = axis_lim[3] = 1
-    axis_lim[4] = axis_lim[5] = 1
-    param_dic["axis_lim"] = axis_lim
-
     # define method for dimensionality reduction
     param_dic["dr_method"] = "MDS" # multi dimensional scaling
+
     # first parameter of method:
     # MDS --> p1: difference measure ["jaccard","cos"]
     param_dic["dr_method_p1"] = "cos"
+
     # second parameter of method:
     # MDS --> p2: number of components
     param_dic["dr_method_p2"] = 3
 
-    # select trial
-    trial = 1
+    # number of trials to compare
+    param_dic["nr_of_trials"] = 30
+
+    # selected trial
+    param_dic["sel_trial"] = 3
+
+    # axis limit for plotting
+    # jaccard: [-0.2,0.2]
+    # cos: [-1,1]
+    # 3D: [-0.5,0.5]
+    axis_lim = np.zeros(6)
+    axis_lim[0] = axis_lim[2]= axis_lim[4]= -1
+    axis_lim[1] = axis_lim[3] = axis_lim[5] =1
+    param_dic["axis_lim"] = axis_lim
+
 
     # options
     #-------------------------------------------------------------------------------------------------------------------
     plotting = False
-
 
     # get data
     #-------------------------------------------------------------------------------------------------------------------
@@ -78,28 +92,40 @@ if __name__ == '__main__':
     infile_2 = open("temp_data/"+file_name_rule_2, 'rb')
     data_rule_2 = pickle.load(infile_2)
     infile_2.close()
+    infile_23 = open("temp_data/"+file_name_rule_switch, 'rb')
+    data_rule_23 = pickle.load(infile_23)
+    infile_23.close()
 
-    # # pick trial
-    # trial_r3 = list(data_rule_3.keys())[trial]
-    # trial_r2 = list(data_rule_2.keys())[trial]
-    #
-    #
-    # # calculate matrix of population vectors
-    # act_mat_r3 = getActivityMat(data_rule_3,param_dic["bin_interval"],trial_r3)
-    # act_mat_r2 = getActivityMat(data_rule_2,param_dic["bin_interval"],trial_r2)
-    #
-    # # multi dimensional scaling
-    # # -------------------------------------------------------------------------------------------------------------------
-    # mds_r3 = multiDimScaling(act_mat_r3,"jaccard",2)
-    # mds_r2= multiDimScaling(act_mat_r2, "jaccard", 2)
+########################################################################################################################
+#   DYNAMIC ANALYSIS
+########################################################################################################################
 
-    dimRedCompare([data_rule_3, data_rule_2],["LIGHT","WEST"],param_dic)
+    # rule switching
+    # ------------------------------------------------------------------------------------------------------------------
+    # if param_dic["dr_method_p2"] == 2:
+    #     dimRed2D(data_rule_23, param_dic)
+    # elif param_dic["dr_method_p2"] == 3:
+    #     dimRed3DCompare(data_rule_23, param_dic)
 
 
+    # compare two rules using dimensionality reduction for both sets separately (reduce to 2 or 3 dimensions)
+    # ------------------------------------------------------------------------------------------------------------------
+    # if param_dic["dr_method_p2"] == 2:
+    #     dimRed2DCompare([data_rule_3, data_rule_2],param_dic)
+    # elif param_dic["dr_method_p2"] == 3:
+    #     dimRed3DCompare([data_rule_3, data_rule_2],param_dic)
 
-    # plotMDS(mds_r3,axis_lim,"light")
-    # plt.show()
+    # compare two rules using dimensionality for the combined data (reduce to 2 or 3 dimensions)
+    # ------------------------------------------------------------------------------------------------------------------
+    #dimRedCombined([data_rule_3, data_rule_2], param_dic)
 
+########################################################################################################################
+#   TRANSITION ANALYSIS
+########################################################################################################################
+
+    # using difference vectors
+    # ------------------------------------------------------------------------------------------------------------------
+    StateTransitionAnalysis(data_rule_3,param_dic)
 
 
 
