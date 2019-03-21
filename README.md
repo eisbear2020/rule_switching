@@ -2,7 +2,16 @@
 
 # File structure
 
-* main.py: contains main part of the analysis
-    * Multidimensional scaling
-* select_data.py: importing/filtering/saving of data
-* helper_func.py: various helper functions
+* main.py: main file for analysis. Calls methods from analysis_methods.py to analyse data
+    * dynamic analysis
+    * transition analysis
+* analysis_methods.py: contains different analysis approaches and uses functions from comp_functions.py.
+    * dimensionality reduction for single data sets
+    * dimensionality reduction for concatenated data sets
+    * comparing data sets with different conditions
+* comp_functions.py: contains functions that compute parts of a thorough analysis:
+    * computing activity map
+    * multi dimensional scaling
+    * population vector difference matrix
+* select_data.py: importing/filtering/saving of data. Uses helper functions from filter_functions.py
+* filter_functions.py: helper functions for selecting data

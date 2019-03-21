@@ -20,9 +20,9 @@
 
 import numpy as np
 import pickle
-from helper_func import getCellID
-from helper_func import selTrials
-from helper_func import getData
+from filter_functions import getCellID
+from filter_functions import selTrials
+from filter_functions import getData
 
 if __name__ == '__main__':
 
