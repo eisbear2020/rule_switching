@@ -26,7 +26,7 @@ from mpl_toolkits.mplot3d import Axes3D
 
 
 
-def plotActMat(act_mat,bin_interval):
+def plot_act_mat(act_mat,bin_interval):
 # plot activation matrix (matrix of population vectors)
     plt.imshow(act_mat, vmin=0, vmax=act_mat.max(), cmap='jet', aspect='auto')
     plt.ylabel("CELL ID")
@@ -35,7 +35,7 @@ def plotActMat(act_mat,bin_interval):
     a = plt.colorbar()
     a.set_label("SPIKES")
 
-def plot2DScatter(ax,mds,data_sep,param_dic):
+def plot_2D_scatter(ax,mds,param_dic,data_sep = []):
 # generates 2D scatter plot with selected data --> for more than 1 data set, data_sep needs to be defined to separate
 # the data sets
     # for more than one data set
@@ -76,7 +76,7 @@ def plot2DScatter(ax,mds,data_sep,param_dic):
     ax.set_xticklabels([])
 
 
-def plot3DScatter(ax,mds,data_sep,param_dic):
+def plot_3D_scatter(ax,mds,param_dic,data_sep = []):
 # generates 3D scatter plot with selected data --> for more than 1 data set, data_sep needs to be defined to separate
 # the data sets
 

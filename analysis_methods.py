@@ -29,14 +29,14 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from collections import OrderedDict
-from comp_functions import getActivityMat
-from comp_functions import multiDimScaling
-from comp_functions import popVecDiff
+from comp_functions import get_activity_mat
+from comp_functions import multi_dim_scaling
+from comp_functions import pop_vec_diff
 
-from plotting_functions import plot2DScatter
-from plotting_functions import plot3DScatter
+from plotting_functions import plot_2D_scatter
+from plotting_functions import plot_3D_scatter
 
-def manifoldTransition(data_set,param_dic):
+def manifold_transition(data_set,param_dic):
 # analyses the transition of the manifold e.g. for the rule switch case. Each trial is transformed individually
 
     nr_trials_to_compare = param_dic["nr_of_trials"]
@@ -60,10 +60,10 @@ def manifoldTransition(data_set,param_dic):
             # compute equal number of trials for all conditions (for plotting)
             if plot_ID > (nr_trials_to_compare-1):
                 break
-            act_mat = getActivityMat(data_set[key], param_dic)
+            act_mat = get_activity_mat(data_set[key], param_dic)
             if param_dic["dr_method"] == "MDS":
-                mds = multiDimScaling(act_mat, param_dic)
-                plot2DScatter(ax[c_r-1,np.mod(plot_ID,c_p)], mds,[],param_dic)
+                mds = multi_dim_scaling(act_mat, param_dic)
+                plot_2D_scatter(ax[c_r-1,np.mod(plot_ID,c_p)],mds,param_dic)
 
     # 3D
     elif param_dic["dr_method_p2"] == 3:
@@ -74,11 +74,11 @@ def manifoldTransition(data_set,param_dic):
             # compute equal number of trials for all conditions (for plotting)
             if plot_ID > (nr_trials_to_compare-1):
                 break
-            act_mat = getActivityMat(data_set[key], param_dic)
+            act_mat = get_activity_mat(data_set[key], param_dic)
             if param_dic["dr_method"] == "MDS":
-                mds = multiDimScaling(act_mat, param_dic)
+                mds = multi_dim_scaling(act_mat, param_dic)
                 ax = fig.add_subplot(int(nr_trials_to_compare/c_p), c_p, plot_ID+1, projection='3d')
-                plot3DScatter(ax, mds,[], param_dic)
+                plot_3D_scatter(ax, mds, param_dic)
 
     fig.suptitle(param_dic["dr_method"]+" : "+param_dic["dr_method_p1"],fontweight='bold')
     handles, labels = fig.gca().get_legend_handles_labels()
@@ -87,9 +87,10 @@ def manifoldTransition(data_set,param_dic):
     plt.show()
 
 
-def manifoldTransitionConc(data_set,param_dic):
+def manifold_transition_conc(data_set,loc_set, param_dic):
 # change of the manifold e.g. during rule switching, using data from multiple trials for transformation (dim. reduction)
 # and separating data afterwards
+# input: data_set --> firing times, loc_set --> locations
 
     nr_trials_to_compare = min(len(data_set.keys()), param_dic["nr_of_trials"])
     nr_cells = len(next(iter(data_set.values())))
@@ -104,14 +105,14 @@ def manifoldTransitionConc(data_set,param_dic):
         if i < param_dic["first_trial"]:
             continue
         else:
-            act_mat = getActivityMat(data_set[key], param_dic)
+            act_mat = get_activity_mat(data_set[key], param_dic,loc_set[key])
             dat_mat = np.hstack((dat_mat,act_mat))
             data_sep[trial_counter + 1] = data_sep[trial_counter] + act_mat.shape[1]
             trial_counter += 1
 
 
     if param_dic["dr_method"] == "MDS":
-        mds = multiDimScaling(dat_mat, param_dic)
+        mds = multi_dim_scaling(dat_mat, param_dic)
 
     # number of columns for plotting
     c_p = 3
@@ -126,8 +127,8 @@ def manifoldTransitionConc(data_set,param_dic):
         for data_ID in range(nr_trials_to_compare):
             if not np.mod(data_ID, c_p):
                 c_r += 1
-            data = mds[int(data_sep[data_ID]):int(data_sep[data_ID+1]),:]
-            plot2DScatter(ax[c_r-1,np.mod(data_ID,c_p)], data,[],param_dic)
+            data = mds[int(data_sep[data_ID]):int(data_sep[data_ID+1]), :]
+            plot_2D_scatter(ax[c_r-1, np.mod(data_ID,c_p)], data, param_dic)
 
     # 3D
     elif param_dic["dr_method_p2"] == 3:
@@ -137,9 +138,9 @@ def manifoldTransitionConc(data_set,param_dic):
         for data_ID in range(nr_trials_to_compare):
             if not np.mod(data_ID, c_p):
                 c_r += 1
-            data = mds[int(data_sep[data_ID]):int(data_sep[data_ID+1]),:]
+            data = mds[int(data_sep[data_ID]):int(data_sep[data_ID+1]), :]
             ax = fig.add_subplot(int(nr_trials_to_compare / c_p), c_p, data_ID+1, projection='3d')
-            plot3DScatter(ax, data, [], param_dic)
+            plot_3D_scatter(ax, data, param_dic)
 
 
     fig.suptitle(param_dic["dr_method"]+" : "+param_dic["dr_method_p1"], fontweight='bold')
@@ -148,7 +149,7 @@ def manifoldTransitionConc(data_set,param_dic):
     fig.legend(by_label.values(), by_label.keys())
     plt.show()
 
-def manifoldCompare(data_sets,param_dic):
+def manifold_compare(data_sets,param_dic):
 # compares results of two different conditions using dimensionality reduction. Transforms each trial individually
     nr_trials_to_compare = param_dic["nr_of_trials"]
     # comparing same number of trials even if one condition has more trials
@@ -168,10 +169,10 @@ def manifoldCompare(data_sets,param_dic):
                 # compute equal number of trials for all conditions (for plotting)
                 if plot_ID > (nr_trials_to_compare-1):
                     break
-                act_mat = getActivityMat(data[key], param_dic)
+                act_mat = get_activity_mat(data[key], param_dic)
                 if param_dic["dr_method"] == "MDS":
-                    mds = multiDimScaling(act_mat, param_dic)
-                    plot2DScatter(ax[plot_ID, dat_ID], mds,[],param_dic)
+                    mds = multi_dim_scaling(act_mat, param_dic)
+                    plot_2D_scatter(ax[plot_ID, dat_ID], mds,param_dic)
 
     # 3D
     elif param_dic["dr_method_p2"] == 3:
@@ -187,11 +188,12 @@ def manifoldCompare(data_sets,param_dic):
                 # compute equal number of trials for all conditions (for plotting)
                 if plot_ID > (nr_trials_to_compare-1):
                     break
-                act_mat = getActivityMat(data[key], param_dic)
+                act_mat = get_activity_mat(data[key], param_dic)
                 if param_dic["dr_method"] == "MDS":
-                    mds = multiDimScaling(act_mat, param_dic)
+                    mds = multi_dim_scaling(act_mat, param_dic)
                     ax = fig.add_subplot(nr_trials_to_compare, len(data_sets),
                                          (dat_ID*nr_trials_to_compare+plot_ID+1), projection='3d')
+                    plot_3D_scatter(ax, mds, param_dic)
 
 
 
@@ -202,7 +204,7 @@ def manifoldCompare(data_sets,param_dic):
     plt.show()
 
 
-def manifoldCompareConc(data_sets,param_dic):
+def manifold_compare_conc(data_sets,param_dic):
 # combines two data sets, reduces the dimension and plots sets in different colors in 2D/3D for one data set of each
 # condition
     # get trial ID from both sets
@@ -210,27 +212,27 @@ def manifoldCompareConc(data_sets,param_dic):
     trial_ID_set2 = list(data_sets[1].keys())[param_dic["sel_trial"]]
 
     # calculate matrix of population vectors
-    act_mat_set1 = getActivityMat(data_sets[0][trial_ID_set1], param_dic)
-    act_mat_set2 = getActivityMat(data_sets[1][trial_ID_set2], param_dic)
+    act_mat_set1 = get_activity_mat(data_sets[0][trial_ID_set1], param_dic)
+    act_mat_set2 = get_activity_mat(data_sets[1][trial_ID_set2], param_dic)
 
     # combine both matrices
     comb_mat = np.hstack((act_mat_set1, act_mat_set2))
 
     # multi dimensional scaling
     # -------------------------------------------------------------------------------------------------------------------
-    mds = multiDimScaling(comb_mat, param_dic)
+    mds = multi_dim_scaling(comb_mat, param_dic)
 
     data_sep = act_mat_set1.shape[1]
 
     # 2D
     if param_dic["dr_method_p2"] == 2:
         fig, ax = plt.subplots()
-        plot2DScatter(ax, mds, data_sep, param_dic)
+        plot_2D_scatter(ax, mds, param_dic, data_sep)
     # 3D
     elif param_dic["dr_method_p2"] == 3:
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        plot3DScatter(ax, mds, data_sep, param_dic)
+        plot_3D_scatter(ax, mds, param_dic, data_sep)
 
     fig.suptitle(param_dic["dr_method"] + " : " + param_dic["dr_method_p1"], fontweight='bold')
     handles, labels = fig.gca().get_legend_handles_labels()
@@ -239,7 +241,7 @@ def manifoldCompareConc(data_sets,param_dic):
     plt.show()
 
 
-def StateTransitionAnalysis(data_sets, param_dic):
+def state_transition_analysis(data_sets, param_dic):
 # analysis the state transitions using difference vectors between two population states for a selected trial
 
     nr_cells = len(next(iter(data_sets[0].values())))
@@ -247,8 +249,8 @@ def StateTransitionAnalysis(data_sets, param_dic):
     data_sep = np.inf
     for data_set in data_sets:
         trial_ID = list(data_set.keys())[param_dic["sel_trial"]]
-        act_mat = getActivityMat(data_set[trial_ID], param_dic)
-        diff_mat = popVecDiff(act_mat)
+        act_mat = get_activity_mat(data_set[trial_ID], param_dic)
+        diff_mat = pop_vec_diff(act_mat)
         if len(data_sets) > 1:
         # combine datasets
             dat_mat = np.hstack((dat_mat, diff_mat))
@@ -258,16 +260,16 @@ def StateTransitionAnalysis(data_sets, param_dic):
             data_sep = []
 
 
-    mds = multiDimScaling(dat_mat, param_dic)
+    mds = multi_dim_scaling(dat_mat, param_dic)
     # 2D
     if param_dic["dr_method_p2"] == 2:
         fig, ax = plt.subplots()
-        plot2DScatter(ax, mds, data_sep, param_dic)
+        plot_2D_scatter(ax, mds, data_sep, param_dic)
     # 3D
     elif param_dic["dr_method_p2"] == 3:
         fig = plt.figure()
         ax = fig.add_subplot(111, projection='3d')
-        plot3DScatter(ax, mds, data_sep, param_dic)
+        plot_3D_scatter(ax, mds, data_sep, param_dic)
     fig.suptitle(param_dic["dr_method"]+" : "+param_dic["dr_method_p1"],fontweight='bold')
     handles, labels = fig.gca().get_legend_handles_labels()
     by_label = OrderedDict(zip(labels, handles))

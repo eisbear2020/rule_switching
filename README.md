@@ -1,4 +1,4 @@
-# Python scripts to analyse neural data
+# Python scripts to analyze neural data
 
 # File structure
 

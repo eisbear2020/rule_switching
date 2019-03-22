@@ -20,9 +20,10 @@
 
 import numpy as np
 import pickle
-from filter_functions import getCellID
-from filter_functions import selTrials
-from filter_functions import getData
+from filter_functions import get_cell_ID
+from filter_functions import sel_trials
+from filter_functions import get_data
+from filter_functions import get_location
 
 if __name__ == '__main__':
 
@@ -40,7 +41,7 @@ if __name__ == '__main__':
     # b2 - b3: interneurons of HPC
 
     cell_type_array = ["p1"]
-    cell_IDs = getCellID(data_dir, s_exp, cell_type_array)
+    cell_IDs = get_cell_ID(data_dir, s_exp, cell_type_array)
 
     # select environment:
     #-------------------------------------------------------------------------------------------------------------------
@@ -60,15 +61,28 @@ if __name__ == '__main__':
     errortrial = [1]
 
     trial_sel = {"startarm": startarm,"goalarm": goalarm, "ruletype":ruletype, "errortrial": errortrial}
-    trial_IDs = selTrials(timestamps,trial_sel)
+    trial_IDs = sel_trials(timestamps,trial_sel)
 
     # if no matching trials were found throw error
     if not trial_IDs:
         raise Exception("No matching trials found")
 
 
+    # get location data
+    #-------------------------------------------------------------------------------------------------------------------
+    whl_rot = np.loadtxt(data_dir + "/" + s_exp + "/" + s_exp + "_" + env + ".whl_rot").astype(int)
 
-    # get data
+    loc = get_location(trial_IDs, whl_rot, timestamps)
+
+    # save data as pickle
+    filename = "temp_data/"+"whl_lin_"+s_exp+"_"+env+"_"+"ct_"+str(cell_type_array)+"_sa_"+str(startarm)+"_ga_"+\
+               str(goalarm)+"_rt_"+str(ruletype)+"_et_"+str(errortrial)
+    outfile = open(filename, 'wb')
+    pickle.dump(loc,outfile)
+    outfile.close()
+
+
+    # get spike data
     #-------------------------------------------------------------------------------------------------------------------
 
     # load cluster IDs and time of spikes
@@ -76,7 +90,7 @@ if __name__ == '__main__':
     res = np.loadtxt(data_dir + "/" + s_exp + "/" + s_exp + "_" + env + ".res").astype(int)
 
     # extract data
-    data = getData(trial_IDs,cell_IDs,clu,res,timestamps)
+    data = get_data(trial_IDs,cell_IDs,clu,res,timestamps)
 
     # save data as pickle
     filename = "temp_data/"+"res_"+s_exp+"_"+env+"_"+"ct_"+str(cell_type_array)+"_sa_"+str(startarm)+"_ga_"+\
