@@ -2,7 +2,7 @@
 #
 #   NEURAL ACTIVITY ANALYSIS
 #
-#   Description:
+#   Description: main file for analysing neural activity data
 #
 #   Author: Lars Bollmann
 #
@@ -10,21 +10,18 @@
 #
 #   Structure:
 #
-#
-#
-#
-#
-#
+#       - dynamic analysis
+#       - transition analysis
 #
 ########################################################################################################################
 
 import pickle
-from analysis_methods import dimRed2DCompare
-from analysis_methods import dimRed2D
-from analysis_methods import dimRed3D
-from analysis_methods import dimRedCombined
+from analysis_methods import manifoldTransition
+from analysis_methods import manifoldTransitionConc
+from analysis_methods import manifoldCompare
+from analysis_methods import manifoldCompareConc
 from analysis_methods import StateTransitionAnalysis
-from analysis_methods import dimRed2DConc
+
 
 if __name__ == '__main__':
 
@@ -68,7 +65,7 @@ if __name__ == '__main__':
 
     # number of trials to compare
     param_dic["nr_of_trials"] = 6
-    # first trial to start analysis with
+    # first trial to start analysis with, default: 0
     param_dic["first_trial"] = 0
     # selected trial
     param_dic["sel_trial"] = 1
@@ -76,8 +73,11 @@ if __name__ == '__main__':
     # PLOTTING PARAMETERS
     # ------------------------------------------------------------------------------------------------------------------
 
-    # plotting options
+    # lines in scatter plot
     param_dic["lines"] = True
+
+    # number of columns for subplots
+    param_dic["c_p"] = 3
 
     # axis limit for plotting
     # jaccard: [-0.2,0.2]
@@ -110,27 +110,21 @@ if __name__ == '__main__':
 
     # rule switching: transformation for each data set separately
     # ------------------------------------------------------------------------------------------------------------------
-    # if param_dic["dr_method_p2"] == 2:
-    #     dimRed2D(data_rule_23, param_dic)
-    # elif param_dic["dr_method_p2"] == 3:
-    #     dimRed3D([data_rule_23], param_dic)
+    #manifoldTransition(data_rule_23, param_dic)
 
     # rule switching: transformation (reduction in dim.) using concatenated data
     # ------------------------------------------------------------------------------------------------------------------
-    #dimRed2DConc(data_rule_23, param_dic)
+    #manifoldTransitionConc(data_rule_23, param_dic)
 
 
 
     # compare two rules using dimensionality reduction for both sets separately (reduce to 2 or 3 dimensions)
     # ------------------------------------------------------------------------------------------------------------------
-    # if param_dic["dr_method_p2"] == 2:
-    #     dimRed2DCompare([data_rule_3, data_rule_2], param_dic)
-    # elif param_dic["dr_method_p2"] == 3:
-    #     dimRed3D([data_rule_3, data_rule_2], param_dic)
+    #manifoldCompare([data_rule_3, data_rule_2], param_dic)
 
     # compare two rules using dimensionality for the combined data (reduce to 2 or 3 dimensions)
     # ------------------------------------------------------------------------------------------------------------------
-    #dimRedCombined([data_rule_3, data_rule_2], param_dic)
+    #manifoldCompareConc([data_rule_3, data_rule_2], param_dic)
 
 
 ########################################################################################################################
@@ -139,7 +133,7 @@ if __name__ == '__main__':
 
     # using difference vectors
     # ------------------------------------------------------------------------------------------------------------------
-    #StateTransitionAnalysis([data_rule_3], param_dic)
+    StateTransitionAnalysis([data_rule_3], param_dic)
 
 
 

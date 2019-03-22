@@ -6,9 +6,9 @@
     * dynamic analysis
     * transition analysis
 * analysis_methods.py: contains different analysis approaches and uses functions from comp_functions.py.
-    * dimensionality reduction for single data sets
-    * dimensionality reduction for concatenated data sets
-    * comparing data sets with different conditions
+    * transition of manifold during rule switch
+    * comparison of manifolds with different rules
+    * analysing state transitions using difference vectors
 * comp_functions.py: contains functions that compute parts of a thorough analysis:
     * computing activity map
     * multi dimensional scaling

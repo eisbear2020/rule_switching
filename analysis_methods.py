@@ -12,12 +12,17 @@
 #
 #   Structure:
 #
-#       - dimRed2D: plot result of one condition over multiple trials
-#       - dimRed2DConc:
-#       - dimRed2DCompare:
-#       - dimRed3D:
-#       - dimRedCombined:
-#       - StateTransitionAnalysis:
+#       - manifoldTransition: evaluates the manifold change e.g during rule switch, transforming every trial separately
+#
+#       - manifoldTransitionConc:   change of the manifold e.g. during rule switching, using data from multiple trials
+#                                   for transformation (dim. reduction) and separating data afterwards
+#
+#       - manifoldCompare:  compares results of two different conditions using dimensionality reduction and transforming
+#                           each trial separately
+#       - manifoldCompareConc:  compares results of two different conditions using dimensionality reduction.
+#                               Uses concatenated data for transformation and separates data afterwards
+#
+#       - StateTransitionAnalysis: analysis the state transitions using difference vectors between two population states
 #
 ########################################################################################################################
 
@@ -31,41 +36,59 @@ from comp_functions import popVecDiff
 from plotting_functions import plot2DScatter
 from plotting_functions import plot3DScatter
 
+def manifoldTransition(data_set,param_dic):
+# analyses the transition of the manifold e.g. for the rule switch case. Each trial is transformed individually
+
+    nr_trials_to_compare = param_dic["nr_of_trials"]
+
+    nr_trials_to_compare = min(len(data_set.keys()), nr_trials_to_compare)
 
 
-def dimRed2D(data_set,param_dic):
-# plot result of one condition over multiple trials, transformation (dim. reduction) for every trial separately
-
-    nr_trials_to_compare = min(len(data_set.keys()), param_dic["nr_of_trials"])
     # number of columns for plotting
-    c_p = 3
+    c_p = param_dic["c_p"]
 
-    # create figure instance
-    fig, ax = plt.subplots(int(nr_trials_to_compare/c_p), c_p)
-    # row for plot
-    c_r = 0
+    # 2D
+    if param_dic["dr_method_p2"] == 2:
+        # create figure instance
+        fig, ax = plt.subplots(int(nr_trials_to_compare/c_p), c_p)
+        # row for plot
+        c_r = 0
 
-    for plot_ID, key in enumerate(data_set):
-        if not np.mod(plot_ID, c_p):
-            c_r += 1
-        # compute equal number of trials for all conditions (for plotting)
-        if plot_ID > (nr_trials_to_compare-1):
-            break
-        act_mat = getActivityMat(data_set[key], param_dic)
-        if param_dic["dr_method"] == "MDS":
-            mds = multiDimScaling(act_mat, param_dic)
-            plot2DScatter(ax[c_r-1,np.mod(plot_ID,c_p)], mds,[],param_dic)
+        for plot_ID, key in enumerate(data_set):
+            if not np.mod(plot_ID, c_p):
+                c_r += 1
+            # compute equal number of trials for all conditions (for plotting)
+            if plot_ID > (nr_trials_to_compare-1):
+                break
+            act_mat = getActivityMat(data_set[key], param_dic)
+            if param_dic["dr_method"] == "MDS":
+                mds = multiDimScaling(act_mat, param_dic)
+                plot2DScatter(ax[c_r-1,np.mod(plot_ID,c_p)], mds,[],param_dic)
 
+    # 3D
+    elif param_dic["dr_method_p2"] == 3:
+        # create figure instance
+        fig = plt.figure()
 
-    fig.suptitle(param_dic["dr_method"]+" : "+param_dic["dr_method_p1"], fontweight='bold')
+        for plot_ID, key in enumerate(data_set):
+            # compute equal number of trials for all conditions (for plotting)
+            if plot_ID > (nr_trials_to_compare-1):
+                break
+            act_mat = getActivityMat(data_set[key], param_dic)
+            if param_dic["dr_method"] == "MDS":
+                mds = multiDimScaling(act_mat, param_dic)
+                ax = fig.add_subplot(int(nr_trials_to_compare/c_p), c_p, plot_ID+1, projection='3d')
+                plot3DScatter(ax, mds,[], param_dic)
+
+    fig.suptitle(param_dic["dr_method"]+" : "+param_dic["dr_method_p1"],fontweight='bold')
     handles, labels = fig.gca().get_legend_handles_labels()
     by_label = OrderedDict(zip(labels, handles))
     fig.legend(by_label.values(), by_label.keys())
     plt.show()
 
 
-def dimRed2DConc(data_set,param_dic):
-# plot result of one condition over multiple trials, using data from multiple trials for transformation (dim. reduction)
+def manifoldTransitionConc(data_set,param_dic):
+# change of the manifold e.g. during rule switching, using data from multiple trials for transformation (dim. reduction)
 # and separating data afterwards
 
     nr_trials_to_compare = min(len(data_set.keys()), param_dic["nr_of_trials"])
@@ -107,7 +130,7 @@ def dimRed2DConc(data_set,param_dic):
             plot2DScatter(ax[c_r-1,np.mod(data_ID,c_p)], data,[],param_dic)
 
     # 3D
-    if param_dic["dr_method_p2"] == 3:
+    elif param_dic["dr_method_p2"] == 3:
         # create figure instance
         fig = plt.figure()
 
@@ -125,27 +148,51 @@ def dimRed2DConc(data_set,param_dic):
     fig.legend(by_label.values(), by_label.keys())
     plt.show()
 
-def dimRed2DCompare(data_sets,param_dic):
-# compares results of two different conditions using dimensionality reduction
+def manifoldCompare(data_sets,param_dic):
+# compares results of two different conditions using dimensionality reduction. Transforms each trial individually
     nr_trials_to_compare = param_dic["nr_of_trials"]
     # comparing same number of trials even if one condition has more trials
     for data_set in data_sets:
         nr_trials_to_compare = min(len(data_set.keys()), nr_trials_to_compare)
-    # create figure instance
-    fig, ax = plt.subplots(nr_trials_to_compare, len(data_sets))
 
-    # go over all data sets
-    for dat_ID, (data, data_set_desc) in enumerate(zip(data_sets,param_dic["data_descr"])):
-        ax[0, dat_ID].set_title(data_set_desc)
-        # go over several trials
-        for plot_ID, key in enumerate(data):
-            # compute equal number of trials for all conditions (for plotting)
-            if plot_ID > (nr_trials_to_compare-1):
-                break
-            act_mat = getActivityMat(data[key], param_dic)
-            if param_dic["dr_method"] == "MDS":
-                mds = multiDimScaling(act_mat, param_dic)
-                plot2DScatter(ax[plot_ID, dat_ID], mds,[],param_dic)
+    # 2D
+    if param_dic["dr_method_p2"] == 2:
+        # create figure instance
+        fig, ax = plt.subplots(nr_trials_to_compare, len(data_sets))
+
+        # go over all data sets
+        for dat_ID, (data, data_set_desc) in enumerate(zip(data_sets,param_dic["data_descr"])):
+            ax[0, dat_ID].set_title(data_set_desc)
+            # go over several trials
+            for plot_ID, key in enumerate(data):
+                # compute equal number of trials for all conditions (for plotting)
+                if plot_ID > (nr_trials_to_compare-1):
+                    break
+                act_mat = getActivityMat(data[key], param_dic)
+                if param_dic["dr_method"] == "MDS":
+                    mds = multiDimScaling(act_mat, param_dic)
+                    plot2DScatter(ax[plot_ID, dat_ID], mds,[],param_dic)
+
+    # 3D
+    elif param_dic["dr_method_p2"] == 3:
+        # create figure instance
+        fig = plt.figure()
+
+
+        # go over all data sets
+        for dat_ID, (data, data_set_desc) in enumerate(zip(data_sets, param_dic["data_descr"])):
+            #ax[0, dat_ID].set_title(data_set_desc)
+            # go over several trials
+            for plot_ID, key in enumerate(data):
+                # compute equal number of trials for all conditions (for plotting)
+                if plot_ID > (nr_trials_to_compare-1):
+                    break
+                act_mat = getActivityMat(data[key], param_dic)
+                if param_dic["dr_method"] == "MDS":
+                    mds = multiDimScaling(act_mat, param_dic)
+                    ax = fig.add_subplot(nr_trials_to_compare, len(data_sets),
+                                         (dat_ID*nr_trials_to_compare+plot_ID+1), projection='3d')
+
 
 
     fig.suptitle(param_dic["dr_method"]+" : "+param_dic["dr_method_p1"], fontweight='bold')
@@ -155,38 +202,9 @@ def dimRed2DCompare(data_sets,param_dic):
     plt.show()
 
 
-def dimRed3D(data_sets,param_dic):
-# compares results of two different conditions using dimensionality reduction
-    nr_trials_to_compare = param_dic["nr_of_trials"]
-    # comparing same number of trials even if one condition has more trials
-    for data_set in data_sets:
-        nr_trials_to_compare = min(len(data_set.keys()), nr_trials_to_compare)
-    # create figure instance
-    fig = plt.figure()
-
-
-    # go over all data sets
-    for dat_ID, (data, data_set_desc) in enumerate(zip(data_sets, param_dic["data_descr"])):
-        #ax[0, dat_ID].set_title(data_set_desc)
-        # go over several trials
-        for plot_ID, key in enumerate(data):
-            # compute equal number of trials for all conditions (for plotting)
-            if plot_ID > (nr_trials_to_compare-1):
-                break
-            act_mat = getActivityMat(data[key], param_dic)
-            if param_dic["dr_method"] == "MDS":
-                mds = multiDimScaling(act_mat, param_dic)
-                ax = fig.add_subplot(nr_trials_to_compare, len(data_sets), (dat_ID*nr_trials_to_compare+plot_ID+1), projection='3d')
-                plot3DScatter(ax, mds,[], param_dic)
-    fig.suptitle(param_dic["dr_method"]+" : "+param_dic["dr_method_p1"],fontweight='bold')
-    handles, labels = fig.gca().get_legend_handles_labels()
-    by_label = OrderedDict(zip(labels, handles))
-    fig.legend(by_label.values(), by_label.keys())
-    plt.show()
-
-
-def dimRedCombined(data_sets,param_dic):
-# combines two data sets, reduces the dimension and plots sets in different colors in 2D/3D
+def manifoldCompareConc(data_sets,param_dic):
+# combines two data sets, reduces the dimension and plots sets in different colors in 2D/3D for one data set of each
+# condition
     # get trial ID from both sets
     trial_ID_set1 = list(data_sets[0].keys())[param_dic["sel_trial"]]
     trial_ID_set2 = list(data_sets[1].keys())[param_dic["sel_trial"]]
@@ -222,6 +240,8 @@ def dimRedCombined(data_sets,param_dic):
 
 
 def StateTransitionAnalysis(data_sets, param_dic):
+# analysis the state transitions using difference vectors between two population states for a selected trial
+
     nr_cells = len(next(iter(data_sets[0].values())))
     dat_mat = np.array([]).reshape(nr_cells,0)
     data_sep = np.inf
