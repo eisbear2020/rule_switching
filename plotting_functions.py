@@ -22,6 +22,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+import matplotlib.colors as clr
 from mpl_toolkits.mplot3d import Axes3D
 
 
@@ -35,7 +36,7 @@ def plot_act_mat(act_mat,bin_interval):
     a = plt.colorbar()
     a.set_label("SPIKES")
 
-def plot_2D_scatter(ax,mds,param_dic,data_sep = []):
+def plot_2D_scatter(ax,mds,param_dic,data_sep = [], loc_vec = []):
 # generates 2D scatter plot with selected data --> for more than 1 data set, data_sep needs to be defined to separate
 # the data sets
     # for more than one data set
@@ -58,9 +59,25 @@ def plot_2D_scatter(ax,mds,param_dic,data_sep = []):
     else:
         # draw lines if option is set to True
         if param_dic["lines"]:
-            colors = cm.rainbow(np.linspace(0, 1, mds.shape[0] - 1))
-            for i, c in zip(range(0, mds.shape[0] - 1), colors):
-                ax.plot(mds[i:i + 2, 0], mds[i:i + 2, 1], color=c)
+            # use locations for line coloring if location vector is provided
+            if len(loc_vec):
+                # length of track
+                s_l = param_dic["spat_seg_plotting"]
+                l_track = 200
+                nr_seg = int(l_track/s_l)
+                col_map = cm.rainbow(np.linspace(0, 1, nr_seg))
+                # linearized track is 200 cm long
+                norm_loc_vec = loc_vec / s_l
+
+                for i in range(0, mds.shape[0] - 1):
+                    #print(loc_vec[i+1],norm_loc_vec[i+1],int(np.ceil(norm_loc_vec[i+1][0]))-1)
+                    ax.plot(mds[i:i + 2, 0], mds[i:i + 2, 1], color=col_map[int(np.ceil(norm_loc_vec[i+1][0]))-1, :],
+                            label=str(int(np.ceil(norm_loc_vec[i+1][0]))*s_l)+" cm")
+
+            else:
+                colors = cm.rainbow(np.linspace(0, 1, mds.shape[0] - 1))
+                for i, c in zip(range(0, mds.shape[0] - 1), colors):
+                    ax.plot(mds[i:i + 2, 0], mds[i:i + 2, 1], color=c)
         # plt.title(title)
         ax.scatter(mds[:, 0], mds[:, 1], color="grey")
         ax.scatter(mds[0, 0], mds[0, 1], color="black", marker="x", label="start", zorder=200)
@@ -76,7 +93,7 @@ def plot_2D_scatter(ax,mds,param_dic,data_sep = []):
     ax.set_xticklabels([])
 
 
-def plot_3D_scatter(ax,mds,param_dic,data_sep = []):
+def plot_3D_scatter(ax,mds,param_dic,data_sep = [], loc_vec = []):
 # generates 3D scatter plot with selected data --> for more than 1 data set, data_sep needs to be defined to separate
 # the data sets
 
@@ -99,9 +116,22 @@ def plot_3D_scatter(ax,mds,param_dic,data_sep = []):
     # for one data set
     else:
         if param_dic["lines"]:
-            colors = cm.rainbow(np.linspace(0, 1, mds.shape[0] - 1))
-            for i, c in zip(range(0, mds.shape[0] - 1), colors):
-                ax.plot(mds[i:i + 2, 0], mds[i:i + 2, 1], mds[i:i + 2, 2], color=c)
+            # use locations for line coloring if location vector is provided
+            if len(loc_vec):
+                # length of track
+                s_l = param_dic["spat_seg_plotting"]
+                l_track = 200
+                nr_seg = int(l_track/s_l)
+                col_map = cm.rainbow(np.linspace(0, 1, nr_seg))
+                # linearized track is 200 cm long
+                norm_loc_vec = loc_vec / s_l
+                for i in range(0, mds.shape[0] - 1):
+                    ax.plot(mds[i:i + 2, 0], mds[i:i + 2, 1], mds[i:i + 2, 2],color=col_map[int(np.ceil(norm_loc_vec[i+1][0]))-1, :],
+                            label=str(int(np.ceil(norm_loc_vec[i+1][0]))*s_l)+" cm")
+            else:
+                colors = cm.rainbow(np.linspace(0, 1, mds.shape[0] - 1))
+                for i, c in zip(range(0, mds.shape[0] - 1), colors):
+                    ax.plot(mds[i:i + 2, 0], mds[i:i + 2, 1], mds[i:i + 2, 2], color=c)
 
         ax.scatter(mds[:, 0], mds[:, 1], mds[:, 2], color="grey")
         ax.scatter(mds[0, 0], mds[0, 1], mds[0, 2], color="black", marker="x", label="start", zorder=200)

@@ -49,7 +49,7 @@ if __name__ == '__main__':
     # 4: session after sleep (with rule switch)
     # 6: last session
 
-    env = "4"
+    env = "6"
     timestamps = np.loadtxt(data_dir+"/"+s_exp+"/"+s_exp+"_"+env+".timestamps").astype(int)
 
     # select trials
@@ -57,7 +57,7 @@ if __name__ == '__main__':
 
     startarm = [1]
     goalarm = [3]
-    ruletype = [2,3] #3: light
+    ruletype = [2] #3: light
     errortrial = [1]
 
     trial_sel = {"startarm": startarm,"goalarm": goalarm, "ruletype":ruletype, "errortrial": errortrial}

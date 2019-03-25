@@ -32,6 +32,7 @@ from collections import OrderedDict
 from comp_functions import get_activity_mat
 from comp_functions import multi_dim_scaling
 from comp_functions import pop_vec_diff
+from comp_functions import perform_PCA
 
 from plotting_functions import plot_2D_scatter
 from plotting_functions import plot_3D_scatter
@@ -60,7 +61,7 @@ def manifold_transition(data_set,param_dic):
             # compute equal number of trials for all conditions (for plotting)
             if plot_ID > (nr_trials_to_compare-1):
                 break
-            act_mat = get_activity_mat(data_set[key], param_dic)
+            act_mat, loc_vec = get_activity_mat(data_set[key], param_dic)
             if param_dic["dr_method"] == "MDS":
                 mds = multi_dim_scaling(act_mat, param_dic)
                 plot_2D_scatter(ax[c_r-1,np.mod(plot_ID,c_p)],mds,param_dic)
@@ -74,7 +75,7 @@ def manifold_transition(data_set,param_dic):
             # compute equal number of trials for all conditions (for plotting)
             if plot_ID > (nr_trials_to_compare-1):
                 break
-            act_mat = get_activity_mat(data_set[key], param_dic)
+            act_mat, loc_vec = get_activity_mat(data_set[key], param_dic)
             if param_dic["dr_method"] == "MDS":
                 mds = multi_dim_scaling(act_mat, param_dic)
                 ax = fig.add_subplot(int(nr_trials_to_compare/c_p), c_p, plot_ID+1, projection='3d')
@@ -94,7 +95,11 @@ def manifold_transition_conc(data_set,loc_set, param_dic):
 
     nr_trials_to_compare = min(len(data_set.keys()), param_dic["nr_of_trials"])
     nr_cells = len(next(iter(data_set.values())))
+    # matrix with concatenated spike data
     dat_mat = np.array([]).reshape(nr_cells,0)
+    # vector with concatenated location data
+    loc_vec = np.empty((0,1))
+    # separator integer
     data_sep = np.zeros(nr_trials_to_compare+1)
     # nr of trials to compare
     trial_counter = 0
@@ -102,17 +107,22 @@ def manifold_transition_conc(data_set,loc_set, param_dic):
     for i,key in enumerate(data_set):
         if trial_counter > (nr_trials_to_compare-1):
             break
-        if i < param_dic["first_trial"]:
-            continue
         else:
-            act_mat = get_activity_mat(data_set[key], param_dic,loc_set[key])
+            act_mat, loc_vec_part = get_activity_mat(data_set[key], param_dic,loc_set[key])
+            # concatenate spike matrices
             dat_mat = np.hstack((dat_mat,act_mat))
+            # concatenate location vectors
+            loc_vec = np.vstack((loc_vec,np.expand_dims(loc_vec_part,1)))
             data_sep[trial_counter + 1] = data_sep[trial_counter] + act_mat.shape[1]
             trial_counter += 1
 
-
+    # dimensionality reduction: multi dimensional scaling
     if param_dic["dr_method"] == "MDS":
-        mds = multi_dim_scaling(dat_mat, param_dic)
+        result_dr = multi_dim_scaling(dat_mat, param_dic)
+    # dimensionality reduction: principal component analysis
+    elif param_dic["dr_method"] == "PCA":
+        result_dr = perform_PCA(dat_mat, param_dic)
+
 
     # number of columns for plotting
     c_p = 3
@@ -127,8 +137,8 @@ def manifold_transition_conc(data_set,loc_set, param_dic):
         for data_ID in range(nr_trials_to_compare):
             if not np.mod(data_ID, c_p):
                 c_r += 1
-            data = mds[int(data_sep[data_ID]):int(data_sep[data_ID+1]), :]
-            plot_2D_scatter(ax[c_r-1, np.mod(data_ID,c_p)], data, param_dic)
+            data = result_dr[int(data_sep[data_ID]):int(data_sep[data_ID+1]), :]
+            plot_2D_scatter(ax[c_r-1, np.mod(data_ID,c_p)], data, param_dic,[],loc_vec)
 
     # 3D
     elif param_dic["dr_method_p2"] == 3:
@@ -138,9 +148,9 @@ def manifold_transition_conc(data_set,loc_set, param_dic):
         for data_ID in range(nr_trials_to_compare):
             if not np.mod(data_ID, c_p):
                 c_r += 1
-            data = mds[int(data_sep[data_ID]):int(data_sep[data_ID+1]), :]
+            data = result_dr[int(data_sep[data_ID]):int(data_sep[data_ID+1]), :]
             ax = fig.add_subplot(int(nr_trials_to_compare / c_p), c_p, data_ID+1, projection='3d')
-            plot_3D_scatter(ax, data, param_dic)
+            plot_3D_scatter(ax, data, param_dic,[],loc_vec)
 
 
     fig.suptitle(param_dic["dr_method"]+" : "+param_dic["dr_method_p1"], fontweight='bold')
@@ -169,7 +179,7 @@ def manifold_compare(data_sets,param_dic):
                 # compute equal number of trials for all conditions (for plotting)
                 if plot_ID > (nr_trials_to_compare-1):
                     break
-                act_mat = get_activity_mat(data[key], param_dic)
+                act_mat, loc_vec = get_activity_mat(data[key], param_dic)
                 if param_dic["dr_method"] == "MDS":
                     mds = multi_dim_scaling(act_mat, param_dic)
                     plot_2D_scatter(ax[plot_ID, dat_ID], mds,param_dic)
@@ -188,7 +198,7 @@ def manifold_compare(data_sets,param_dic):
                 # compute equal number of trials for all conditions (for plotting)
                 if plot_ID > (nr_trials_to_compare-1):
                     break
-                act_mat = get_activity_mat(data[key], param_dic)
+                act_mat, loc_vec = get_activity_mat(data[key], param_dic)
                 if param_dic["dr_method"] == "MDS":
                     mds = multi_dim_scaling(act_mat, param_dic)
                     ax = fig.add_subplot(nr_trials_to_compare, len(data_sets),
@@ -204,7 +214,7 @@ def manifold_compare(data_sets,param_dic):
     plt.show()
 
 
-def manifold_compare_conc(data_sets,param_dic):
+def manifold_compare_conc(data_sets,loc_sets, param_dic):
 # combines two data sets, reduces the dimension and plots sets in different colors in 2D/3D for one data set of each
 # condition
     # get trial ID from both sets
@@ -212,11 +222,12 @@ def manifold_compare_conc(data_sets,param_dic):
     trial_ID_set2 = list(data_sets[1].keys())[param_dic["sel_trial"]]
 
     # calculate matrix of population vectors
-    act_mat_set1 = get_activity_mat(data_sets[0][trial_ID_set1], param_dic)
-    act_mat_set2 = get_activity_mat(data_sets[1][trial_ID_set2], param_dic)
+    act_mat_set1, loc_vec1 = get_activity_mat(data_sets[0][trial_ID_set1], param_dic, loc_sets[0][trial_ID_set1])
+    act_mat_set2, loc_vec2 = get_activity_mat(data_sets[1][trial_ID_set2], param_dic, loc_sets[1][trial_ID_set2])
 
     # combine both matrices
     comb_mat = np.hstack((act_mat_set1, act_mat_set2))
+    # comb_loc = np.vstack((np.expand_dims(loc_vec1,1),np.expand_dims(loc_vec2,1)))
 
     # multi dimensional scaling
     # -------------------------------------------------------------------------------------------------------------------
@@ -249,7 +260,7 @@ def state_transition_analysis(data_sets, param_dic):
     data_sep = np.inf
     for data_set in data_sets:
         trial_ID = list(data_set.keys())[param_dic["sel_trial"]]
-        act_mat = get_activity_mat(data_set[trial_ID], param_dic)
+        act_mat, loc_vec = get_activity_mat(data_set[trial_ID], param_dic)
         diff_mat = pop_vec_diff(act_mat)
         if len(data_sets) > 1:
         # combine datasets

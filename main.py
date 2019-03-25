@@ -57,24 +57,29 @@ if __name__ == '__main__':
     # without filter --> set to []
     param_dic["speed_filter"] = 5
 
+    # exclude population vectors with all zero values
+    param_dic["zero_filter"] = True
+
     # define method for dimensionality reduction
-    param_dic["dr_method"] = "MDS" # multi dimensional scaling
+    # "MDS" multi dimensional scaling
+    # "PCA" principal component analysis
+    param_dic["dr_method"] = "MDS"
 
     # first parameter of method:
     # MDS --> p1: difference measure ["jaccard","cos"]
-    param_dic["dr_method_p1"] = "cos"
+    # PCA --> p1 does not exist --> ""
+    param_dic["dr_method_p1"] = "jaccard"
 
     # second parameter of method:
     # MDS --> p2: number of components
+    # PCA --> p2: number of components
     param_dic["dr_method_p2"] = 3
 
 
     # number of trials to compare
-    param_dic["nr_of_trials"] = 12
-    # first trial to start analysis with, default: 0
-    param_dic["first_trial"] = 0
+    param_dic["nr_of_trials"] = 15
     # selected trial
-    param_dic["sel_trial"] = 1
+    param_dic["sel_trial"] = 2
 
     # PLOTTING PARAMETERS
     # ------------------------------------------------------------------------------------------------------------------
@@ -84,6 +89,10 @@ if __name__ == '__main__':
 
     # number of columns for subplots
     param_dic["c_p"] = 3
+
+    # length of spatial segment for plotting (track [200cm] will be divided into equal length segments)
+    # set to 20: TODO --> adapt for different lengths
+    param_dic["spat_seg_plotting"] = 20
 
     # axis limit for plotting
     # jaccard: [-0.2,0.2]
@@ -115,6 +124,12 @@ if __name__ == '__main__':
 
     # location data
     # ------------------------------------------------------------------------------------------------------------------
+    infile_3 = open("temp_data/whl_lin_" + file_rule_3, 'rb')
+    whl_lin_rule_3 = pickle.load(infile_3)
+    infile_3.close()
+    infile_2 = open("temp_data/whl_lin_" + file_rule_2, 'rb')
+    whl_lin_rule_2 = pickle.load(infile_2)
+    infile_2.close()
     infile_23 = open("temp_data/whl_lin_" + file_rule_switch, 'rb')
     whl_lin_rule_23 = pickle.load(infile_23)
     infile_23.close()
@@ -139,7 +154,7 @@ if __name__ == '__main__':
 
     # compare two rules using dimensionality for the combined data (reduce to 2 or 3 dimensions)
     # ------------------------------------------------------------------------------------------------------------------
-    #manifold_compare_conc([res_rule_3, res_rule_2], param_dic)
+    #manifold_compare_conc([res_rule_3, res_rule_2],[whl_lin_rule_3, whl_lin_rule_2], param_dic)
 
 
 ########################################################################################################################

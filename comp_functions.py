@@ -28,6 +28,7 @@ from sklearn.metrics import jaccard_similarity_score
 from sklearn.manifold import MDS
 from scipy.spatial import distance
 from scipy import signal
+from sklearn.decomposition import PCA
 
 def get_activity_mat(firing_times,param_dic,location=[]):
 # computes activity matrix: bin_interval in seconds --> sums up the activity within one time interval
@@ -49,7 +50,7 @@ def get_activity_mat(firing_times,param_dic,location=[]):
     nr_intervals = int(dur_trial/bin_interval)
     size_intervals = int((last_firing-first_firing)/nr_intervals)
 
-    # binary matrix
+    # matrix with population vectors
     act_mat = np.zeros([len(firing_times.keys()),nr_intervals])
 
     # go through all cells: cell_ID is not used --> only firing times
@@ -58,28 +59,56 @@ def get_activity_mat(firing_times,param_dic,location=[]):
         for i in range(nr_intervals):
             start_intv = first_firing+i*size_intervals
             end_intv = first_firing+(i+1)*size_intervals
+            # write population vectors
             cell_spikes_intv = [x for x in cell if start_intv <= x < end_intv]
             act_mat[cell_iter, i] = len(cell_spikes_intv)
 
+    # write locations & speed for each interval if location file is provided
+    if len(location):
+        # vector with locations
+        loc_vec = np.zeros(nr_intervals)
+        # vector with speeds
+        speed_vec = np.zeros(nr_intervals)
+
+        # calculate location and speed for each interval
+        loc, speed = calc_loc_and_speed(location)
+        for i in range(nr_intervals):
+            start_intv = i * size_intervals
+            end_intv = (i + 1) * size_intervals
+            loc_vec[i] = np.mean(loc[start_intv:end_intv])
+            speed_vec[i] = np.mean(speed[start_intv:end_intv])
+
     # filter time bins with low velocity (high synchrony events)
+    #-------------------------------------------------------------------------------------------------------------------
     if param_dic["speed_filter"]:
         if not len(location):
             raise Exception("No location data for speed filtering provided")
 
-         # get location and speed
-        loc, speed = calc_loc_and_speed(location)
-        # set all time bins to False
         int_sel = np.full(nr_intervals, False)
 
-        # check average speed for each time bin (interval), if above threshold --> include time bin
+        # check speed for each time bin (interval), if above threshold --> include time bin
         for i in range(nr_intervals):
-            start_intv = i * size_intervals
-            end_intv = (i + 1) * size_intervals
-            if np.mean(speed[start_intv:end_intv]) > param_dic["speed_filter"]:
+            if speed_vec[i] > param_dic["speed_filter"]:
                 int_sel[i] = True
         act_mat = act_mat[:,int_sel]
+        loc_vec = loc_vec[int_sel]
+        speed_vec = speed_vec[int_sel]
 
-    return act_mat
+    # filter all zero population vectors
+    #-------------------------------------------------------------------------------------------------------------------
+    if param_dic["zero_filter"]:
+        # set all to vectors to False
+        int_sel = np.full(act_mat.shape[1], False)
+        # go through all population vectors
+        for i,pop_vec in enumerate(act_mat.T):
+            if np.count_nonzero(pop_vec):
+                int_sel[i] = True
+        act_mat = act_mat[:, int_sel]
+        loc_vec = loc_vec[int_sel]
+        speed_vec = speed_vec[int_sel]
+
+
+    return act_mat, loc_vec
 
 def calc_pop_vector_entropy(act_mat):
 # calculates shannon entropy for each population vector in act_mat
@@ -121,6 +150,21 @@ def multi_dim_scaling(act_mat,param_dic):
 
     model = MDS(n_components=param_dic["dr_method_p2"], dissimilarity='precomputed', random_state=1)
     return model.fit_transform(D)
+
+def perform_PCA(act_mat,param_dic):
+    pca = PCA(n_components=param_dic["dr_method_p2"])
+    pca_result = pca.fit_transform(act_mat.T)
+    param_dic["dr_method_p1"] = str(pca.explained_variance_ratio_)
+
+    return pca_result
+
+
+
+
+
+
+
+
 
 
 def pop_vec_diff(data_set):
