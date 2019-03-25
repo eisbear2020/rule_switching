@@ -15,6 +15,7 @@
 #       - getActivityMat: computes activity matrix (matrix with population vectors)
 #       - calcPopVectorEntropy: calculates shannon entropy for each population vector in act_mat
 #       - multiDimScaling: returns fitted multi scale model using defined difference measure
+#       - perform_PCA: performs and applies PCA
 #       - popVecDiff: computes difference vectors between subsequent population vectors
 #       - calcLocAndSpeed: calculates location and speed
 #
