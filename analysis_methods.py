@@ -166,12 +166,16 @@ def manifold_transition_conc(data_set,loc_set, param_dic):
             ax = fig.add_subplot(int(nr_trials_to_compare / c_p), c_p, data_ID+1, projection='3d')
             plot_3D_scatter(ax, data, param_dic,[],loc_vec)
 
-
     fig.suptitle(param_dic["dr_method"]+" : "+param_dic["dr_method_p1"], fontweight='bold')
     handles, labels = fig.gca().get_legend_handles_labels()
     by_label = OrderedDict(zip(labels, handles))
     fig.legend(by_label.values(), by_label.keys())
-    plt.show()
+    # save plot if option is set to true
+    if param_dic["save_plot"]:
+        fig.savefig("plots/"+param_dic["plot_file_name"]+".png")
+    else:
+        plt.show()
+
 
 def manifold_compare(data_sets,param_dic):
 # compares results of two different conditions using dimensionality reduction. Transforms each trial individually

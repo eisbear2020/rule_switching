@@ -79,7 +79,7 @@ if __name__ == '__main__':
 
 
     # number of trials to compare
-    param_dic["nr_of_trials"] = 18
+    param_dic["nr_of_trials"] = 6
     # selected trial
     param_dic["sel_trial"] = 2
 
@@ -95,6 +95,10 @@ if __name__ == '__main__':
     # length of spatial segment for plotting (track [200cm] will be divided into equal length segments)
     # set to 20: TODO --> adapt for different lengths
     param_dic["spat_seg_plotting"] = 20
+
+    # saving figure
+    param_dic["save_plot"] = True
+    param_dic["plot_file_name"] = "test"
 
     # axis limit for plotting
     # jaccard: [-0.2,0.2]
