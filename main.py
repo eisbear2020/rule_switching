@@ -65,49 +65,52 @@ if __name__ == '__main__':
     # "MDS" multi dimensional scaling
     # "PCA" principal component analysis
     # "TSNE"
-    param_dic["dr_method"] = "MDS"
+    param_dic["dr_method"] = "PCA"
 
     # first parameter of method:
     # MDS --> p1: difference measure ["jaccard","cos"]
     # PCA --> p1 does not exist --> ""
-    param_dic["dr_method_p1"] = "cos"
+    param_dic["dr_method_p1"] = ""
 
     # second parameter of method:
     # MDS --> p2: number of components
     # PCA --> p2: number of components
-    param_dic["dr_method_p2"] = 3
+    param_dic["dr_method_p2"] = 2
 
 
     # number of trials to compare
-    param_dic["nr_of_trials"] = 15
+    param_dic["nr_of_trials"] = 21
     # selected trial
     param_dic["sel_trial"] = 2
 
     # PLOTTING PARAMETERS
     # ------------------------------------------------------------------------------------------------------------------
 
+    # saving figure
+    param_dic["save_plot"] = True
+
     # lines in scatter plot
     param_dic["lines"] = True
 
-    # number of columns for subplots
-    param_dic["c_p"] = 3
 
     # length of spatial segment for plotting (track [200cm] will be divided into equal length segments)
     # set to 20: TODO --> adapt for different lengths
     param_dic["spat_seg_plotting"] = 20
 
-    # saving figure
-    param_dic["save_plot"] = True
-    param_dic["plot_file_name"] = "man_transition_mds_cos_3D"
+    # saving figure file name
+    param_dic["plot_file_name"] = "man_transition"+"_"+param_dic["dr_method"]+"_"+ param_dic["dr_method_p1"]+"_"\
+                                  +str(param_dic["dr_method_p2"])+"D"
 
+    # TODO: automatically use maximum value from all data for axis limits
     # axis limit for plotting
     # jaccard: [-0.2,0.2]
     # cos: [-1,1]
     # 3D: [-0.5,0.5]
     # tSNE 2D: -50,50
+    # PCA
     axis_lim = np.zeros(6)
-    axis_lim[0] = axis_lim[2]= axis_lim[4]= -0.5
-    axis_lim[1] = axis_lim[3] = axis_lim[5] =0.5
+    axis_lim[0] = axis_lim[2]= axis_lim[4]= -10
+    axis_lim[1] = axis_lim[3] = axis_lim[5] =10
     param_dic["axis_lim"] = axis_lim
     #param_dic["axis_lim"] =[]
 
