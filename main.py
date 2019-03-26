@@ -75,11 +75,11 @@ if __name__ == '__main__':
     # second parameter of method:
     # MDS --> p2: number of components
     # PCA --> p2: number of components
-    param_dic["dr_method_p2"] = 2
+    param_dic["dr_method_p2"] = 3
 
 
     # number of trials to compare
-    param_dic["nr_of_trials"] = 6
+    param_dic["nr_of_trials"] = 15
     # selected trial
     param_dic["sel_trial"] = 2
 
@@ -98,7 +98,7 @@ if __name__ == '__main__':
 
     # saving figure
     param_dic["save_plot"] = True
-    param_dic["plot_file_name"] = "test"
+    param_dic["plot_file_name"] = "man_transition_mds_cos_3D"
 
     # axis limit for plotting
     # jaccard: [-0.2,0.2]
@@ -106,8 +106,8 @@ if __name__ == '__main__':
     # 3D: [-0.5,0.5]
     # tSNE 2D: -50,50
     axis_lim = np.zeros(6)
-    axis_lim[0] = axis_lim[2]= axis_lim[4]= -1
-    axis_lim[1] = axis_lim[3] = axis_lim[5] =1
+    axis_lim[0] = axis_lim[2]= axis_lim[4]= -0.5
+    axis_lim[1] = axis_lim[3] = axis_lim[5] =0.5
     param_dic["axis_lim"] = axis_lim
     #param_dic["axis_lim"] =[]
 
