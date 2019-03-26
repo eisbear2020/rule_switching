@@ -31,3 +31,15 @@
 ## 3. TSNE
 
 ![alt text](plots/man_transition_TSNE__2D.png)
+
+# State transition analysis
+
+* using "difference vectors" between population states
+* filtered data where speed < 5 cm/s and all zero population vectors
+
+## 1. Multidimensional scaling
+### Difference measure: jaccard
+
+![alt text](plots/trans_analysis_MDS_jaccard_2D.png)
+
+![alt text](plots/trans_analysis_MDS_jaccard_3D.png)
