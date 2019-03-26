@@ -16,6 +16,7 @@
 ########################################################################################################################
 
 import pickle
+import numpy as np
 from analysis_methods import manifold_transition
 from analysis_methods import manifold_transition_conc
 from analysis_methods import manifold_compare
@@ -63,21 +64,22 @@ if __name__ == '__main__':
     # define method for dimensionality reduction
     # "MDS" multi dimensional scaling
     # "PCA" principal component analysis
+    # "TSNE"
     param_dic["dr_method"] = "MDS"
 
     # first parameter of method:
     # MDS --> p1: difference measure ["jaccard","cos"]
     # PCA --> p1 does not exist --> ""
-    param_dic["dr_method_p1"] = "jaccard"
+    param_dic["dr_method_p1"] = "cos"
 
     # second parameter of method:
     # MDS --> p2: number of components
     # PCA --> p2: number of components
-    param_dic["dr_method_p2"] = 3
+    param_dic["dr_method_p2"] = 2
 
 
     # number of trials to compare
-    param_dic["nr_of_trials"] = 15
+    param_dic["nr_of_trials"] = 18
     # selected trial
     param_dic["sel_trial"] = 2
 
@@ -98,11 +100,12 @@ if __name__ == '__main__':
     # jaccard: [-0.2,0.2]
     # cos: [-1,1]
     # 3D: [-0.5,0.5]
-    # axis_lim = np.zeros(6)
-    # axis_lim[0] = axis_lim[2]= axis_lim[4]= -0.5
-    # axis_lim[1] = axis_lim[3] = axis_lim[5] =0.5
-    # param_dic["axis_lim"] = axis_lim
-    param_dic["axis_lim"] =[]
+    # tSNE 2D: -50,50
+    axis_lim = np.zeros(6)
+    axis_lim[0] = axis_lim[2]= axis_lim[4]= -1
+    axis_lim[1] = axis_lim[3] = axis_lim[5] =1
+    param_dic["axis_lim"] = axis_lim
+    #param_dic["axis_lim"] =[]
 
     plotting = False
 
@@ -164,6 +167,4 @@ if __name__ == '__main__':
     # using difference vectors
     # ------------------------------------------------------------------------------------------------------------------
     #state_transition_analysis([data_rule_3,data_rule_2], param_dic)
-
-
 

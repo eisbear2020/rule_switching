@@ -33,6 +33,7 @@ from comp_functions import get_activity_mat
 from comp_functions import multi_dim_scaling
 from comp_functions import pop_vec_diff
 from comp_functions import perform_PCA
+from comp_functions import perform_TSNE
 
 from plotting_functions import plot_2D_scatter
 from plotting_functions import plot_3D_scatter
@@ -94,6 +95,16 @@ def manifold_transition_conc(data_set,loc_set, param_dic):
 # input: data_set --> firing times, loc_set --> locations
 
     nr_trials_to_compare = min(len(data_set.keys()), param_dic["nr_of_trials"])
+    # check how many columns should be used for plotting
+    if not np.mod(nr_trials_to_compare, 3):
+        # 3 col
+        c_p = 3
+    elif not np.mod(nr_trials_to_compare, 2):
+        # 2 col
+        c_p = 2
+    else:
+        c_p = 1
+
     nr_cells = len(next(iter(data_set.values())))
     # matrix with concatenated spike data
     dat_mat = np.array([]).reshape(nr_cells,0)
@@ -113,7 +124,7 @@ def manifold_transition_conc(data_set,loc_set, param_dic):
             dat_mat = np.hstack((dat_mat,act_mat))
             # concatenate location vectors
             loc_vec = np.vstack((loc_vec,np.expand_dims(loc_vec_part,1)))
-            data_sep[trial_counter + 1] = data_sep[trial_counter] + act_mat.shape[1]
+            data_sep[trial_counter + 1] = int(data_sep[trial_counter] + act_mat.shape[1])
             trial_counter += 1
 
     # dimensionality reduction: multi dimensional scaling
@@ -122,10 +133,9 @@ def manifold_transition_conc(data_set,loc_set, param_dic):
     # dimensionality reduction: principal component analysis
     elif param_dic["dr_method"] == "PCA":
         result_dr = perform_PCA(dat_mat, param_dic)
+    elif param_dic["dr_method"] == "TSNE":
+        result_dr = perform_TSNE(dat_mat, param_dic)
 
-
-    # number of columns for plotting
-    c_p = 3
     # row for plot
     c_r = 0
 
@@ -133,12 +143,16 @@ def manifold_transition_conc(data_set,loc_set, param_dic):
     if param_dic["dr_method_p2"] == 2:
         # create figure instance
         fig, ax = plt.subplots(int(nr_trials_to_compare / c_p), c_p)
+        # if one-dimensional (that means only one column for plotting) --> expand dims
+        if ax.ndim == 1:
+            ax = np.expand_dims(ax, axis=1)
 
         for data_ID in range(nr_trials_to_compare):
             if not np.mod(data_ID, c_p):
                 c_r += 1
-            data = result_dr[int(data_sep[data_ID]):int(data_sep[data_ID+1]), :]
-            plot_2D_scatter(ax[c_r-1, np.mod(data_ID,c_p)], data, param_dic,[],loc_vec)
+            data_subset = result_dr[int(data_sep[data_ID]):int(data_sep[data_ID+1]), :]
+            loc_vec_subset = loc_vec[int(data_sep[data_ID]):int(data_sep[data_ID+1])]
+            plot_2D_scatter(ax[c_r-1, np.mod(data_ID,c_p)], data_subset, param_dic,[],loc_vec_subset)
 
     # 3D
     elif param_dic["dr_method_p2"] == 3:

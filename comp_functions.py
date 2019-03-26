@@ -30,6 +30,7 @@ from sklearn.manifold import MDS
 from scipy.spatial import distance
 from scipy import signal
 from sklearn.decomposition import PCA
+from sklearn.manifold import TSNE
 
 def get_activity_mat(firing_times,param_dic,location=[]):
 # computes activity matrix: bin_interval in seconds --> sums up the activity within one time interval
@@ -160,6 +161,8 @@ def perform_PCA(act_mat,param_dic):
     return pca_result
 
 
+def perform_TSNE(act_mat,param_dic):
+    return TSNE(n_components=param_dic["dr_method_p2"]).fit_transform(act_mat.T)
 
 
 
