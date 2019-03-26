@@ -19,7 +19,7 @@
 
 ### Difference measure: jaccard
 
-![alt text](plots/man_transition_mds_jacc_2D.png)
+![alt text](plots/man_transition_MDS_jaccard_2D.png)
 
 ## 2. PCA
 
