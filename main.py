@@ -17,11 +17,8 @@
 
 import pickle
 import numpy as np
-from analysis_methods import manifold_transition
-from analysis_methods import manifold_transition_conc
-from analysis_methods import manifold_compare
-from analysis_methods import manifold_compare_conc
 from analysis_methods import state_transition_analysis
+from analysis_methods import ManifoldTransition
 from comp_functions import calc_loc_and_speed
 
 
@@ -54,10 +51,15 @@ if __name__ == '__main__':
     # interval for temporal binning in s
     param_dic["time_bin_size"] = 0.1
 
+    # interval for spatial binning in cm
+    param_dic["spatial_bin_size"] = 10
+
+    # spatial bins to exclude: e.g. first 2 (e.g 0-10cm and 10-20cm) and last (190-200cm) --> [2,-1]
+    param_dic["spat_bins_excluded"] = [2,-1]
+
     # filter high synchrony events/immobility using the speed in cm/s --> cm/2
     # without filter --> set to []
     param_dic["speed_filter"] = 5
-
     # exclude population vectors with all zero values
     param_dic["zero_filter"] = True
 
@@ -65,12 +67,12 @@ if __name__ == '__main__':
     # "MDS" multi dimensional scaling
     # "PCA" principal component analysis
     # "TSNE"
-    param_dic["dr_method"] = "PCA"
+    param_dic["dr_method"] = "MDS"
 
     # first parameter of method:
     # MDS --> p1: difference measure ["jaccard","cos"]
     # PCA --> p1 does not exist --> ""
-    param_dic["dr_method_p1"] = ""
+    param_dic["dr_method_p1"] = "cos"
 
     # second parameter of method:
     # MDS --> p2: number of components
@@ -98,7 +100,7 @@ if __name__ == '__main__':
     param_dic["spat_seg_plotting"] = 20
 
     # saving figure file name
-    param_dic["plot_file_name"] = "man_transition"+"_"+param_dic["dr_method"]+"_"+ param_dic["dr_method_p1"]+"_"\
+    param_dic["plot_file_name"] = "man_compare_one_plot_light"+"_"+param_dic["dr_method"]+"_"+ param_dic["dr_method_p1"]+"_"\
                                   +str(param_dic["dr_method_p2"])+"D"
 
     # TODO: automatically use maximum value from all data for axis limits
@@ -107,14 +109,13 @@ if __name__ == '__main__':
     # cos: [-1,1]
     # 3D: [-0.5,0.5]
     # tSNE 2D: -50,50
-    # PCA
-    axis_lim = np.zeros(6)
-    axis_lim[0] = axis_lim[2]= axis_lim[4]= -10
-    axis_lim[1] = axis_lim[3] = axis_lim[5] =10
-    param_dic["axis_lim"] = axis_lim
-    #param_dic["axis_lim"] =[]
+    # PCA: -10,10
+    # axis_lim = np.zeros(6)
+    # axis_lim[0] = axis_lim[2]= axis_lim[4]= -50
+    # axis_lim[1] = axis_lim[3] = axis_lim[5] =50
+    # param_dic["axis_lim"] = axis_lim
+    param_dic["axis_lim"] =[]
 
-    plotting = False
 
 ########################################################################################################################
 #   LOADING THE DATA
@@ -145,7 +146,7 @@ if __name__ == '__main__':
     infile_23.close()
 
 ########################################################################################################################
-#   DYNAMIC ANALYSIS
+#   MANIFOLD TRANSITION ANALYSIS
 ########################################################################################################################
 
     # rule switching: transformation for each data set separately
@@ -154,9 +155,15 @@ if __name__ == '__main__':
 
     # rule switching: transformation (reduction in dim.) using concatenated data
     # ------------------------------------------------------------------------------------------------------------------
-    manifold_transition_conc(res_rule_23, whl_lin_rule_23, param_dic)
+    #manifold_transition_conc(res_rule_23, whl_lin_rule_23, param_dic)
+
+    #new_analysis = ManifoldTransition(res_rule_23, whl_lin_rule_23, param_dic)
+    #new_analysis.concatenated_data_spatial_bins()
 
 
+########################################################################################################################
+#   MANIFOLD COMPARISON
+########################################################################################################################
 
     # compare two rules using dimensionality reduction for both sets separately (reduce to 2 or 3 dimensions)
     # ------------------------------------------------------------------------------------------------------------------
@@ -166,12 +173,15 @@ if __name__ == '__main__':
     # ------------------------------------------------------------------------------------------------------------------
     #manifold_compare_conc([res_rule_3, res_rule_2],[whl_lin_rule_3, whl_lin_rule_2], param_dic)
 
+    new_analysis = ManifoldTransition(res_rule_2, whl_lin_rule_2, param_dic)
+    new_analysis.concatenated_data_spatial_bins()
+
 
 ########################################################################################################################
-#   TRANSITION ANALYSIS
+#   STATE TRANSITION ANALYSIS
 ########################################################################################################################
 
     # using difference vectors
     # ------------------------------------------------------------------------------------------------------------------
-    #state_transition_analysis([data_rule_3,data_rule_2], param_dic)
+    #state_transition_analysis([res_rule_23], whl_lin_rule_23, param_dic)
 

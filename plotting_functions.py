@@ -69,13 +69,13 @@ def plot_2D_scatter(ax,mds,param_dic,data_sep = [], loc_vec = []):
                 # linearized track is 200 cm long
                 norm_loc_vec = loc_vec / s_l
 
+
                 for i in range(0, mds.shape[0] - 1):
-                    #print(loc_vec[i+1],norm_loc_vec[i+1],int(np.ceil(norm_loc_vec[i+1][0]))-1)
                     ax.plot(mds[i:i + 2, 0], mds[i:i + 2, 1], color=col_map[int(np.ceil(norm_loc_vec[i+1][0]))-1, :],
                             label=str(int(np.ceil(norm_loc_vec[i+1][0]))*s_l)+" cm")
 
             else:
-                colors = cm.rainbow(np.linspace(0, 1, mds.shape[0] - 1))
+                colors = cm.cool(np.linspace(0, 1, mds.shape[0] - 1))
                 for i, c in zip(range(0, mds.shape[0] - 1), colors):
                     ax.plot(mds[i:i + 2, 0], mds[i:i + 2, 1], color=c)
         # plt.title(title)
@@ -129,7 +129,7 @@ def plot_3D_scatter(ax,mds,param_dic,data_sep = [], loc_vec = []):
                     ax.plot(mds[i:i + 2, 0], mds[i:i + 2, 1], mds[i:i + 2, 2],color=col_map[int(np.ceil(norm_loc_vec[i+1][0]))-1, :],
                             label=str(int(np.ceil(norm_loc_vec[i+1][0]))*s_l)+" cm")
             else:
-                colors = cm.rainbow(np.linspace(0, 1, mds.shape[0] - 1))
+                colors = cm.cool(np.linspace(0, 1, mds.shape[0] - 1))
                 for i, c in zip(range(0, mds.shape[0] - 1), colors):
                     ax.plot(mds[i:i + 2, 0], mds[i:i + 2, 1], mds[i:i + 2, 2], color=c)
 

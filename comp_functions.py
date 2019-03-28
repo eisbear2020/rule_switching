@@ -32,7 +32,81 @@ from scipy import signal
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 
-def get_activity_mat(firing_times,param_dic,location=[]):
+def get_activity_mat_spatial(firing_times,param_dic,location):
+
+    bin_interval = param_dic["spatial_bin_size"]
+    bin_to_exc = param_dic["spat_bins_excluded"]
+
+    # find first and last firing for each trial
+    first_firing = np.inf
+    last_firing = 0
+
+    for key,value in firing_times.items():
+        if value:
+            first_firing = int(np.amin([first_firing, np.amin(value)]))
+            last_firing = int(np.amax([last_firing, np.amax(value)]))
+
+    # calculate location and speed for each interval
+    loc, speed = calc_loc_and_speed(location)
+
+    # trim location to same length as firing data --> remove last location entries
+    loc = loc[:(last_firing-first_firing)]
+
+    # trim speed to same length as firing data --> remove last location entries
+    speed = speed[:(last_firing-first_firing)]
+
+    # length of linearized path: 200 cm
+    nr_intervals = int(200 / bin_interval)
+
+    # matrix with population vectors
+    act_mat = np.zeros([len(firing_times.keys()), nr_intervals])
+
+
+    # occupation vector for normalization
+    occ_vec = np.zeros(nr_intervals)
+
+    for interval in range(nr_intervals):
+        # define spatial interval
+        start_interval = interval*bin_interval
+        end_interval = (interval+1)*bin_interval
+
+        # with speed filtering
+        if param_dic["speed_filter"]:
+            for loc_ID, loc_ in enumerate(loc):
+                if (start_interval <= loc_ < end_interval) and speed[loc_ID] > param_dic["speed_filter"]:
+                    occ_vec[interval] += 1
+
+        # without speed filter
+        else:
+            occ_vec[interval] = len([occ for occ in loc if (start_interval <= occ < end_interval)])
+
+    # go through all cells: cell_ID is not used --> only firing times
+    for cell_iter, (cell_ID, cell) in enumerate(firing_times.items()):
+        # go through all spatial intervals
+        for i in range(nr_intervals):
+            # define spatial interval
+            start_interval = i*bin_interval
+            end_interval = (i+1)*bin_interval
+
+            # write population vectors
+            cell_spikes_interval = [x for x in cell if start_interval <= loc[(x-first_firing-1)] < end_interval]
+
+            act_mat[cell_iter, i] = len(cell_spikes_interval)
+
+
+    act_mat = act_mat[:,bin_to_exc[0]:bin_to_exc[1]]
+    occ_vec = occ_vec[bin_to_exc[0]:bin_to_exc[1]]
+
+    act_mat = (act_mat * 20e3) / occ_vec
+
+    # replace NANs with zeros
+    act_mat = np.nan_to_num(act_mat)
+    loc_vec = np.arange(0, 200, bin_interval)
+    loc_vec = loc_vec[bin_to_exc[0]:bin_to_exc[1]]
+
+    return act_mat, loc_vec
+
+def get_activity_mat_time(firing_times,param_dic,location=[]):
 # computes activity matrix: bin_interval in seconds --> sums up the activity within one time interval
 # rows: cells
 # columns: time bins
