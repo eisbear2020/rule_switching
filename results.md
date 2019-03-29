@@ -1,8 +1,53 @@
+# COMPARING MANIFOLDS FOR DIFFERENT RULES
+
+Do we see significant differences in the dynamics of the system for two different rules?
+
+**Analysis methods**:
+* using concatenated data for transformation and separating them afterwards
+* filtered data where speed < 5 cm/s and all zero population vectors
+* dimensionality reduction: MDS, PCA etc.
+* "confidence intervals" for each bin for each rule to find sections where manifolds differ significantly (comparing population states)
+* characterizing/comparing dynamics: 
+    * step length
+    * step direction (angle between subsequent steps)
+    * etc.
+
+## Results using spatial bins (10 cm)
+
+### 1. Multidimensional scaling
+
+#### Difference measure: cosine
+
+##### Rule: light
+
+![alt text](plots/man_compare_one_plot_light_MDS_cos_2D.png)
+
+* variability is quite different for different bins (greater in the center)
+
+## Results using time bins (0.1 s)
+
+### 1. Multidimensional scaling
+
+#### Difference measure: cosine
+
+##### Comparison using one trial for each rule
+
+![alt text](plots/man_compare_MDS_cos_one_trial_3D.png)
+
+* how does the difference look like using all trials for both cases?
+
 # MANIFOLD TRANSITION FOR RULE SWITCH: HPC
 
-* rule switch after trial 7
+Can we characterize the transition of the manifold during the rule switch?
+
+**Analysis methods**:
 * using concatenated trials for transformation and separating them afterwards
 * filtered data where speed < 5 cm/s and all zero population vectors
+* dimensionality reduction: MDS, PCA etc.
+* analysing the transition:
+    * rigid rotation?
+    * translation?
+    * stretching?
 
 ## Results using time bins (0.1s)
 
@@ -10,12 +55,12 @@
 
 #### Difference measure: cosine
 
-* number of components: 2
+* rule switch after trial 7
 
 ![alt text](plots/man_transition_mds_cos_2D.png)
 
 
-* number of components: 3
+* rule switch after trial 7
 
 ![alt text](plots/man_transition_mds_cos_3D.png)
 
@@ -45,21 +90,16 @@
 
 ![alt text](plots/man_transition_one_plot_MDS_cos_2D.png)
 
-# COMPARING MANIFOLDS FOR DIFFERENT RULES
-
-### 1. Multidimensional scaling
-
-#### Difference measure: cosine
-
-##### Rule: light
-
-![alt text](plots/man_compare_one_plot_light_MDS_cos_2D.png)
-
 
 # STATE TRANSITION ANALYSIS
 
-* using "difference vectors" between population states
+"Operations" that can change the state of the system. Do we see differences for different rules/spatial positions/rule switching? 
+
+**Analysis methods:**
 * filtered data where speed < 5 cm/s and all zero population vectors
+* calculate "difference vectors" between two subsequent population vectors
+* dimensionality reduction: MDS, PCA etc.
+
 
 ## 1. Multidimensional scaling
 ### Difference measure: jaccard
