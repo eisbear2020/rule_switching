@@ -1,4 +1,4 @@
-# COMPARING MANIFOLDS FOR DIFFERENT RULES
+# COMPARING MANIFOLDS FOR DIFFERENT RULES: HPC
 
 Do we see significant differences in the dynamics of the system for two different rules?
 
@@ -91,7 +91,7 @@ Can we characterize the transition of the manifold during the rule switch?
 ![alt text](plots/man_transition_one_plot_MDS_cos_2D.png)
 
 
-# STATE TRANSITION ANALYSIS
+# STATE TRANSITION ANALYSIS: HPC
 
 "Operations" that can change the state of the system. Do we see differences for different rules/spatial positions/rule switching? 
 
