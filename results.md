@@ -3,6 +3,7 @@
 Do we see significant differences in the dynamics of the system for two different rules?
 
 **Analysis methods**:
+* same trajectories (start arm & goal arm)
 * using concatenated data for transformation and separating them afterwards
 * filtered data where speed < 5 cm/s and all zero population vectors
 * dimensionality reduction: MDS, PCA etc.
@@ -41,6 +42,7 @@ Do we see significant differences in the dynamics of the system for two differen
 Can we characterize the transition of the manifold during the rule switch?
 
 **Analysis methods**:
+* same trajectories (start arm & goal arm)
 * using concatenated trials for transformation and separating them afterwards
 * filtered data where speed < 5 cm/s and all zero population vectors
 * dimensionality reduction: MDS, PCA etc.
@@ -90,6 +92,8 @@ Can we characterize the transition of the manifold during the rule switch?
 
 ![alt text](plots/man_transition_one_plot_MDS_cos_2D.png)
 
+![alt text](plots/man_transition_one_plot_MDS_cos_3D.png)
+* visible separation for both rules
 
 # STATE TRANSITION ANALYSIS: HPC
 
