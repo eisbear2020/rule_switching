@@ -22,6 +22,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
+from collections import OrderedDict
 import matplotlib.colors as clr
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -146,3 +147,49 @@ def plot_3D_scatter(ax,mds,param_dic,data_sep = [], loc_vec = []):
     ax.set_yticklabels([])
     ax.set_xticklabels([])
     ax.set_zticklabels([])
+
+
+def plot_compare(data,param_dic,data_sep, col_map):
+    # 2D plot
+    if param_dic["dr_method_p2"] == 2:
+        fig, ax = plt.subplots()
+        for data_ID in range(len(data_sep)-1):
+            data_subset = data[int(data_sep[data_ID]):int(data_sep[data_ID + 1]), :]
+
+            for i in range(0, data_subset.shape[0] - 1):
+                ax.plot(data_subset[i:i + 2, 0], data_subset[i:i + 2, 1], color=col_map[data_ID, :],
+                        label="trial " + str(data_ID))
+            ax.scatter(data_subset[:, 0], data_subset[:, 1], color="grey")
+            ax.scatter(data_subset[0, 0], data_subset[0, 1], color="black", marker="x", label="start", zorder=200)
+            ax.scatter(data_subset[-1, 0], data_subset[-1, 1], color="black", label="end", zorder=200)
+
+    # 3D plot
+
+    if param_dic["dr_method_p2"] == 3:
+        # create figure instance
+        fig = plt.figure()
+        ax = fig.add_subplot(111, projection='3d')
+
+        for data_ID in range(len(data_sep)-1):
+            data_subset = data[int(data_sep[data_ID]):int(data_sep[data_ID + 1]), :]
+
+            for i in range(0, data_subset.shape[0] - 1):
+                ax.plot(data_subset[i:i + 2, 0], data_subset[i:i + 2, 1], data_subset[i:i + 2, 2],
+                        color=col_map[data_ID, :],
+                        label="trial " + str(data_ID))
+            ax.scatter(data_subset[:, 0], data_subset[:, 1], data_subset[:, 2], color="grey")
+            ax.scatter(data_subset[0, 0], data_subset[0, 1], data_subset[0, 2], color="black", marker="x", label="start",
+                       zorder=200)
+            ax.scatter(data_subset[-1, 0], data_subset[-1, 1], data_subset[-1, 2], color="black", label="end", zorder=200)
+            # hide z label
+            ax.set_zticklabels([])
+
+    # hide labels
+    ax.set_yticklabels([])
+    ax.set_xticklabels([])
+
+    fig.suptitle(param_dic["dr_method"]+" : "+param_dic["dr_method_p1"], fontweight='bold')
+    handles, labels = fig.gca().get_legend_handles_labels()
+    by_label = OrderedDict(zip(labels, handles))
+    fig.legend(by_label.values(), by_label.keys())
+    plt.show()

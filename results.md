@@ -93,7 +93,10 @@ Can we characterize the transition of the manifold during the rule switch?
 ![alt text](plots/man_transition_one_plot_MDS_cos_2D.png)
 
 ![alt text](plots/man_transition_one_plot_MDS_cos_3D.png)
-* visible separation for both rules
+
+![alt text](plots/man_transition_one_plot_MDS_cos_3D_rulesep.png)
+* visible separation for both rules (light --> go west)
+* maybe use trials in between (not successful ones) to see how the remapping actually happens
 
 # STATE TRANSITION ANALYSIS: HPC
 
