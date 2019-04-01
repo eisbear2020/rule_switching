@@ -82,7 +82,7 @@ if __name__ == '__main__':
     # second parameter of method:
     # MDS --> p2: number of components
     # PCA --> p2: number of components
-    param_dic["dr_method_p2"] = 3
+    param_dic["dr_method_p2"] = 2
 
 
     # number of trials to compare
