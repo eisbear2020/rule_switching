@@ -25,6 +25,7 @@ import matplotlib.cm as cm
 from collections import OrderedDict
 import matplotlib.colors as clr
 from mpl_toolkits.mplot3d import Axes3D
+import matplotlib.colors as colors
 
 
 
@@ -149,7 +150,28 @@ def plot_3D_scatter(ax,mds,param_dic,data_sep = [], loc_vec = []):
     ax.set_zticklabels([])
 
 
-def plot_compare(data,param_dic,data_sep, col_map):
+def plot_compare(data, param_dic, data_sep, rule_sep = []):
+# plots data in one plot and colors rules differently if "rule_sep" is provided. Otherwise each trial is colored with a
+# different color
+
+    if rule_sep:
+        # to color 2 different subsets of trials (e.g. for different rules): new_rule_trial --> first trial with new
+        # rule
+
+        # create rgba color map
+        col_map = np.zeros((len(data_sep)+1,4))
+        col_map[:rule_sep] = colors.to_rgba_array("r")
+        col_map[rule_sep:] = colors.to_rgba_array("b")
+
+        # create label array
+        label_arr = np.zeros((len(data_sep)+1), dtype=object)
+        label_arr[:rule_sep] = param_dic["data_descr"][0]
+        label_arr[rule_sep:] = param_dic["data_descr"][1]
+
+    else:
+        col_map = cm.rainbow(np.linspace(0, 1, len(data_sep)))
+
+
     # 2D plot
     if param_dic["dr_method_p2"] == 2:
         fig, ax = plt.subplots()
@@ -157,8 +179,13 @@ def plot_compare(data,param_dic,data_sep, col_map):
             data_subset = data[int(data_sep[data_ID]):int(data_sep[data_ID + 1]), :]
 
             for i in range(0, data_subset.shape[0] - 1):
-                ax.plot(data_subset[i:i + 2, 0], data_subset[i:i + 2, 1], color=col_map[data_ID, :],
-                        label="trial " + str(data_ID))
+                # check if trial or rule is meant to be colored
+                if rule_sep:
+                    ax.plot(data_subset[i:i + 2, 0], data_subset[i:i + 2, 1], color=col_map[data_ID, :],
+                            label=label_arr[data_ID])
+                else:
+                    ax.plot(data_subset[i:i + 2, 0], data_subset[i:i + 2, 1], color=col_map[data_ID, :],
+                            label="TRIAL " + str(data_ID))
             ax.scatter(data_subset[:, 0], data_subset[:, 1], color="grey")
             ax.scatter(data_subset[0, 0], data_subset[0, 1], color="black", marker="x", label="start", zorder=200)
             ax.scatter(data_subset[-1, 0], data_subset[-1, 1], color="black", label="end", zorder=200)

@@ -30,7 +30,6 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-import matplotlib.colors as colors
 from collections import OrderedDict
 from comp_functions import get_activity_mat_time
 from comp_functions import get_activity_mat_spatial
@@ -46,7 +45,7 @@ from plotting_functions import plot_compare
 
 
 class Manifold():
-    ''' Methods for analyzing manifold'''
+    ''' Base class for manifold analysis'''
 
     def __init__(self, param_dic):
 
@@ -100,23 +99,11 @@ class Manifold():
         elif self.dr_method == "TSNE":
             self.result_dr = perform_TSNE(dat_mat, self.param_dic)
 
-    def plot_in_one_fig_color_trials(self):
-        #to color different trials with different colors
-        col_map = cm.rainbow(np.linspace(0, 1, len(self.data_sep)))
+
+    def plot_in_one_fig(self,rule_sep = []):
 
         # plots results as scatter plot
-        plot_compare(self.result_dr, self.param_dic, self.data_sep,col_map)
-
-    def plot_in_one_fig_color_rules(self,new_rule_trial):
-        # to color 2 different subsets of trials (e.g. for different rules): new_rule_trial --> first trial with new
-        # rule
-
-        # create rgba color map
-        col_map = np.zeros((len(self.data_sep)+1,4))
-        col_map[:new_rule_trial] = colors.to_rgba_array("r")
-        col_map[new_rule_trial:] = colors.to_rgba_array("b")
-        # plots results as scatter plot
-        plot_compare(self.result_dr, self.param_dic, self.data_sep,col_map)
+        plot_compare(self.result_dr, self.param_dic, self.data_sep, rule_sep)
 
 
 
@@ -364,7 +351,7 @@ class ManifoldCompare(Manifold):
         self.rule_sep = self.rule_sep[:-1]
         # apply dimensionality reduction to data
         self.reduce_dimension(dat_mat)
-        self.plot_in_one_fig_color_rules(self.rule_sep[0])
+        self.plot_in_one_fig(self.rule_sep[0])
 
 
     def manifold_compare_conc(self):

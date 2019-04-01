@@ -163,10 +163,10 @@ if __name__ == '__main__':
     #manifold_transition_conc(res_rule_23, whl_lin_rule_23, param_dic)
 
     # trial with new rule
-    # new_rule_trial = 3
+    # new_rule_trial = 7
     # new_analysis = ManifoldTransition(res_rule_23, whl_lin_rule_23, param_dic)
     # new_analysis.concatenated_data()
-    # new_analysis.plot_in_one_fig_color_rules(new_rule_trial)
+    # new_analysis.plot_in_one_fig(new_rule_trial)
 
 ########################################################################################################################
 #   MANIFOLD COMPARISON
@@ -176,7 +176,7 @@ if __name__ == '__main__':
     # ------------------------------------------------------------------------------------------------------------------
     # new_analysis = SingleManifold(res_rule_2, whl_lin_rule_2, param_dic)
     # new_analysis.concatenated_data()
-    # new_analysis.plot_in_one_fig_color_trials()
+    # new_analysis.plot_in_one_fig()
 
     # compare two rules using dimensionality reduction for both sets separately (reduce to 2 or 3 dimensions)
     # ------------------------------------------------------------------------------------------------------------------
@@ -186,8 +186,8 @@ if __name__ == '__main__':
     # ------------------------------------------------------------------------------------------------------------------
     #manifold_compare_conc([res_rule_3, res_rule_2],[whl_lin_rule_3, whl_lin_rule_2], param_dic)
 
-    new_comparison = ManifoldCompare([res_rule_3, res_rule_2],[whl_lin_rule_3, whl_lin_rule_2], param_dic)
-    new_comparison.all_trials()
+    # new_comparison = ManifoldCompare([res_rule_3, res_rule_2],[whl_lin_rule_3, whl_lin_rule_2], param_dic)
+    # new_comparison.all_trials()
 
 
 ########################################################################################################################
