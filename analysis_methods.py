@@ -45,10 +45,11 @@ from plotting_functions import plot_3D_scatter
 from plotting_functions import plot_compare
 
 
-class Analysis:
-    ''' Base class for Analysis methods'''
+class Manifold():
+    ''' Methods for analyzing manifold'''
 
     def __init__(self, param_dic):
+
         # number of trials to compare
         self.nr_trials = param_dic["nr_of_trials"]
 
@@ -61,18 +62,6 @@ class Analysis:
         # name for saving plot
         self.plot_file_name = param_dic["plot_file_name"]
 
-
-class Manifold(Analysis):
-    ''' Methods for analyzing manifold'''
-
-    def __init__(self, data_set, loc_set, param_dic):
-
-        # get attributes from parent class
-        Analysis.__init__(self, param_dic)
-
-        # dictionary with firing times for different cells and different trials
-        self.data_set = data_set
-
         # dimensionality reduction method
         self.dr_method = param_dic["dr_method"]
 
@@ -84,17 +73,66 @@ class Manifold(Analysis):
         #  - for all methods: number of components
         self.dr_method_p2 = param_dic["dr_method_p2"]
 
-        # dictionary with locations for different trials
-        self.loc_set = loc_set
-
         # result of dimensionality reduction
         self.result_dr = []
 
-        # array with location data
-        self.loc_vec = []
+        # vector with concatenated location data
+        self.loc_vec = np.empty((0,1))
 
         # parameter dictionary
         self.param_dic = param_dic
+
+        # array with separator indices for different trials
+        self.data_sep = []
+
+
+    def reduce_dimension(self,dat_mat):
+    # reduces the dimension using one of the defined methods
+
+        # clear in case there was a previous result
+        self.result_dr = []
+        # dimensionality reduction: multi dimensional scaling
+        if self.dr_method == "MDS":
+            self.result_dr = multi_dim_scaling(dat_mat, self.param_dic)
+        # dimensionality reduction: principal component analysis
+        elif self.dr_method == "PCA":
+            self.result_dr = perform_PCA(dat_mat, self.param_dic)
+        elif self.dr_method == "TSNE":
+            self.result_dr = perform_TSNE(dat_mat, self.param_dic)
+
+    def plot_in_one_fig_color_trials(self):
+        #to color different trials with different colors
+        col_map = cm.rainbow(np.linspace(0, 1, len(self.data_sep)))
+
+        # plots results as scatter plot
+        plot_compare(self.result_dr, self.param_dic, self.data_sep,col_map)
+
+    def plot_in_one_fig_color_rules(self,new_rule_trial):
+        # to color 2 different subsets of trials (e.g. for different rules): new_rule_trial --> first trial with new
+        # rule
+
+        # create rgba color map
+        col_map = np.zeros((len(self.data_sep)+1,4))
+        col_map[:new_rule_trial] = colors.to_rgba_array("r")
+        col_map[new_rule_trial:] = colors.to_rgba_array("b")
+        # plots results as scatter plot
+        plot_compare(self.result_dr, self.param_dic, self.data_sep,col_map)
+
+
+
+class SingleManifold(Manifold):
+    ''' Methods for analyzing one manifold'''
+
+    def __init__(self, data_set, loc_set, param_dic):
+
+        # get attributes from parent class
+        Manifold.__init__(self, param_dic)
+
+        # dictionary with firing times for different cells and different trials
+        self.data_set = data_set
+
+        # dictionary with locations for different trials
+        self.loc_set = loc_set
 
         # how many cells are in the data set
         self.nr_cells = len(next(iter(self.data_set.values())))
@@ -113,29 +151,11 @@ class Manifold(Analysis):
         else:
             self.c_p = 1
 
-
-    def reduce_dimension(self,dat_mat):
-    # reduces the dimension using one of the defined methods
-
-        # clear in case there was a previous result
-        self.result_dr = []
-        # dimensionality reduction: multi dimensional scaling
-        if self.dr_method == "MDS":
-            self.result_dr = multi_dim_scaling(dat_mat, self.param_dic)
-        # dimensionality reduction: principal component analysis
-        elif self.dr_method == "PCA":
-            self.result_dr = perform_PCA(dat_mat, self.param_dic)
-        elif self.dr_method == "TSNE":
-            self.result_dr = perform_TSNE(dat_mat, self.param_dic)
-
-
     def concatenated_data(self):
     # using data from multiple trials for transformation (dim. reduction) and separating data afterwards
     # --> using either temporal or spatial bins
 
         dat_mat = np.array([]).reshape(self.nr_cells,0)
-        # vector with concatenated location data
-        self.loc_vec = np.empty((0,1))
         # nr of trials to compare
         trial_counter = 0
         # concatenate all trials and save separator for trials
@@ -156,45 +176,6 @@ class Manifold(Analysis):
                 trial_counter += 1
         # apply dimensionality reduction to data
         self.reduce_dimension(dat_mat)
-
-
-    def plot_in_one_fig_locations(self):
-    # plots results as scatter plot and colors lines according to location
-
-        # 2D plot
-        if self.dr_method_p2 == 2:
-            # create figure instance
-            fig, ax = plt.subplots()
-
-            for data_ID in range(self.nr_trials_to_compare):
-                data_subset = self.result_dr[int(self.data_sep[data_ID]):int(self.data_sep[data_ID+1]), :]
-                loc_vec_subset = self.loc_vec[int(self.data_sep[data_ID]):int(self.data_sep[data_ID+1])]
-                plot_2D_scatter(ax, data_subset, self.param_dic,[],loc_vec_subset)
-
-        # 3D plot
-        elif self.dr_method_p2 == 3:
-            # create figure instance
-            fig = plt.figure()
-            ax = fig.add_subplot(111,projection='3d')
-            for data_ID in range(self.nr_trials_to_compare):
-                data = self.result_dr[int(self.data_sep[data_ID]):int(self.data_sep[data_ID+1]), :]
-                plot_3D_scatter(ax, data, self.param_dic,[],self.loc_vec)
-
-        fig.suptitle(self.dr_method+" : "+self.dr_method_p1, fontweight='bold')
-        handles, labels = fig.gca().get_legend_handles_labels()
-        by_label = OrderedDict(zip(labels, handles))
-        fig.legend(by_label.values(), by_label.keys())
-        plt.show()
-        # save plot if option is set to true
-        if self.save_plot:
-            fig.savefig("plots/"+self.plot_file_name+".png")
-
-    def plot_in_one_fig_trials(self):
-        #to color different trials with different colors
-        col_map = cm.rainbow(np.linspace(0, 1, len(self.data_sep)))
-
-        # plots results as scatter plot
-        plot_compare(self.result_dr, self.param_dic, self.data_sep,col_map)
 
     def plot_in_multi_figs(self):
     # plots results as scatter plot in different figures
@@ -238,14 +219,44 @@ class Manifold(Analysis):
             fig.savefig("plots/"+self.plot_file_name+".png")
 
 
-class ManifoldTransition(Manifold):
+    def plot_in_one_fig_color_position(self):
+    # plots results as scatter plot and colors lines according to location
+
+        # 2D plot
+        if self.dr_method_p2 == 2:
+            # create figure instance
+            fig, ax = plt.subplots()
+
+            for data_ID in range(self.nr_trials_to_compare):
+                data_subset = self.result_dr[int(self.data_sep[data_ID]):int(self.data_sep[data_ID+1]), :]
+                loc_vec_subset = self.loc_vec[int(self.data_sep[data_ID]):int(self.data_sep[data_ID+1])]
+                plot_2D_scatter(ax, data_subset, self.param_dic,[],loc_vec_subset)
+
+        # 3D plot
+        elif self.dr_method_p2 == 3:
+            # create figure instance
+            fig = plt.figure()
+            ax = fig.add_subplot(111,projection='3d')
+            for data_ID in range(self.nr_trials_to_compare):
+                data = self.result_dr[int(self.data_sep[data_ID]):int(self.data_sep[data_ID+1]), :]
+                plot_3D_scatter(ax, data, self.param_dic,[],self.loc_vec)
+
+        fig.suptitle(self.dr_method+" : "+self.dr_method_p1, fontweight='bold')
+        handles, labels = fig.gca().get_legend_handles_labels()
+        by_label = OrderedDict(zip(labels, handles))
+        fig.legend(by_label.values(), by_label.keys())
+        plt.show()
+        # save plot if option is set to true
+        if self.save_plot:
+            fig.savefig("plots/"+self.plot_file_name+".png")
+
+class ManifoldTransition(SingleManifold):
     ''' Methods for analyzing manifold transition'''
 
     def __init__(self, data_set, loc_set, param_dic):
 
         # get attributes from parent class
-        Manifold.__init__(self, data_set, loc_set, param_dic)
-
+        SingleManifold.__init__(self, data_set, loc_set, param_dic)
 
     def separate_data_time_bins(self):
         # analyses the transition of the manifold e.g. for the rule switch case. Each trial is transformed individually
@@ -287,25 +298,14 @@ class ManifoldTransition(Manifold):
         fig.legend(by_label.values(), by_label.keys())
         plt.show()
 
-    def plot_in_one_fig_rules(self,new_rule_trial):
-        # to color 2 different subsets of trials (e.g. for different rules): new_rule_trial --> first trial with new
-        # rule
 
-        # create rgba color map
-        col_map = np.zeros((len(self.data_sep)+1,4))
-        col_map[:new_rule_trial] = colors.to_rgba_array("r")
-        col_map[new_rule_trial:] = colors.to_rgba_array("b")
-        # plots results as scatter plot
-        plot_compare(self.result_dr, self.param_dic, self.data_sep,col_map)
-
-
-class ManifoldCompare(Analysis):
-    ''' Methods for analyzing manifold transition'''
+class ManifoldCompare(Manifold):
+    ''' Methods for comparing manifolds with different conditions (rule) '''
 
     def __init__(self, data_sets, loc_sets, param_dic):
 
         # get attributes from parent class
-        Analysis.__init__(self, param_dic)
+        Manifold.__init__(self, param_dic)
 
         # dictionary with firing times for different cells and different trials
         self.data_sets = data_sets
@@ -317,27 +317,54 @@ class ManifoldCompare(Analysis):
         self.result_dr = []
 
         # array with location data
-        self.loc_vec = []
+        self.loc_vec = np.empty((0,1))
 
         # parameter dictionary
         self.param_dic = param_dic
 
+        # data separator
+        self.data_sep = np.empty((0, 1))
+
+        # rule separator
+        self.rule_sep = np.zeros(len(data_sets), dtype=int)
+
         # how many cells are in the data set
-        self.nr_cells = len(next(iter(self.data_set.values())))
+        self.nr_cells = len(next(iter(self.data_sets[0].values())))
 
-        # how many trials to compare
-        self.nr_trials_to_compare = min(len(self.data_set.keys()), self.nr_trials)
+    def all_trials(self):
+    # combines multiple data sets, reduces the dimension and plots sets in different colors in 2D/3D for one data set of each
+    # condition
 
-        # array with separator indices for different trials
-        self.data_sep = np.zeros(self.nr_trials_to_compare+1)
+        # initialize data matrix
+        dat_mat = np.array([]).reshape(self.nr_cells, 0)
 
-        # check how many columns should be used for plotting: 3 col, 2 col or 1 col
-        if not np.mod(self.nr_trials_to_compare, 3):
-            self.c_p = 3
-        elif not np.mod(self.nr_trials_to_compare, 2):
-            self.c_p = 2
-        else:
-            self.c_p = 1
+        trial_counter = 0
+        # go through all data sets
+        for data_set_ID, (data_set,loc_set) in enumerate(zip(self.data_sets,self.loc_sets)):
+            # concatenate all trials and save separator for trials
+            data_set_data_sep = np.zeros(len(data_set.keys())+1)
+            self.rule_sep[data_set_ID] = int(len(data_set.keys()))
+            # add zero array to existing separator array
+            self.data_sep = np.vstack((self.data_sep, np.expand_dims(data_set_data_sep, 1)))
+            for i, key in enumerate(data_set):
+                if self.binning_method == "temporal":
+                    act_mat, loc_vec_part = get_activity_mat_time(data_set[key], self.param_dic,loc_set[key])
+                elif self.binning_method == "spatial":
+                    act_mat, loc_vec_part = get_activity_mat_spatial(data_set[key], self.param_dic,
+                                                                     loc_set[key])
+                # concatenate spike matrices
+                dat_mat = np.hstack((dat_mat, act_mat))
+                # concatenate location vectors
+                self.loc_vec = np.vstack((self.loc_vec, np.expand_dims(loc_vec_part, 1)))
+                self.data_sep[trial_counter + 1] = int(self.data_sep[trial_counter] + act_mat.shape[1])
+                trial_counter += 1
+
+        # remove last elements --> only contain zero
+        self.data_sep = self.data_sep[:-1]
+        self.rule_sep = self.rule_sep[:-1]
+        # apply dimensionality reduction to data
+        self.reduce_dimension(dat_mat)
+        self.plot_in_one_fig_color_rules(self.rule_sep[0])
 
 
     def manifold_compare_conc(self):

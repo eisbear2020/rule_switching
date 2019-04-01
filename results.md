@@ -23,7 +23,15 @@ Do we see significant differences in the dynamics of the system for two differen
 
 ![alt text](plots/man_compare_one_plot_light_MDS_cos_2D.png)
 
+##### Light vs. west
+
+![alt text](plots/man_compare_MDS_cos_3D.png)
+
 * variability is quite different for different bins (greater in the center)
+
+##### Light vs. west
+
+![alt text](plots/man_compare_one_plot_light_MDS_cos_2D.png)
 
 ## Results using time bins (0.1 s)
 

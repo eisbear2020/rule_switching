@@ -18,8 +18,9 @@
 import pickle
 import numpy as np
 from analysis_methods import state_transition_analysis
-from analysis_methods import Manifold
+from analysis_methods import SingleManifold
 from analysis_methods import ManifoldTransition
+from analysis_methods import ManifoldCompare
 from comp_functions import calc_loc_and_speed
 
 
@@ -93,7 +94,7 @@ if __name__ == '__main__':
     # ------------------------------------------------------------------------------------------------------------------
 
     # saving figure
-    param_dic["save_plot"] = True
+    param_dic["save_plot"] = False
 
     # lines in scatter plot
     param_dic["lines"] = True
@@ -165,7 +166,7 @@ if __name__ == '__main__':
     # new_rule_trial = 3
     # new_analysis = ManifoldTransition(res_rule_23, whl_lin_rule_23, param_dic)
     # new_analysis.concatenated_data()
-    # new_analysis.plot_in_one_fig_rules(new_rule_trial)
+    # new_analysis.plot_in_one_fig_color_rules(new_rule_trial)
 
 ########################################################################################################################
 #   MANIFOLD COMPARISON
@@ -173,9 +174,9 @@ if __name__ == '__main__':
 
     # look at one rule across multiple trials
     # ------------------------------------------------------------------------------------------------------------------
-    new_analysis = Manifold(res_rule_2, whl_lin_rule_2, param_dic)
-    new_analysis.concatenated_data()
-    new_analysis.plot_in_one_fig_trials()
+    # new_analysis = SingleManifold(res_rule_2, whl_lin_rule_2, param_dic)
+    # new_analysis.concatenated_data()
+    # new_analysis.plot_in_one_fig_color_trials()
 
     # compare two rules using dimensionality reduction for both sets separately (reduce to 2 or 3 dimensions)
     # ------------------------------------------------------------------------------------------------------------------
@@ -184,6 +185,9 @@ if __name__ == '__main__':
     # compare two rules using dimensionality for the combined data (reduce to 2 or 3 dimensions)
     # ------------------------------------------------------------------------------------------------------------------
     #manifold_compare_conc([res_rule_3, res_rule_2],[whl_lin_rule_3, whl_lin_rule_2], param_dic)
+
+    new_comparison = ManifoldCompare([res_rule_3, res_rule_2],[whl_lin_rule_3, whl_lin_rule_2], param_dic)
+    new_comparison.all_trials()
 
 
 ########################################################################################################################
