@@ -1,0 +1,9 @@
+# pycache files #
+#################
+
+*.pyc
+
+# workspace files #
+###################
+
+.idea/workspace.xml
