@@ -1,10 +1,10 @@
 ########################################################################################################################
 #
-#   Analysis methods
+#   Manifold methods
 #
 #   Description:
 #
-#       - analysis steps/methods
+#       - contains classes that are used to perform manifold analysis
 #
 #   Author: Lars Bollmann
 #
@@ -12,19 +12,22 @@
 #
 #   Structure:
 #
-#       - ManifoldTransition: evaluates the manifold change e.g during rule switch
+#       - Manifold: Base class containing basic attributes and methods
 #
-#               - separate_data_time_bins: using time bins, transforming every trial separately
+#       - singleManifold: Methods/attributes to analyze manifold for one condition (e.g. RULE A)
+#
 #               - concatenated_data_time_bins:  using data from multiple trials for transformation (dim. reduction)
 #                                               and separating data afterwards
 #
+#               - state_transition: analysis the state transitions using difference vectors between two population
+#                                   states
+#
+#       - ManifoldTransition: evaluates the manifold change e.g during rule switch
+#
+#               - separate_data_time_bins: using time bins, transforming every trial separately
 #
 #       - ManifoldCompare:  compares results of two different conditions using dimensionality reduction and transforming
 #                           each trial separately
-#       - manifoldCompareConc:  compares results of two different conditions using dimensionality reduction.
-#                               Uses concatenated data for transformation and separates data afterwards
-#
-#       - StateTransitionAnalysis: analysis the state transitions using difference vectors between two population states
 #
 ########################################################################################################################
 
@@ -163,6 +166,37 @@ class SingleManifold(Manifold):
                 trial_counter += 1
         # apply dimensionality reduction to data
         self.reduce_dimension(dat_mat)
+
+    def state_transition_analysis(self):
+        # analysis the state transitions using difference vectors between two population states for a selected trial
+
+        dat_mat = np.array([]).reshape(self.nr_cells,0)
+        # nr of trials to compare
+        trial_counter = 0
+        # concatenate all trials and save separator for trials
+        for i, key in enumerate(self.data_set):
+            if trial_counter > (self.nr_trials_to_compare-1):
+                break
+            else:
+                if self.binning_method == "temporal":
+                    act_mat, loc_vec_part = get_activity_mat_time(self.data_set[key], self.param_dic,self.loc_set[key])
+                elif self.binning_method == "spatial":
+                    act_mat, loc_vec_part = get_activity_mat_spatial(self.data_set[key], self.param_dic,
+                                                                     self.loc_set[key])
+                # calculate differences between population vectors
+                diff_mat = pop_vec_diff(act_mat)
+                # concatenate spike matrices
+                dat_mat = np.hstack((dat_mat, diff_mat))
+                # concatenate location vectors
+                self.loc_vec = np.vstack((self.loc_vec, np.expand_dims(loc_vec_part, 1)))
+                self.data_sep[trial_counter + 1] = int(self.data_sep[trial_counter] + act_mat.shape[1])
+                trial_counter += 1
+        # apply dimensionality reduction to data
+        self.reduce_dimension(dat_mat)
+        self.plot_in_one_fig_color_position()
+
+
+
 
     def plot_in_multi_figs(self):
     # plots results as scatter plot in different figures
@@ -358,12 +392,12 @@ class ManifoldCompare(Manifold):
     # combines two data sets, reduces the dimension and plots sets in different colors in 2D/3D for one data set of each
     # condition
         # get trial ID from both sets
-        trial_ID_set1 = list(data_sets[0].keys())[param_dic["sel_trial"]]
-        trial_ID_set2 = list(data_sets[1].keys())[param_dic["sel_trial"]]
+        trial_ID_set1 = list(self.data_sets[0].keys())[self.param_dic["sel_trial"]]
+        trial_ID_set2 = list(self.data_sets[1].keys())[self.param_dic["sel_trial"]]
 
         # calculate matrix of population vectors
-        act_mat_set1, loc_vec1 = get_activity_mat_time(data_sets[0][trial_ID_set1], param_dic, loc_sets[0][trial_ID_set1])
-        act_mat_set2, loc_vec2 = get_activity_mat_time(data_sets[1][trial_ID_set2], param_dic, loc_sets[1][trial_ID_set2])
+        act_mat_set1, loc_vec1 = get_activity_mat_time(self.data_sets[0][trial_ID_set1], self.param_dic, self.loc_sets[0][trial_ID_set1])
+        act_mat_set2, loc_vec2 = get_activity_mat_time(self.data_sets[1][trial_ID_set2], self.param_dic, self.loc_sets[1][trial_ID_set2])
 
         # combine both matrices
         comb_mat = np.hstack((act_mat_set1, act_mat_set2))
@@ -371,21 +405,21 @@ class ManifoldCompare(Manifold):
 
         # multi dimensional scaling
         # -------------------------------------------------------------------------------------------------------------------
-        mds = multi_dim_scaling(comb_mat, param_dic)
+        mds = multi_dim_scaling(comb_mat, self.param_dic)
 
         data_sep = act_mat_set1.shape[1]
 
         # 2D
-        if param_dic["dr_method_p2"] == 2:
+        if self.param_dic["dr_method_p2"] == 2:
             fig, ax = plt.subplots()
-            plot_2D_scatter(ax, mds, param_dic, data_sep)
+            plot_2D_scatter(ax, mds, self.param_dic, data_sep)
         # 3D
-        elif param_dic["dr_method_p2"] == 3:
+        elif self.param_dic["dr_method_p2"] == 3:
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
             plot_3D_scatter(ax, mds, param_dic, data_sep)
 
-        fig.suptitle(param_dic["dr_method"] + " : " + param_dic["dr_method_p1"], fontweight='bold')
+        fig.suptitle(self.param_dic["dr_method"] + " : " + self.param_dic["dr_method_p1"], fontweight='bold')
         handles, labels = fig.gca().get_legend_handles_labels()
         by_label = OrderedDict(zip(labels, handles))
         fig.legend(by_label.values(), by_label.keys())
@@ -441,46 +475,3 @@ class ManifoldCompare(Manifold):
             by_label = OrderedDict(zip(labels, handles))
             fig.legend(by_label.values(), by_label.keys())
             plt.show()
-
-
-def state_transition_analysis(data_sets, loc_set, param_dic):
-# analysis the state transitions using difference vectors between two population states for a selected trial
-
-    nr_cells = len(next(iter(data_sets[0].values())))
-    dat_mat = np.array([]).reshape(nr_cells,0)
-    # vector with concatenated location data
-    loc_vec = np.empty((0, 1))
-    data_sep = np.inf
-    for data_set in data_sets:
-        trial_ID = list(data_set.keys())[param_dic["sel_trial"]]
-        act_mat, loc_vec_part = get_activity_mat_time(data_set[trial_ID], param_dic,loc_set[trial_ID])
-        diff_mat = pop_vec_diff(act_mat)
-        if len(data_sets) > 1:
-        # combine datasets
-            dat_mat = np.hstack((dat_mat, diff_mat))
-            data_sep = min(act_mat.shape[1], data_sep)
-
-        else:
-            dat_mat = diff_mat
-            loc_vec = np.expand_dims(loc_vec_part[:-1],1)
-            data_sep = []
-
-    mds = multi_dim_scaling(dat_mat, param_dic)
-    # 2D
-    if param_dic["dr_method_p2"] == 2:
-        fig, ax = plt.subplots()
-        plot_2D_scatter(ax, mds, param_dic, [], loc_vec)
-    # 3D
-    elif param_dic["dr_method_p2"] == 3:
-        fig = plt.figure()
-        ax = fig.add_subplot(111, projection='3d')
-        plot_3D_scatter(ax, mds, param_dic, [], loc_vec)
-    fig.suptitle(param_dic["dr_method"]+" : "+param_dic["dr_method_p1"],fontweight='bold')
-    handles, labels = fig.gca().get_legend_handles_labels()
-    by_label = OrderedDict(zip(labels, handles))
-    fig.legend(by_label.values(), by_label.keys())
-    plt.show()
-
-    # save plot if option is set to true
-    if param_dic["save_plot"]:
-        fig.savefig("plots/" + param_dic["plot_file_name"] + ".png")

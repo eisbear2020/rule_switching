@@ -201,9 +201,14 @@ def plot_compare(data, param_dic, data_sep, rule_sep = []):
             data_subset = data[int(data_sep[data_ID]):int(data_sep[data_ID + 1]), :]
 
             for i in range(0, data_subset.shape[0] - 1):
-                ax.plot(data_subset[i:i + 2, 0], data_subset[i:i + 2, 1], data_subset[i:i + 2, 2],
-                        color=col_map[data_ID, :],
-                        label="trial " + str(data_ID))
+                if rule_sep:
+                    ax.plot(data_subset[i:i + 2, 0], data_subset[i:i + 2, 1], data_subset[i:i + 2, 2],
+                            color=col_map[data_ID, :],
+                            label=label_arr[data_ID])
+                else:
+                    ax.plot(data_subset[i:i + 2, 0], data_subset[i:i + 2, 1], data_subset[i:i + 2, 2],
+                            color=col_map[data_ID, :],
+                            label="TRIAL " + str(data_ID))
             ax.scatter(data_subset[:, 0], data_subset[:, 1], data_subset[:, 2], color="grey")
             ax.scatter(data_subset[0, 0], data_subset[0, 1], data_subset[0, 2], color="black", marker="x", label="start",
                        zorder=200)

@@ -10,17 +10,18 @@
 #
 #   Structure:
 #
-#       - dynamic analysis
-#       - transition analysis
+#       - Manifold analysis
+#           - transition analysis (RULE A --> RULE B)
+#           - comparison analysis (RULE A vs. RULE B)
+#           - state transition analysis (difference vectors between population states)
 #
 ########################################################################################################################
 
 import pickle
 import numpy as np
-from analysis_methods import state_transition_analysis
-from analysis_methods import SingleManifold
-from analysis_methods import ManifoldTransition
-from analysis_methods import ManifoldCompare
+from manifold_methods import SingleManifold
+from manifold_methods import ManifoldTransition
+from manifold_methods import ManifoldCompare
 from comp_functions import calc_loc_and_speed
 
 
@@ -72,17 +73,17 @@ if __name__ == '__main__':
     # "MDS" multi dimensional scaling
     # "PCA" principal component analysis
     # "TSNE"
-    param_dic["dr_method"] = "MDS"
+    param_dic["dr_method"] = "TSNE"
 
     # first parameter of method:
     # MDS --> p1: difference measure ["jaccard","cos"]
     # PCA --> p1 does not exist --> ""
-    param_dic["dr_method_p1"] = "cos"
+    param_dic["dr_method_p1"] = ""
 
     # second parameter of method:
     # MDS --> p2: number of components
     # PCA --> p2: number of components
-    param_dic["dr_method_p2"] = 2
+    param_dic["dr_method_p2"] = 3
 
 
     # number of trials to compare
@@ -105,7 +106,7 @@ if __name__ == '__main__':
     param_dic["spat_seg_plotting"] = 20
 
     # saving figure file name
-    param_dic["plot_file_name"] = "man_transition_mds_cos_3D_rulesep"+"_"+param_dic["dr_method"]+"_"+ param_dic["dr_method_p1"]+"_"\
+    param_dic["plot_file_name"] = "man_compare"+"_"+param_dic["dr_method"]+"_"+ param_dic["dr_method_p1"]+"_"\
                                   +str(param_dic["dr_method_p2"])+"D"
 
     # TODO: automatically use maximum value from all data for axis limits
@@ -196,5 +197,6 @@ if __name__ == '__main__':
 
     # using difference vectors
     # ------------------------------------------------------------------------------------------------------------------
-    #state_transition_analysis([res_rule_23], whl_lin_rule_23, param_dic)
+    state_transition_analysis = SingleManifold(res_rule_23, whl_lin_rule_23, param_dic)
+    state_transition_analysis.state_transition_analysis()
 
