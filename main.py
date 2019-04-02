@@ -55,7 +55,7 @@ if __name__ == '__main__':
     param_dic["binning_method"] = "spatial"
 
     # interval for temporal binning in s
-    param_dic["time_bin_size"] = 0.5
+    param_dic["time_bin_size"] = 0.1
 
     # interval for spatial binning in cm
     param_dic["spatial_bin_size"] = 10
@@ -76,9 +76,9 @@ if __name__ == '__main__':
     param_dic["dr_method"] = "MDS"
 
     # first parameter of method:
-    # MDS --> p1: difference measure ["jaccard","cos"]
+    # MDS --> p1: difference measure ["jaccard","cos","euclidean"]
     # PCA --> p1 does not exist --> ""
-    param_dic["dr_method_p1"] = "cos"
+    param_dic["dr_method_p1"] = ""
 
     # second parameter of method:
     # MDS --> p2: number of components
@@ -89,16 +89,15 @@ if __name__ == '__main__':
     # number of trials to compare
     param_dic["nr_of_trials"] = 21
     # selected trial
-    param_dic["sel_trial"] = 2
+    param_dic["sel_trial"] = 3
 
     # PLOTTING PARAMETERS
     # ------------------------------------------------------------------------------------------------------------------
 
     # saving figure
-    param_dic["save_plot"] = True
-
+    param_dic["save_plot"] = False
     # lines in scatter plot
-    param_dic["lines"] = True
+    param_dic["lines"] = False
 
 
     # length of spatial segment for plotting (track [200cm] will be divided into equal length segments)
@@ -106,7 +105,7 @@ if __name__ == '__main__':
     param_dic["spat_seg_plotting"] = 20
 
     # saving figure file name
-    param_dic["plot_file_name"] = "man_compare_ransition"+"_"+param_dic["dr_method"]+"_"+ param_dic["dr_method_p1"]+"_"\
+    param_dic["plot_file_name"] = "man_comparison"+"_"+param_dic["dr_method"]+"_"+ param_dic["dr_method_p1"]+"_"\
                                   +str(param_dic["dr_method_p2"])+"D"+ param_dic["binning_method"]
 
     # TODO: automatically use maximum value from all data for axis limits
@@ -159,10 +158,10 @@ if __name__ == '__main__':
     # ------------------------------------------------------------------------------------------------------------------
 
     # trial with new rule
-    new_rule_trial = 7
-    new_analysis = ManifoldTransition(res_rule_switch, whl_lin_rule_switch, param_dic)
-    new_analysis.state_analysis()
-    new_analysis.plot_in_one_fig(new_rule_trial)
+    # new_rule_trial = 7
+    # new_analysis = ManifoldTransition(res_rule_switch, whl_lin_rule_switch, param_dic)
+    # new_analysis.state_analysis()
+    # new_analysis.plot_in_one_fig(new_rule_trial)
 
 ########################################################################################################################
 #   MANIFOLD COMPARISON
@@ -177,7 +176,8 @@ if __name__ == '__main__':
     # compare two rules using dimensionality for the combined data (reduce to 2 or 3 dimensions)
     # ------------------------------------------------------------------------------------------------------------------
 
-    # new_comparison = ManifoldCompare([res_rule_light, res_rule_west],[whl_lin_rule_light, whl_lin_rule_west], param_dic)
+    # new_comparison = ManifoldCompare([res_rule_light, res_rule_west],[whl_lin_rule_light, whl_lin_rule_west],
+    #                                   param_dic)
     # new_comparison.state_analysis()
 
 
@@ -187,6 +187,6 @@ if __name__ == '__main__':
 
     # using difference vectors
     # ------------------------------------------------------------------------------------------------------------------
-    # state_transition_analysis = SingleManifold(res_rule_switch, whl_lin_rule_switch, param_dic)
+    # state_transition_analysis = SingleManifold(res_rule_light, whl_lin_rule_light, param_dic)
     # state_transition_analysis.state_transition_analysis()
 

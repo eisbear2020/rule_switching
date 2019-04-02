@@ -37,6 +37,11 @@ Do we see significant differences in the dynamics of the system for two differen
 
 * apparent difference between both rules
 
+#### Difference measure: euclidean
+
+##### Light vs. west
+![alt text](../plots/man_compare_MDS_euclidean_3Dspatial.png)
+
 ## Results using time bins
 
 ### 1. Multidimensional scaling
@@ -134,6 +139,21 @@ Can we characterize the transition of the manifold during the rule switch?
 ## 1. Multidimensional scaling
 ### Difference measure: jaccard
 
-![alt text](../plots/trans_analysis_MDS_jaccard_2D.png)
+* difference vectors are modified (positive and negative integer values)
+* rule: light
 
-![alt text](../plots/trans_analysis_MDS_jaccard_3D.png)
+![alt text](../plots/trans_analysis_MDS_jaccard_2Dtemporal.png)
+
+* the transitions seem to carry information about the location
+
+### Difference measure: cos
+
+![alt text](../plots/trans_analysis_MDS_cos_2Dtemporal.png)
+
+* there is no nice separation
+
+### Difference measure: euclidean
+
+![alt text](../plots/trans_analysis_MDS_euclidean_2Dtemporal.png)
+
+* there is no nice separation

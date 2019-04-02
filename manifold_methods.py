@@ -206,6 +206,11 @@ class SingleManifold(Manifold):
                 self.loc_vec = np.vstack((self.loc_vec, np.expand_dims(loc_vec_part, 1)))
                 self.data_sep[trial_counter + 1] = int(self.data_sep[trial_counter] + act_mat.shape[1])
                 trial_counter += 1
+
+        # for jaccard distance --> make difference matrix signed binary
+        if self.dr_method_p1 == "jaccard":
+            dat_mat = np.sign(dat_mat)
+
         # apply dimensionality reduction to data
         self.reduce_dimension(dat_mat)
         self.plot_in_one_fig_color_position()

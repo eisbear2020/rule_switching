@@ -224,6 +224,15 @@ def multi_dim_scaling(act_mat,param_dic):
                     if math.isnan(D[i,j]):
                         D[i, j] = 1
 
+    elif param_dic["dr_method_p1"] == "euclidean":
+        # calculate difference matrix: cosine
+        D = np.zeros([act_mat.shape[1], act_mat.shape[1]])
+
+        # euclidean distance
+        for i, pop_vec_ref in enumerate(act_mat.T):
+            for j, pop_vec_comp in enumerate(act_mat.T):
+                    D[i, j] = distance.euclidean(pop_vec_ref, pop_vec_comp)
+
     model = MDS(n_components=param_dic["dr_method_p2"], dissimilarity='precomputed', random_state=1)
     return model.fit_transform(D)
 

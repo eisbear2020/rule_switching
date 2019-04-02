@@ -80,10 +80,28 @@ def plot_2D_scatter(ax,mds,param_dic,data_sep = [], loc_vec = []):
                 colors = cm.cool(np.linspace(0, 1, mds.shape[0] - 1))
                 for i, c in zip(range(0, mds.shape[0] - 1), colors):
                     ax.plot(mds[i:i + 2, 0], mds[i:i + 2, 1], color=c)
-        # plt.title(title)
-        ax.scatter(mds[:, 0], mds[:, 1], color="grey")
-        ax.scatter(mds[0, 0], mds[0, 1], color="black", marker="x", label="start", zorder=200)
-        ax.scatter(mds[-1, 0], mds[-1, 1], color="black", label="end", zorder=200)
+            # plt.title(title)
+            ax.scatter(mds[:, 0], mds[:, 1], color="grey")
+            ax.scatter(mds[0, 0], mds[0, 1], color="black", marker="x", label="start", zorder=200)
+            ax.scatter(mds[-1, 0], mds[-1, 1], color="black", label="end", zorder=200)
+
+        else:
+            # use locations for point coloring if location vector is provided
+            if len(loc_vec):
+                # length of track
+                s_l = param_dic["spat_seg_plotting"]
+                l_track = 200
+                nr_seg = int(l_track/s_l)
+                col_map = cm.rainbow(np.linspace(0, 1, nr_seg))
+                # linearized track is 200 cm long
+                norm_loc_vec = loc_vec / s_l
+                for i in range(mds.shape[0]):
+                    ax.scatter(mds[i, 0], mds[i, 1], color=col_map[int(np.ceil(norm_loc_vec[i][0]))-1, :],
+                            label=str(int(np.ceil(norm_loc_vec[i][0]))*s_l)+" cm")
+            else:
+                colors = cm.cool(np.linspace(0, 1, mds.shape[0] - 1))
+                for i, c in zip(range(0, mds.shape[0] - 1), colors):
+                    ax.scatter(mds[i, 0], mds[i, 1], color=c)
 
         # if axis limits are defined apply them
         if len(param_dic["axis_lim"]):
@@ -135,9 +153,27 @@ def plot_3D_scatter(ax,mds,param_dic,data_sep = [], loc_vec = []):
                 for i, c in zip(range(0, mds.shape[0] - 1), colors):
                     ax.plot(mds[i:i + 2, 0], mds[i:i + 2, 1], mds[i:i + 2, 2], color=c)
 
-        ax.scatter(mds[:, 0], mds[:, 1], mds[:, 2], color="grey")
-        ax.scatter(mds[0, 0], mds[0, 1], mds[0, 2], color="black", marker="x", label="start", zorder=200)
-        ax.scatter(mds[-1, 0], mds[-1, 1], mds[-1, 2], color="black", label="end", zorder=200)
+            ax.scatter(mds[:, 0], mds[:, 1], mds[:, 2], color="grey")
+            ax.scatter(mds[0, 0], mds[0, 1], mds[0, 2], color="black", marker="x", label="start", zorder=200)
+            ax.scatter(mds[-1, 0], mds[-1, 1], mds[-1, 2], color="black", label="end", zorder=200)
+        else:
+            # use locations for point coloring if location vector is provided
+            if len(loc_vec):
+                # length of track
+                s_l = param_dic["spat_seg_plotting"]
+                l_track = 200
+                nr_seg = int(l_track/s_l)
+                col_map = cm.rainbow(np.linspace(0, 1, nr_seg))
+                # linearized track is 200 cm long
+                norm_loc_vec = loc_vec / s_l
+                for i in range(mds.shape[0]):
+                    ax.scatter(mds[i, 0], mds[i, 1], mds[i, 2], color=col_map[int(np.ceil(norm_loc_vec[i][0]))-1, :],
+                            label=str(int(np.ceil(norm_loc_vec[i][0]))*s_l)+" cm")
+            else:
+                colors = cm.cool(np.linspace(0, 1, mds.shape[0] - 1))
+                for i, c in zip(range(0, mds.shape[0] - 1), colors):
+                    ax.scatter(mds[i, 0], mds[i, 1], mds[i, 2], color=c)
+
         # if axis limits are defined apply them
         if len(param_dic["axis_lim"]):
             axis_lim = param_dic["axis_lim"]

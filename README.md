@@ -3,7 +3,7 @@
 # File structure
 
 ## main.py
-main file for analysis. Calls methods from analysis_methods.py to analyse data 
+main file for analysis. Calls methods from manifold_methods.py to analyse data 
 
 * manifold transition (e.g. RULE A --> RULE B)
 * manifold comparison (e.g RULE A vs. RULE B)
