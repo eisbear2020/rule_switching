@@ -1,10 +1,8 @@
 ########################################################################################################################
 #
-#   Manifold methods
+#   MANIFOLD METHODS
 #
-#   Description:
-#
-#       - contains classes that are used to perform manifold analysis
+#   Description: contains classes that are used to perform manifold analysis
 #
 #   Author: Lars Bollmann
 #
@@ -14,12 +12,16 @@
 #
 #       - Manifold: Base class containing basic attributes and methods
 #
+#               - reduce_dimension: reduces dimension using defined method
+#
+#               - plot_in_one_fig: plots results as scatter plot separating either trials (default) or rules
+#
 #       - singleManifold: Methods/attributes to analyze manifold for one condition (e.g. RULE A)
 #
-#               - concatenated_data_time_bins:  using data from multiple trials for transformation (dim. reduction)
+#               - concatenated_data:  using data from multiple trials for transformation (dim. reduction)
 #                                               and separating data afterwards
 #
-#               - state_transition: analysis the state transitions using difference vectors between two population
+#               - state_transition: analyzes the state transitions using difference vectors between two population
 #                                   states
 #
 #       - ManifoldTransition: evaluates the manifold change e.g during rule switch
@@ -28,6 +30,10 @@
 #
 #       - ManifoldCompare:  compares results of two different conditions using dimensionality reduction and transforming
 #                           each trial separately
+#
+#               - all_trials: compares two conditions (e.g. RULE A vs. RULE B) using all available trials from the data
+#
+#               - selected_trials: compares two conditions (e.g. RULE A vs. RULE B) using one trial for each condition
 #
 ########################################################################################################################
 
@@ -46,6 +52,9 @@ from plotting_functions import plot_2D_scatter
 from plotting_functions import plot_3D_scatter
 from plotting_functions import plot_compare
 
+########################################################################################################################
+#   MANIFOLD BASE CLASS
+########################################################################################################################
 
 class Manifold():
     ''' Base class for manifold analysis'''
@@ -104,11 +113,16 @@ class Manifold():
 
 
     def plot_in_one_fig(self,rule_sep = []):
+        # plots results as scatter plot separating either trials (default) or rules
+        fig = plot_compare(self.result_dr, self.param_dic, self.data_sep, rule_sep)
+        # save plot if option is set to true
+        if self.save_plot:
+            fig.savefig("plots/" + self.plot_file_name + ".png")
 
-        # plots results as scatter plot
-        plot_compare(self.result_dr, self.param_dic, self.data_sep, rule_sep)
 
-
+########################################################################################################################
+#   SINGLE MANIFOLD ANALYSIS
+########################################################################################################################
 
 class SingleManifold(Manifold):
     ''' Methods for analyzing one manifold'''
@@ -141,9 +155,9 @@ class SingleManifold(Manifold):
         else:
             self.c_p = 1
 
-    def concatenated_data(self):
-    # using data from multiple trials for transformation (dim. reduction) and separating data afterwards
-    # --> using either temporal or spatial bins
+    def state_analysis(self):
+        # using population vectors from multiple trials for transformation (dim. reduction) and separating data
+        # afterwards --> using either temporal or spatial bins
 
         dat_mat = np.array([]).reshape(self.nr_cells,0)
         # nr of trials to compare
@@ -169,6 +183,7 @@ class SingleManifold(Manifold):
 
     def state_transition_analysis(self):
         # analysis the state transitions using difference vectors between two population states for a selected trial
+        # difference matrices (e.g. matrix of difference vectors) are transformed together and separated afterwards
 
         dat_mat = np.array([]).reshape(self.nr_cells,0)
         # nr of trials to compare
@@ -271,6 +286,10 @@ class SingleManifold(Manifold):
         if self.save_plot:
             fig.savefig("plots/"+self.plot_file_name+".png")
 
+########################################################################################################################
+#   MANIFOLD TRANSITION ANALYSIS
+########################################################################################################################
+
 class ManifoldTransition(SingleManifold):
     ''' Methods for analyzing manifold transition'''
 
@@ -352,7 +371,7 @@ class ManifoldCompare(Manifold):
         # how many cells are in the data set
         self.nr_cells = len(next(iter(self.data_sets[0].values())))
 
-    def all_trials(self):
+    def state_analysis(self):
     # combines multiple data sets, reduces the dimension and plots sets in different colors in 2D/3D for one data set of each
     # condition
 
@@ -388,12 +407,12 @@ class ManifoldCompare(Manifold):
         self.plot_in_one_fig(self.rule_sep[0])
 
 
-    def manifold_compare_conc(self):
+    def state_analysis_selected_trial(self, trial_nr):
     # combines two data sets, reduces the dimension and plots sets in different colors in 2D/3D for one data set of each
     # condition
         # get trial ID from both sets
-        trial_ID_set1 = list(self.data_sets[0].keys())[self.param_dic["sel_trial"]]
-        trial_ID_set2 = list(self.data_sets[1].keys())[self.param_dic["sel_trial"]]
+        trial_ID_set1 = list(self.data_sets[0].keys())[trial_nr]
+        trial_ID_set2 = list(self.data_sets[1].keys())[trial_nr]
 
         # calculate matrix of population vectors
         act_mat_set1, loc_vec1 = get_activity_mat_time(self.data_sets[0][trial_ID_set1], self.param_dic, self.loc_sets[0][trial_ID_set1])
@@ -417,7 +436,7 @@ class ManifoldCompare(Manifold):
         elif self.param_dic["dr_method_p2"] == 3:
             fig = plt.figure()
             ax = fig.add_subplot(111, projection='3d')
-            plot_3D_scatter(ax, mds, param_dic, data_sep)
+            plot_3D_scatter(ax, mds, self.param_dic, data_sep)
 
         fig.suptitle(self.param_dic["dr_method"] + " : " + self.param_dic["dr_method_p1"], fontweight='bold')
         handles, labels = fig.gca().get_legend_handles_labels()

@@ -55,7 +55,7 @@ if __name__ == '__main__':
     param_dic["binning_method"] = "spatial"
 
     # interval for temporal binning in s
-    param_dic["time_bin_size"] = 0.1
+    param_dic["time_bin_size"] = 0.5
 
     # interval for spatial binning in cm
     param_dic["spatial_bin_size"] = 10
@@ -73,12 +73,12 @@ if __name__ == '__main__':
     # "MDS" multi dimensional scaling
     # "PCA" principal component analysis
     # "TSNE"
-    param_dic["dr_method"] = "TSNE"
+    param_dic["dr_method"] = "MDS"
 
     # first parameter of method:
     # MDS --> p1: difference measure ["jaccard","cos"]
     # PCA --> p1 does not exist --> ""
-    param_dic["dr_method_p1"] = ""
+    param_dic["dr_method_p1"] = "cos"
 
     # second parameter of method:
     # MDS --> p2: number of components
@@ -87,7 +87,7 @@ if __name__ == '__main__':
 
 
     # number of trials to compare
-    param_dic["nr_of_trials"] = 6
+    param_dic["nr_of_trials"] = 21
     # selected trial
     param_dic["sel_trial"] = 2
 
@@ -95,7 +95,7 @@ if __name__ == '__main__':
     # ------------------------------------------------------------------------------------------------------------------
 
     # saving figure
-    param_dic["save_plot"] = False
+    param_dic["save_plot"] = True
 
     # lines in scatter plot
     param_dic["lines"] = True
@@ -106,8 +106,8 @@ if __name__ == '__main__':
     param_dic["spat_seg_plotting"] = 20
 
     # saving figure file name
-    param_dic["plot_file_name"] = "man_compare"+"_"+param_dic["dr_method"]+"_"+ param_dic["dr_method_p1"]+"_"\
-                                  +str(param_dic["dr_method_p2"])+"D"
+    param_dic["plot_file_name"] = "man_compare_ransition"+"_"+param_dic["dr_method"]+"_"+ param_dic["dr_method_p1"]+"_"\
+                                  +str(param_dic["dr_method_p2"])+"D"+ param_dic["binning_method"]
 
     # TODO: automatically use maximum value from all data for axis limits
     # axis limit for plotting
@@ -130,44 +130,39 @@ if __name__ == '__main__':
     # spike data
     # ------------------------------------------------------------------------------------------------------------------
     infile_3 = open("temp_data/res_"+file_rule_3, 'rb')
-    res_rule_3 = pickle.load(infile_3)
+    res_rule_light = pickle.load(infile_3)
     infile_3.close()
     infile_2 = open("temp_data/res_"+file_rule_2, 'rb')
-    res_rule_2 = pickle.load(infile_2)
+    res_rule_west = pickle.load(infile_2)
     infile_2.close()
     infile_23 = open("temp_data/res_"+file_rule_switch, 'rb')
-    res_rule_23 = pickle.load(infile_23)
+    res_rule_switch = pickle.load(infile_23)
     infile_23.close()
 
     # location data
     # ------------------------------------------------------------------------------------------------------------------
     infile_3 = open("temp_data/whl_lin_" + file_rule_3, 'rb')
-    whl_lin_rule_3 = pickle.load(infile_3)
+    whl_lin_rule_light = pickle.load(infile_3)
     infile_3.close()
     infile_2 = open("temp_data/whl_lin_" + file_rule_2, 'rb')
-    whl_lin_rule_2 = pickle.load(infile_2)
+    whl_lin_rule_west = pickle.load(infile_2)
     infile_2.close()
     infile_23 = open("temp_data/whl_lin_" + file_rule_switch, 'rb')
-    whl_lin_rule_23 = pickle.load(infile_23)
+    whl_lin_rule_switch = pickle.load(infile_23)
     infile_23.close()
 
 ########################################################################################################################
 #   MANIFOLD TRANSITION ANALYSIS
 ########################################################################################################################
 
-    # rule switching: transformation for each data set separately
-    # ------------------------------------------------------------------------------------------------------------------
-    #manifold_transition(res_rule_23, param_dic)
-
     # rule switching: transformation (reduction in dim.) using concatenated data
     # ------------------------------------------------------------------------------------------------------------------
-    #manifold_transition_conc(res_rule_23, whl_lin_rule_23, param_dic)
 
     # trial with new rule
-    # new_rule_trial = 7
-    # new_analysis = ManifoldTransition(res_rule_23, whl_lin_rule_23, param_dic)
-    # new_analysis.concatenated_data()
-    # new_analysis.plot_in_one_fig(new_rule_trial)
+    new_rule_trial = 7
+    new_analysis = ManifoldTransition(res_rule_switch, whl_lin_rule_switch, param_dic)
+    new_analysis.state_analysis()
+    new_analysis.plot_in_one_fig(new_rule_trial)
 
 ########################################################################################################################
 #   MANIFOLD COMPARISON
@@ -175,20 +170,15 @@ if __name__ == '__main__':
 
     # look at one rule across multiple trials
     # ------------------------------------------------------------------------------------------------------------------
-    # new_analysis = SingleManifold(res_rule_2, whl_lin_rule_2, param_dic)
-    # new_analysis.concatenated_data()
-    # new_analysis.plot_in_one_fig()
-
-    # compare two rules using dimensionality reduction for both sets separately (reduce to 2 or 3 dimensions)
-    # ------------------------------------------------------------------------------------------------------------------
-    #manifold_compare([res_rule_3, res_rule_2], param_dic)
+    # new_analysis = SingleManifold(res_rule_light, whl_lin_rule_light, param_dic)
+    # new_analysis.state_analysis()
+    # new_analysis.plot_in_one_fig_color_position()
 
     # compare two rules using dimensionality for the combined data (reduce to 2 or 3 dimensions)
     # ------------------------------------------------------------------------------------------------------------------
-    #manifold_compare_conc([res_rule_3, res_rule_2],[whl_lin_rule_3, whl_lin_rule_2], param_dic)
 
-    # new_comparison = ManifoldCompare([res_rule_3, res_rule_2],[whl_lin_rule_3, whl_lin_rule_2], param_dic)
-    # new_comparison.all_trials()
+    # new_comparison = ManifoldCompare([res_rule_light, res_rule_west],[whl_lin_rule_light, whl_lin_rule_west], param_dic)
+    # new_comparison.state_analysis()
 
 
 ########################################################################################################################
@@ -197,6 +187,6 @@ if __name__ == '__main__':
 
     # using difference vectors
     # ------------------------------------------------------------------------------------------------------------------
-    state_transition_analysis = SingleManifold(res_rule_23, whl_lin_rule_23, param_dic)
-    state_transition_analysis.state_transition_analysis()
+    # state_transition_analysis = SingleManifold(res_rule_switch, whl_lin_rule_switch, param_dic)
+    # state_transition_analysis.state_transition_analysis()
 

@@ -225,3 +225,5 @@ def plot_compare(data, param_dic, data_sep, rule_sep = []):
     by_label = OrderedDict(zip(labels, handles))
     fig.legend(by_label.values(), by_label.keys())
     plt.show()
+    # return figure for saving
+    return fig
