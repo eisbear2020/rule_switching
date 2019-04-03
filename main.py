@@ -52,7 +52,7 @@ if __name__ == '__main__':
     # ------------------------------------------------------------------------------------------------------------------
 
     # binning with "temporal","spatial"
-    param_dic["binning_method"] = "spatial"
+    param_dic["binning_method"] = "temporal"
 
     # interval for temporal binning in s
     param_dic["time_bin_size"] = 0.1
@@ -78,7 +78,7 @@ if __name__ == '__main__':
     # first parameter of method:
     # MDS --> p1: difference measure ["jaccard","cos","euclidean"]
     # PCA --> p1 does not exist --> ""
-    param_dic["dr_method_p1"] = ""
+    param_dic["dr_method_p1"] = "jaccard"
 
     # second parameter of method:
     # MDS --> p2: number of components
@@ -105,7 +105,7 @@ if __name__ == '__main__':
     param_dic["spat_seg_plotting"] = 20
 
     # saving figure file name
-    param_dic["plot_file_name"] = "man_comparison"+"_"+param_dic["dr_method"]+"_"+ param_dic["dr_method_p1"]+"_"\
+    param_dic["plot_file_name"] = "trans_analysis"+"_"+param_dic["dr_method"]+"_"+ param_dic["dr_method_p1"]+"_"\
                                   +str(param_dic["dr_method_p2"])+"D"+ param_dic["binning_method"]
 
     # TODO: automatically use maximum value from all data for axis limits
@@ -185,8 +185,15 @@ if __name__ == '__main__':
 #   STATE TRANSITION ANALYSIS
 ########################################################################################################################
 
-    # using difference vectors
+    # looking at one rule
     # ------------------------------------------------------------------------------------------------------------------
-    # state_transition_analysis = SingleManifold(res_rule_light, whl_lin_rule_light, param_dic)
+    # state_transition_analysis = SingleManifold(res_rule_west, whl_lin_rule_west, param_dic)
     # state_transition_analysis.state_transition_analysis()
 
+    # comparing two rules
+
+    new_comparison = ManifoldCompare([res_rule_light, res_rule_west],[whl_lin_rule_light, whl_lin_rule_west], param_dic)
+    new_comparison.state_transition_analysis()
+
+    # new rule after trial 6
+    new_comparison.plot_in_one_fig(6)

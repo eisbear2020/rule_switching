@@ -50,12 +50,41 @@ def plot_2D_scatter(ax,mds,param_dic,data_sep = [], loc_vec = []):
                     ax.plot(mds[i:i + 2, 0], mds[i:i + 2, 1], color="lightblue")
                 elif data_sep <= i:
                     ax.plot(mds[i:i + 2, 0], mds[i:i + 2, 1], color="lightcoral")
-        ax.scatter(mds[:data_sep, 0], mds[:data_sep, 1], color="b",label=param_dic["data_descr"][0])
-        ax.scatter(mds[data_sep:, 0], mds[data_sep:, 1], color="r",label=param_dic["data_descr"][1])
-        ax.scatter(mds [0, 0], mds [0, 1],color="black", marker="x",label="start",zorder=200)
-        ax.scatter(mds[data_sep-1, 0], mds[data_sep-1, 1], color="black", label="end",zorder=200)
-        ax.scatter(mds [data_sep, 0], mds [data_sep, 1],color="black", marker="x",label="start",zorder=200)
-        ax.scatter(mds[-1, 0], mds[-1, 1], color="black", label="end",zorder=200)
+            ax.scatter(mds[:data_sep, 0], mds[:data_sep, 1], color="b",label=param_dic["data_descr"][0])
+            ax.scatter(mds[data_sep:, 0], mds[data_sep:, 1], color="r",label=param_dic["data_descr"][1])
+            ax.scatter(mds [0, 0], mds [0, 1],color="black", marker="x",label="start",zorder=200)
+            ax.scatter(mds[data_sep-1, 0], mds[data_sep-1, 1], color="black", label="end",zorder=200)
+            ax.scatter(mds [data_sep, 0], mds [data_sep, 1],color="black", marker="x",label="start",zorder=200)
+            ax.scatter(mds[-1, 0], mds[-1, 1], color="black", label="end",zorder=200)
+        # color points instead of lines
+        else:
+            # check if positions are provided
+            if len(loc_vec):
+                # length of track
+                s_l = param_dic["spat_seg_plotting"]
+                l_track = 200
+                nr_seg = int(l_track/s_l)
+                col_map_blue = cm.Blues(np.linspace(0, 1, nr_seg + 5))
+                col_map_red = cm.Reds(np.linspace(0, 1, nr_seg +5 ))
+                col_map_blue = col_map_blue[5:,:]
+                col_map_red = col_map_red[5:, :]
+                # linearized track is 200 cm long
+                norm_loc_vec = loc_vec / s_l
+                for i,c in enumerate(mds):
+                    if i <= data_sep:
+                        ax.scatter(mds[i, 0], mds[i, 1],  color=col_map_blue[int(np.ceil(norm_loc_vec[i][0]))-1, :],
+                                   label=param_dic["data_descr"][0]+ str(int(np.ceil(norm_loc_vec[i][0]))*s_l)+" cm")
+                    elif data_sep < i:
+                        ax.scatter(mds[i, 0], mds[i, 1], color=col_map_red[int(np.ceil(norm_loc_vec[i][0]))-1, :],
+                                   label=param_dic["data_descr"][1] + str(
+                                       int(np.ceil(norm_loc_vec[i + 1][0])) * s_l) + " cm")
+
+            else:
+                for i,c in enumerate(mds):
+                    if i <= data_sep:
+                        ax.scatter(mds[i, 0], mds[i, 1], color="lightblue",label=param_dic["data_descr"][0])
+                    elif data_sep < i:
+                        ax.scatter(mds[i, 0], mds[i, 1], color="lightcoral",label=param_dic["data_descr"][1])
 
     # for one data set
     else:
@@ -70,7 +99,6 @@ def plot_2D_scatter(ax,mds,param_dic,data_sep = [], loc_vec = []):
                 col_map = cm.rainbow(np.linspace(0, 1, nr_seg))
                 # linearized track is 200 cm long
                 norm_loc_vec = loc_vec / s_l
-
 
                 for i in range(0, mds.shape[0] - 1):
                     ax.plot(mds[i:i + 2, 0], mds[i:i + 2, 1], color=col_map[int(np.ceil(norm_loc_vec[i+1][0]))-1, :],
@@ -126,12 +154,35 @@ def plot_3D_scatter(ax,mds,param_dic,data_sep = [], loc_vec = []):
                     ax.plot(mds[i:i + 2, 0], mds[i:i + 2, 1],mds[i:i + 2, 2], color="lightblue")
                 elif data_sep <= i:
                     ax.plot(mds[i:i + 2, 0], mds[i:i + 2, 1],mds[i:i + 2, 2], color="lightcoral")
-        ax.scatter(mds[:data_sep, 0], mds[:data_sep, 1],mds[:data_sep, 2], color="b",label=param_dic["data_descr"][0])
-        ax.scatter(mds[data_sep:, 0], mds[data_sep:, 1],mds[data_sep:, 2], color="r",label=param_dic["data_descr"][1])
-        ax.scatter(mds [0, 0], mds [0, 1],mds [0, 2],color="black", marker="x",label="start",zorder=200)
-        ax.scatter(mds[data_sep-1, 0], mds[data_sep-1, 1],mds[data_sep-1, 2], color="black", label="end",zorder=200)
-        ax.scatter(mds [data_sep, 0], mds [data_sep, 1],mds [data_sep, 2],color="black", marker="x",label="start",zorder=200)
-        ax.scatter(mds[-1, 0], mds[-1, 1],mds[-1, 2], color="black", label="end",zorder=200)
+            ax.scatter(mds[:data_sep, 0], mds[:data_sep, 1],mds[:data_sep, 2], color="b",label=param_dic["data_descr"][0])
+            ax.scatter(mds[data_sep:, 0], mds[data_sep:, 1],mds[data_sep:, 2], color="r",label=param_dic["data_descr"][1])
+            ax.scatter(mds [0, 0], mds [0, 1],mds [0, 2],color="black", marker="x",label="start",zorder=200)
+            ax.scatter(mds[data_sep-1, 0], mds[data_sep-1, 1],mds[data_sep-1, 2], color="black", label="end",zorder=200)
+            ax.scatter(mds [data_sep, 0], mds [data_sep, 1],mds [data_sep, 2],color="black", marker="x",label="start",zorder=200)
+            ax.scatter(mds[-1, 0], mds[-1, 1],mds[-1, 2], color="black", label="end",zorder=200)
+
+        # color points instead of lines
+        else:
+            # check if positions are provided
+            if len(loc_vec):
+                # length of track
+                s_l = param_dic["spat_seg_plotting"]
+                l_track = 200
+                nr_seg = int(l_track/s_l)
+                col_map_blue = cm.Blues(np.linspace(0, 1, nr_seg + 2))
+                col_map_red = cm.Reds(np.linspace(0, 1, nr_seg +2 ))
+                col_map_blue = col_map_blue[2:,:]
+                col_map_red = col_map_red[2:, :]
+                # linearized track is 200 cm long
+                norm_loc_vec = loc_vec / s_l
+                for i,c in enumerate(mds):
+                    if i <= data_sep:
+                        ax.scatter(mds[i, 0], mds[i, 1],mds[i,2],  color=col_map_blue[int(np.ceil(norm_loc_vec[i][0]))-1, :],
+                                   label=param_dic["data_descr"][0]+ str(int(np.ceil(norm_loc_vec[i][0]))*s_l)+" cm")
+                    elif data_sep < i:
+                        ax.scatter(mds[i, 0], mds[i, 1], mds[i,2], color=col_map_red[int(np.ceil(norm_loc_vec[i][0]))-1, :],
+                                   label=param_dic["data_descr"][1] + str(
+                                       int(np.ceil(norm_loc_vec[i + 1][0])) * s_l) + " cm")
 
     # for one data set
     else:
@@ -215,16 +266,31 @@ def plot_compare(data, param_dic, data_sep, rule_sep = []):
             data_subset = data[int(data_sep[data_ID]):int(data_sep[data_ID + 1]), :]
 
             for i in range(0, data_subset.shape[0] - 1):
-                # check if trial or rule is meant to be colored
-                if rule_sep:
-                    ax.plot(data_subset[i:i + 2, 0], data_subset[i:i + 2, 1], color=col_map[data_ID, :],
-                            label=label_arr[data_ID])
+                # check if lines should be plotted
+                if param_dic["lines"]:
+                    # check if trial or rule is meant to be colored
+                    # rule
+                    if rule_sep:
+                        # check if lines should be plotted
+                        ax.plot(data_subset[i:i + 2, 0], data_subset[i:i + 2, 1], color=col_map[data_ID, :],
+                                label=label_arr[data_ID])
+                    # trials
+                    else:
+                        ax.plot(data_subset[i:i + 2, 0], data_subset[i:i + 2, 1], color=col_map[data_ID, :],
+                                label="TRIAL " + str(data_ID))
+                    ax.scatter(data_subset[:, 0], data_subset[:, 1], color="grey")
+                    ax.scatter(data_subset[0, 0], data_subset[0, 1], color="black", marker="x", label="start", zorder=200)
+                    ax.scatter(data_subset[-1, 0], data_subset[-1, 1], color="black", label="end", zorder=200)
+                # plot without lines
                 else:
-                    ax.plot(data_subset[i:i + 2, 0], data_subset[i:i + 2, 1], color=col_map[data_ID, :],
-                            label="TRIAL " + str(data_ID))
-            ax.scatter(data_subset[:, 0], data_subset[:, 1], color="grey")
-            ax.scatter(data_subset[0, 0], data_subset[0, 1], color="black", marker="x", label="start", zorder=200)
-            ax.scatter(data_subset[-1, 0], data_subset[-1, 1], color="black", label="end", zorder=200)
+                    # color rules
+                    if rule_sep:
+                        ax.scatter(data_subset[i, 0], data_subset[i, 1], color=col_map[data_ID, :],
+                                label=label_arr[data_ID])
+                    # color trial
+                    else:
+                        ax.scatter(data_subset[i, 0], data_subset[i, 1], color=col_map[data_ID, :],
+                                   label="TRIAL " + str(data_ID))
 
     # 3D plot
 
@@ -237,18 +303,29 @@ def plot_compare(data, param_dic, data_sep, rule_sep = []):
             data_subset = data[int(data_sep[data_ID]):int(data_sep[data_ID + 1]), :]
 
             for i in range(0, data_subset.shape[0] - 1):
-                if rule_sep:
-                    ax.plot(data_subset[i:i + 2, 0], data_subset[i:i + 2, 1], data_subset[i:i + 2, 2],
-                            color=col_map[data_ID, :],
-                            label=label_arr[data_ID])
+                # check if lines should be plotted
+                if param_dic["lines"]:
+                    if rule_sep:
+                        ax.plot(data_subset[i:i + 2, 0], data_subset[i:i + 2, 1], data_subset[i:i + 2, 2],
+                                color=col_map[data_ID, :],
+                                label=label_arr[data_ID])
+                    else:
+                        ax.plot(data_subset[i:i + 2, 0], data_subset[i:i + 2, 1], data_subset[i:i + 2, 2],
+                                color=col_map[data_ID, :],
+                                label="TRIAL " + str(data_ID))
+                    ax.scatter(data_subset[:, 0], data_subset[:, 1], data_subset[:, 2], color="grey")
+                    ax.scatter(data_subset[0, 0], data_subset[0, 1], data_subset[0, 2], color="black", marker="x", label="start",
+                               zorder=200)
+                    ax.scatter(data_subset[-1, 0], data_subset[-1, 1], data_subset[-1, 2], color="black", label="end", zorder=200)
                 else:
-                    ax.plot(data_subset[i:i + 2, 0], data_subset[i:i + 2, 1], data_subset[i:i + 2, 2],
-                            color=col_map[data_ID, :],
-                            label="TRIAL " + str(data_ID))
-            ax.scatter(data_subset[:, 0], data_subset[:, 1], data_subset[:, 2], color="grey")
-            ax.scatter(data_subset[0, 0], data_subset[0, 1], data_subset[0, 2], color="black", marker="x", label="start",
-                       zorder=200)
-            ax.scatter(data_subset[-1, 0], data_subset[-1, 1], data_subset[-1, 2], color="black", label="end", zorder=200)
+                    if rule_sep:
+                        ax.scatter(data_subset[i, 0], data_subset[i, 1], data_subset[i, 2],
+                                color=col_map[data_ID, :],
+                                label=label_arr[data_ID])
+                    else:
+                        ax.scatter(data_subset[i, 0], data_subset[i, 1], data_subset[i, 2],
+                                color=col_map[data_ID, :],
+                                label="TRIAL " + str(data_ID))
             # hide z label
             ax.set_zticklabels([])
 

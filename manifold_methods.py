@@ -78,7 +78,11 @@ class Manifold():
 
         # dimensionality reduction method: parameter 1
         #  - multidimensional scaling: difference measure (jaccard,cos,etc)
-        self.dr_method_p1 = param_dic["dr_method_p1"]
+        if param_dic["dr_method"] == "MDS" and not param_dic["dr_method_p1"]:
+            print("Difference measure for MDS not defined!")
+            exit()
+        else:
+            self.dr_method_p1 = param_dic["dr_method_p1"]
 
         # dimensionality reduciton method: parameter 2
         #  - for all methods: number of components
@@ -499,3 +503,74 @@ class ManifoldCompare(Manifold):
             by_label = OrderedDict(zip(labels, handles))
             fig.legend(by_label.values(), by_label.keys())
             plt.show()
+
+    def state_transition_analysis(self):
+        # analysis the state transitions using difference vectors between two population states for a selected trial
+        # difference matrices (e.g. matrix of difference vectors) are transformed together and separated afterwards
+
+        dat_mat = np.array([]).reshape(self.nr_cells, 0)
+        # nr of trials to compare
+        trial_counter = 0
+
+
+        # go through all data sets
+        for data_set_ID, (data_set,loc_set) in enumerate(zip(self.data_sets,self.loc_sets)):
+            # concatenate all trials and save separator for trials
+            data_set_data_sep = np.zeros(len(data_set.keys())+1)
+            self.rule_sep[data_set_ID] = int(len(data_set.keys()))
+            # add zero array to existing separator array
+            self.data_sep = np.vstack((self.data_sep, np.expand_dims(data_set_data_sep, 1)))
+            for i, key in enumerate(data_set):
+                if self.binning_method == "temporal":
+                    act_mat, loc_vec_part = get_activity_mat_time(data_set[key], self.param_dic,loc_set[key])
+                elif self.binning_method == "spatial":
+                    act_mat, loc_vec_part = get_activity_mat_spatial(data_set[key], self.param_dic,
+                                                                     loc_set[key])
+                # calculate differences between population vectors
+                diff_mat = pop_vec_diff(act_mat)
+                # concatenate spike matrices
+                dat_mat = np.hstack((dat_mat, diff_mat))
+                # concatenate location vectors
+                self.loc_vec = np.vstack((self.loc_vec, np.expand_dims(loc_vec_part, 1)))
+                self.data_sep[trial_counter + 1] = int(self.data_sep[trial_counter] + act_mat.shape[1])
+                trial_counter += 1
+
+        # remove last elements --> only contain zero
+        self.data_sep = self.data_sep[:-1]
+        self.rule_sep = self.rule_sep[:-1]
+
+        # for jaccard distance --> make difference matrix signed binary
+        if self.dr_method_p1 == "jaccard":
+            dat_mat = np.sign(dat_mat)
+
+        # apply dimensionality reduction to data
+        self.reduce_dimension(dat_mat)
+        #self.plot_in_one_fig_color_position()
+
+    def plot_in_one_fig_color_position(self):
+    # plots results as scatter plot and colors lines according to location
+
+        # 2D plot
+        if self.dr_method_p2 == 2:
+            # create figure instance
+            fig, ax = plt.subplots()
+            data_sep = self.data_sep[self.rule_sep[0]+1]+1
+            plot_2D_scatter(ax, self.result_dr, self.param_dic,data_sep,self.loc_vec)
+
+
+        # 3D plot
+        elif self.dr_method_p2 == 3:
+            # create figure instance
+            fig = plt.figure()
+            ax = fig.add_subplot(111,projection='3d')
+            data_sep = self.data_sep[self.rule_sep[0]+1]+1
+            plot_3D_scatter(ax, self.result_dr, self.param_dic,data_sep,self.loc_vec)
+
+        fig.suptitle(self.dr_method+" : "+self.dr_method_p1, fontweight='bold')
+        handles, labels = fig.gca().get_legend_handles_labels()
+        by_label = OrderedDict(zip(labels, handles))
+        fig.legend(by_label.values(), by_label.keys())
+        plt.show()
+        # save plot if option is set to true
+        if self.save_plot:
+            fig.savefig("plots/"+self.plot_file_name+".png")

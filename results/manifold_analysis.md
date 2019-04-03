@@ -138,22 +138,38 @@ Can we characterize the transition of the manifold during the rule switch?
 
 ## 1. Multidimensional scaling
 ### Difference measure: jaccard
-
 * difference vectors are modified (positive and negative integer values)
-* rule: light
+* using temporal bins
+#### rule light
 
-![alt text](../plots/trans_analysis_MDS_jaccard_2Dtemporal.png)
+![alt text](../plots/trans_analysis_light_MDS_jaccard_2Dtemporal.png)
 
 * the transitions seem to carry information about the location
 
+#### rule west
+
+![alt text](../plots/trans_analysis_west_MDS_jaccard_2Dtemporal.png)
+
+#### rule light vs. west
+
+![alt text](../plots/trans_analysis_MDS_jaccard_3Dtemporal_no_position_coloring.png)
+
+![alt text](../plots/trans_analysis_MDS_jaccard_2Dtemporal.png)
+
+![alt text](../plots/trans_analysis_MDS_jaccard_3Dtemporal.png)
+
 ### Difference measure: cos
 
-![alt text](../plots/trans_analysis_MDS_cos_2Dtemporal.png)
+#### rule light
+
+![alt text](../plots/trans_analysis_light_MDS_cos_2Dtemporal.png)
 
 * there is no nice separation
 
 ### Difference measure: euclidean
 
-![alt text](../plots/trans_analysis_MDS_euclidean_2Dtemporal.png)
+#### rule light
+
+![alt text](../plots/trans_analysis_light_MDS_euclidean_2Dtemporal.png)
 
 * there is no nice separation
