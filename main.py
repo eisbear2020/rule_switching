@@ -195,5 +195,3 @@ if __name__ == '__main__':
     new_comparison = ManifoldCompare([res_rule_light, res_rule_west],[whl_lin_rule_light, whl_lin_rule_west], param_dic)
     new_comparison.state_transition_analysis()
 
-    # new rule after trial 6
-    new_comparison.plot_in_one_fig(6)
