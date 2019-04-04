@@ -123,6 +123,8 @@ Can we characterize the transition of the manifold during the rule switch?
 
 ![alt text](../plots/man_transition_MDS_cos_3Dspatial.png)
 
+![alt text](../plots/man_transition_MDS_cos_3Dspatial_colored_position.png)
+
 * visible separation for both rules (light --> go west)
 * maybe use trials in between (not successful ones) to see how the remapping actually happens
 
