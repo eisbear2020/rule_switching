@@ -32,6 +32,7 @@ from scipy import signal
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 
+
 def get_activity_mat_spatial(firing_times,param_dic,location):
 
     bin_interval = param_dic["spatial_bin_size"]
@@ -106,10 +107,11 @@ def get_activity_mat_spatial(firing_times,param_dic,location):
 
     return act_mat, loc_vec
 
+
 def get_activity_mat_time(firing_times,param_dic,location=[]):
-# computes activity matrix: bin_interval in seconds --> sums up the activity within one time interval
-# rows: cells
-# columns: time bins
+    # computes activity matrix: bin_interval in seconds --> sums up the activity within one time interval
+    # rows: cells
+    # columns: time bins
     bin_interval = param_dic["time_bin_size"]
 
     # find first and last firing for each trial
@@ -186,8 +188,9 @@ def get_activity_mat_time(firing_times,param_dic,location=[]):
 
     return act_mat, loc_vec
 
+
 def calc_pop_vector_entropy(act_mat):
-# calculates shannon entropy for each population vector in act_mat
+    # calculates shannon entropy for each population vector in act_mat
     pop_vec_entropy = np.zeros(act_mat.shape[1])
     # calculate entropy
     for i,pop_vec in enumerate(act_mat.T):
@@ -195,8 +198,9 @@ def calc_pop_vector_entropy(act_mat):
         pop_vec_entropy[i] = sp.entropy(pop_vec+0.000001)
     return pop_vec_entropy
 
+
 def multi_dim_scaling(act_mat,param_dic):
-# returns fitted multi scale model using defined difference measure
+    # returns fitted multi scale model using defined difference measure
 
     if param_dic["dr_method_p1"] == "jaccard":
         # calculate difference matrix: Jaccard
@@ -236,7 +240,9 @@ def multi_dim_scaling(act_mat,param_dic):
     model = MDS(n_components=param_dic["dr_method_p2"], dissimilarity='precomputed', random_state=1)
     return model.fit_transform(D)
 
+
 def perform_PCA(act_mat,param_dic):
+    # performs PCA
     pca = PCA(n_components=param_dic["dr_method_p2"])
     pca_result = pca.fit_transform(act_mat.T)
     param_dic["dr_method_p1"] = str(pca.explained_variance_ratio_)
@@ -245,17 +251,54 @@ def perform_PCA(act_mat,param_dic):
 
 
 def perform_TSNE(act_mat,param_dic):
+    # performs TSNE
     return TSNE(n_components=param_dic["dr_method_p2"]).fit_transform(act_mat.T)
 
 
+def calc_diff(a, b, diff_meas):
+
+    # calculates column-wise difference between two matrices a and b
+    D = np.zeros((a.shape[1],b.shape[1]))
+
+    if diff_meas == "jaccard":
+        # calculate difference using Jaccard
+
+        # Jaccard similarity
+        for i,pop_vec_ref in enumerate(a.T):
+            for j,pop_vec_comp in enumerate(b.T):
+                D[i,j] = jaccard_similarity_score(pop_vec_ref,pop_vec_comp)
+
+        # want difference --> diff_jaccard = 1 - sim_jaccard
+        D = 1 - D
+        # plt.imshow(D)
+        # plt.colorbar()
+        # plt.show()
+    elif diff_meas == "cos":
+    # calculates column-wise difference between two matrices a and b
+
+        # cosine
+        for i, pop_vec_ref in enumerate(a.T):
+            for j, pop_vec_comp in enumerate(b.T):
+                D[i, j] = distance.cosine(pop_vec_ref, pop_vec_comp)
+                # if one of the vectors contains only zeros --> division by zero for cosine
+                if math.isnan(D[i,j]):
+                    D[i, j] = 1
 
 
+    elif diff_meas == "euclidean":
+        # calculate difference matrix: euclidean distance
 
+        # euclidean distance
+        for i, pop_vec_ref in enumerate(a.T):
+            for j, pop_vec_comp in enumerate(b.T):
+                    D[i, j] = distance.euclidean(pop_vec_ref, pop_vec_comp)
+
+    return D
 
 
 
 def pop_vec_diff(data_set):
-# computes difference vectors between subsequent population vectors and returns matrix of difference vectors
+    # computes difference vectors between subsequent population vectors and returns matrix of difference vectors
     # calculate transition vector between two subsequent population states --> rows: cells, col: time bins
     diffMat = np.zeros((data_set.shape[0],data_set.shape[1]-1))
     for i,pop_vec in enumerate(data_set.T[:-1,:]):
@@ -264,9 +307,9 @@ def pop_vec_diff(data_set):
 
 
 def calc_loc_and_speed(whl):
-# computes speed from the whl and returns speed in cm/s
-# need to smooth position data --> accuracy of measurement: about +-1cm --> error for speed: +-40m/s
-# last element of velocity vector is zero --> velocity is calculated using 2 locations
+    # computes speed from the whl and returns speed in cm/s
+    # need to smooth position data --> accuracy of measurement: about +-1cm --> error for speed: +-40m/s
+    # last element of velocity vector is zero --> velocity is calculated using 2 locations
 
     #savitzky golay
     w_l = 15 # window length
@@ -306,3 +349,9 @@ def calc_loc_and_speed(whl):
     # plt.show()
 
     return location, speed
+
+
+def calc_cohens_d(dat1, dat2):
+    print("TO IMPLEMENT")
+    # calculates cohens D --> assumption of normal distributions
+    #pooled_std = np.sqrt(((dat1.shape[])))

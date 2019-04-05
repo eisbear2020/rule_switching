@@ -545,8 +545,9 @@ class ManifoldCompare(Manifold):
 
         # apply dimensionality reduction to data
         self.reduce_dimension(dat_mat)
-        self.plot_in_one_fig_color_position()
         self.plot_in_one_fig(self.rule_sep[0])
+        self.plot_in_one_fig_color_position()
+
 
     def plot_in_one_fig_color_position(self):
     # plots results as scatter plot and colors lines according to location

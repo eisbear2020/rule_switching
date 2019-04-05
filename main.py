@@ -24,6 +24,7 @@ from manifold_methods import ManifoldTransition
 from manifold_methods import ManifoldCompare
 from comp_functions import calc_loc_and_speed
 
+from quantification_methods import TransitionAnalysis
 
 
 if __name__ == '__main__':
@@ -38,6 +39,7 @@ if __name__ == '__main__':
     file_rule_3 = "mjc189-1905-0517_2_ct_['p1']_sa_[1]_ga_[3]_rt_[3]_et_[1]"
     file_rule_2 = "mjc189-1905-0517_6_ct_['p1']_sa_[1]_ga_[3]_rt_[2]_et_[1]"
     file_rule_switch = "mjc189-1905-0517_4_ct_['p1']_sa_[1]_ga_[3]_rt_[2, 3]_et_[1]"
+    #file_rule_switch = "mjc190-1607-0515_4_ct_['p1']_sa_[1]_ga_[2]_rt_[1, 3]_et_[1]"
 
     # dictionary for all other parameters
     param_dic = {}
@@ -52,10 +54,10 @@ if __name__ == '__main__':
     # ------------------------------------------------------------------------------------------------------------------
 
     # binning with "temporal","spatial"
-    param_dic["binning_method"] = "temporal"
+    param_dic["binning_method"] = "spatial"
 
     # interval for temporal binning in s
-    param_dic["time_bin_size"] = 0.1
+    param_dic["time_bin_size"] = 0.5
 
     # interval for spatial binning in cm
     param_dic["spatial_bin_size"] = 10
@@ -78,7 +80,7 @@ if __name__ == '__main__':
     # first parameter of method:
     # MDS --> p1: difference measure ["jaccard","cos","euclidean"]
     # PCA --> p1 does not exist --> ""
-    param_dic["dr_method_p1"] = "jaccard"
+    param_dic["dr_method_p1"] = "cos"
 
     # second parameter of method:
     # MDS --> p2: number of components
@@ -97,7 +99,7 @@ if __name__ == '__main__':
     # saving figure
     param_dic["save_plot"] = False
     # lines in scatter plot
-    param_dic["lines"] = False
+    param_dic["lines"] = True
 
 
     # length of spatial segment for plotting (track [200cm] will be divided into equal length segments)
@@ -151,20 +153,32 @@ if __name__ == '__main__':
     infile_23.close()
 
 ########################################################################################################################
-#   MANIFOLD TRANSITION ANALYSIS
+#   TRANSITION ANALYSIS (RULE A --> RULE B)
 ########################################################################################################################
 
-    # rule switching: transformation (reduction in dim.) using concatenated data
+    # MANIFOLD ANALYSIS
     # ------------------------------------------------------------------------------------------------------------------
 
     # trial with new rule
-    # new_rule_trial = 7
+    # new_rule_trial = 9
     # new_analysis = ManifoldTransition(res_rule_switch, whl_lin_rule_switch, param_dic)
     # new_analysis.state_analysis()
     # new_analysis.plot_in_one_fig(new_rule_trial)
+    # new_analysis.plot_in_one_fig_color_position()
+
+    # QUANTITATIVE ANALYSIS
+    # ------------------------------------------------------------------------------------------------------------------
+    new_rule_trial = 7
+    new_transition_analysis = TransitionAnalysis(param_dic, res_rule_switch, whl_lin_rule_switch, new_rule_trial)
+    #new_transition_analysis.create_save_spatial_bin_dictionary()
+
+
+    # load spatial bin dictionaries
+    new_transition_analysis.cross_diff_spat(pickle.load(open("temp_data/quant_analysis/RULE LIGHT_temporal_10","rb")),
+                                            pickle.load(open("temp_data/quant_analysis/RULE WEST_temporal_10","rb")))
 
 ########################################################################################################################
-#   MANIFOLD COMPARISON
+#   COMPARISON ANALYSIS
 ########################################################################################################################
 
     # look at one rule across multiple trials
@@ -173,7 +187,7 @@ if __name__ == '__main__':
     # new_analysis.state_analysis()
     # new_analysis.plot_in_one_fig_color_position()
 
-    # compare two rules using dimensionality for the combined data (reduce to 2 or 3 dimensions)
+    # compare two rules using dimensionality reduction for the combined data (reduce to 2 or 3 dimensions)
     # ------------------------------------------------------------------------------------------------------------------
 
     # new_comparison = ManifoldCompare([res_rule_light, res_rule_west],[whl_lin_rule_light, whl_lin_rule_west],
@@ -185,13 +199,16 @@ if __name__ == '__main__':
 #   STATE TRANSITION ANALYSIS
 ########################################################################################################################
 
-    # looking at one rule
+    # MANIFOLD ANALYSIS
     # ------------------------------------------------------------------------------------------------------------------
+
+    # looking at one rule
+
     # state_transition_analysis = SingleManifold(res_rule_west, whl_lin_rule_west, param_dic)
     # state_transition_analysis.state_transition_analysis()
 
     # comparing two rules
 
-    new_comparison = ManifoldCompare([res_rule_light, res_rule_west],[whl_lin_rule_light, whl_lin_rule_west], param_dic)
-    new_comparison.state_transition_analysis()
+    # new_comparison = ManifoldCompare([res_rule_light, res_rule_west],[whl_lin_rule_light, whl_lin_rule_west], param_dic)
+    # new_comparison.state_transition_analysis()
 

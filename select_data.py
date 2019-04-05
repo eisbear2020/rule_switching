@@ -33,7 +33,8 @@ if __name__ == '__main__':
 
     # select experiment
     #-------------------------------------------------------------------------------------------------------------------
-    s_exp = "mjc189-1905-0517"
+    #s_exp = "mjc189-1905-0517"
+    s_exp = "mjc190-1607-0515"
 
     # select cell type
     #-------------------------------------------------------------------------------------------------------------------
@@ -49,15 +50,15 @@ if __name__ == '__main__':
     # 4: session after sleep (with rule switch)
     # 6: last session
 
-    env = "6"
+    env = "4"
     timestamps = np.loadtxt(data_dir+"/"+s_exp+"/"+s_exp+"_"+env+".timestamps").astype(int)
 
     # select trials
     #-------------------------------------------------------------------------------------------------------------------
 
     startarm = [1]
-    goalarm = [3]
-    ruletype = [2] #3: light
+    goalarm = [2]
+    ruletype = [1,3] #3: light
     errortrial = [1]
 
     trial_sel = {"startarm": startarm,"goalarm": goalarm, "ruletype":ruletype, "errortrial": errortrial}

@@ -64,8 +64,8 @@ def plot_2D_scatter(ax,mds,param_dic,data_sep = [], loc_vec = []):
                 s_l = param_dic["spat_seg_plotting"]
                 l_track = 200
                 nr_seg = int(l_track/s_l)
-                col_map_blue = cm.Blues(np.linspace(0, 1, nr_seg + 5))
-                col_map_red = cm.Reds(np.linspace(0, 1, nr_seg +5 ))
+                col_map_blue = cm.Reds(np.linspace(0, 1, nr_seg + 5))
+                col_map_red = cm.Blues(np.linspace(0, 1, nr_seg +5 ))
                 col_map_blue = col_map_blue[5:,:]
                 col_map_red = col_map_red[5:, :]
                 # linearized track is 200 cm long
@@ -169,8 +169,8 @@ def plot_3D_scatter(ax,mds,param_dic,data_sep = [], loc_vec = []):
                 s_l = param_dic["spat_seg_plotting"]
                 l_track = 200
                 nr_seg = int(l_track/s_l)
-                col_map_blue = cm.Blues(np.linspace(0, 1, nr_seg + 2))
-                col_map_red = cm.Reds(np.linspace(0, 1, nr_seg +2 ))
+                col_map_blue = cm.Reds(np.linspace(0, 1, nr_seg + 2))
+                col_map_red = cm.Blues(np.linspace(0, 1, nr_seg +2 ))
                 col_map_blue = col_map_blue[2:,:]
                 col_map_red = col_map_red[2:, :]
                 # linearized track is 200 cm long
