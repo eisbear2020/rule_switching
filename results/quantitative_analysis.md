@@ -10,10 +10,23 @@ Can we characterize the transition of the population states during rule switch?
 
 * RULE 1: light, RULE 2: west
 
+**Overall distance**:
+* calculate pair-wise cos distance between trials of RULE 1 and RULE 2 for each
+spatial bin
+* plot average/SEM of these pair-wise distances for each spatial bin
+* normalization: divide average of across-rule cos distances by within rule cos 
+distance for each spatial bin
+
 ![alt text](../plots/quant_transition_cos.png)
 
 * above plot considers union of all trials
 * can we tell something from different results of the normalization by rule 1 and rule b?
+
+**Separating trials**:
+* for each spatial bin and trial after the switch: 
+    * pair-wise cos differences between trail and each trial before the switch
+    --> get array for all comparisons
+    * taking the average
 
 ![alt text](../plots/quant_transition_cos_trials.png)
 
