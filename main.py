@@ -25,7 +25,7 @@ from manifold_methods import ManifoldCompare
 from comp_functions import calc_loc_and_speed
 
 from quantification_methods import TransitionAnalysis
-
+from quantification_methods import ComparisonAnalysis
 
 if __name__ == '__main__':
 
@@ -152,6 +152,34 @@ if __name__ == '__main__':
     whl_lin_rule_switch = pickle.load(infile_23)
     infile_23.close()
 
+
+########################################################################################################################
+#   COMPARISON ANALYSIS
+########################################################################################################################
+
+    # MANIFOLD ANALYSIS
+    # ------------------------------------------------------------------------------------------------------------------
+
+    # look at one rule across multiple trials
+    # ------------------------------------------------------------------------------------------------------------------
+    # new_analysis = SingleManifold(res_rule_light, whl_lin_rule_light, param_dic)
+    # new_analysis.state_analysis()
+    # new_analysis.plot_in_one_fig_color_position()
+
+    # compare two rules using dimensionality reduction for the combined data (reduce to 2 or 3 dimensions)
+    # ------------------------------------------------------------------------------------------------------------------
+
+    # new_comparison = ManifoldCompare([res_rule_light, res_rule_west],[whl_lin_rule_light, whl_lin_rule_west],
+    #                                   param_dic)
+    # new_comparison.state_analysis()
+
+    # QUANTITATIVE ANALYSIS
+    # ------------------------------------------------------------------------------------------------------------------
+    # new_comparison = ComparisonAnalysis([res_rule_light, res_rule_west],[whl_lin_rule_light, whl_lin_rule_west],
+    #                                     param_dic)
+    # new_comparison.create_save_spatial_bin_dictionary()
+
+
 ########################################################################################################################
 #   TRANSITION ANALYSIS (RULE A --> RULE B)
 ########################################################################################################################
@@ -169,31 +197,16 @@ if __name__ == '__main__':
     # QUANTITATIVE ANALYSIS
     # ------------------------------------------------------------------------------------------------------------------
     new_rule_trial = 7
-    new_transition_analysis = TransitionAnalysis(param_dic, res_rule_switch, whl_lin_rule_switch, new_rule_trial)
+    new_transition_analysis = TransitionAnalysis(res_rule_switch, whl_lin_rule_switch,param_dic, new_rule_trial)
+
     #new_transition_analysis.create_save_spatial_bin_dictionary()
 
-
     # load spatial bin dictionaries
-    new_transition_analysis.cross_diff_spat(pickle.load(open("temp_data/quant_analysis/RULE LIGHT_temporal_10","rb")),
-                                            pickle.load(open("temp_data/quant_analysis/RULE WEST_temporal_10","rb")))
+    # new_transition_analysis.cross_cos_diff_spat(pickle.load(open("temp_data/quant_analysis/SWITCH_RULE LIGHT_spatial_10", "rb")),
+    # pickle.load(open("temp_data/quant_analysis/SWITCH_RULE WEST_spatial_10","rb")))
 
-########################################################################################################################
-#   COMPARISON ANALYSIS
-########################################################################################################################
-
-    # look at one rule across multiple trials
-    # ------------------------------------------------------------------------------------------------------------------
-    # new_analysis = SingleManifold(res_rule_light, whl_lin_rule_light, param_dic)
-    # new_analysis.state_analysis()
-    # new_analysis.plot_in_one_fig_color_position()
-
-    # compare two rules using dimensionality reduction for the combined data (reduce to 2 or 3 dimensions)
-    # ------------------------------------------------------------------------------------------------------------------
-
-    # new_comparison = ManifoldCompare([res_rule_light, res_rule_west],[whl_lin_rule_light, whl_lin_rule_west],
-    #                                   param_dic)
-    # new_comparison.state_analysis()
-
+    new_transition_analysis.cross_cos_diff_spat_trials(pickle.load(open("temp_data/quant_analysis/SWITCH_RULE LIGHT_spatial_10", "rb")),
+                                                pickle.load(open("temp_data/quant_analysis/RULE WEST_spatial_10", "rb")))
 
 ########################################################################################################################
 #   STATE TRANSITION ANALYSIS

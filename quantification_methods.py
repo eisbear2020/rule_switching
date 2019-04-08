@@ -70,7 +70,7 @@ class Analysis():
 class TransitionAnalysis(Analysis):
     ''' Base class for quantitative analysis'''
 
-    def __init__(self, param_dic, data_set, loc_set, new_rule_trial):
+    def __init__(self, data_set, loc_set, param_dic, new_rule_trial):
 
         # get attributes from parent class
         Analysis.__init__(self, param_dic)
@@ -111,7 +111,6 @@ class TransitionAnalysis(Analysis):
             dic_spat_int_1["INT"+str(spat_int)] = dic_spat_int_2["INT"+str(spat_int)] = \
                 np.array([]).reshape(self.nr_cells,0)
 
-
         for trial, key in enumerate(self.data_set):
             act_mat, loc_vec_part = get_activity_mat_spatial(self.data_set[key], self.param_dic,
                                                              self.loc_set[key])
@@ -130,18 +129,74 @@ class TransitionAnalysis(Analysis):
                     dic_spat_int_2[key] = np.hstack((dic_spat_int_2[key], np.expand_dims(act_mat[:,int_count],1)))
 
         # save first dictionary as pickle
-        filename = "temp_data/quant_analysis/" + self.param_dic["data_descr"][0] + "_" + \
-                   self.param_dic["binning_method"] + "_" + str(self.param_dic["spatial_bin_size"])
+        filename = "temp_data/quant_analysis/" +"SWITCH_"+ self.param_dic["data_descr"][0] + "_spatial_"\
+                   + str(self.param_dic["spatial_bin_size"])
         outfile = open(filename, 'wb')
         pickle.dump(dic_spat_int_1, outfile)
         outfile.close()
 
         # save second dictionary as pickle
-        filename = "temp_data/quant_analysis/" + self.param_dic["data_descr"][1] + "_" + \
-                   self.param_dic["binning_method"] + "_" + str(self.param_dic["spatial_bin_size"])
+        filename = "temp_data/quant_analysis/" +"SWITCH_"+ self.param_dic["data_descr"][1] + "_spatial_" + \
+                   str(self.param_dic["spatial_bin_size"])
         outfile = open(filename, 'wb')
         pickle.dump(dic_spat_int_2, outfile)
         outfile.close()
+
+    def cross_cos_diff_spat_trials(self, spat_bin_dic_1, spat_bin_dic_2):
+
+        if len(spat_bin_dic_1.keys()) != len(spat_bin_dic_2.keys()):
+            print("Number of spatial bins in both dictionaries don't match")
+            exit()
+
+        nr_trials_after_switch = next(iter(spat_bin_dic_2.values())).shape[1]
+        nr_trials_before_switch = next(iter(spat_bin_dic_1.values())).shape[1]
+        nr_intervals = len(spat_bin_dic_1.keys())
+        x_axis = np.arange(0,200,self.param_dic["spatial_bin_size"])
+        x_axis = x_axis[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
+
+        col_map = cm.rainbow(np.linspace(0, 1, nr_trials_after_switch))
+
+        # go through all trials after rule switch and compare each one with rule before rule switch
+        # --> each entry in dictionary is a spatial bin --> contains all population vectors
+
+        for trial_after_switch in range(nr_trials_after_switch):
+            cross_diff = np.zeros((nr_intervals,nr_trials_before_switch))
+
+            # go through all spatial bins and calculate difference --> rows: spatial bins, columns: cos distances
+            for i, key in enumerate(spat_bin_dic_2):
+                cross_diff[i, :] = calc_diff(spat_bin_dic_1[key], np.expand_dims(spat_bin_dic_2[key][:,trial_after_switch],1),"cos").flatten()
+
+            plt.subplot(2,1,1)
+            plt.plot(x_axis, np.average(cross_diff,1), color= col_map[trial_after_switch,:], marker= "o", label="TRIAL "+str(trial_after_switch))
+            plt.legend()
+            plt.grid()
+            plt.xlim([min(x_axis), max(x_axis) + 20])
+            plt.title("DIFFERENCE BETWEEN SINGLE TRIALS AFTER RULE SWITCH AND ALL TRIALS BEFORE RULE SWITCH")
+            plt.xlabel("MAZE POSITION")
+            plt.ylabel("AVERAGE COS DIFFERENCE")
+
+        # go through all spatial bins and see how the difference changes with trials after rule switch
+        # --> each entry in dictionary is a spatial bin --> contains all population vectors
+
+        col_map = cm.tab20(np.linspace(0, 1, len(x_axis)))
+        spat_position = x_axis
+        x_axis = np.arange(nr_trials_after_switch)
+
+        for i, key in enumerate(spat_bin_dic_2):
+            cross_diff = np.zeros((nr_trials_after_switch, nr_trials_before_switch))
+            for trial_after_switch in range(nr_trials_after_switch):
+                cross_diff[trial_after_switch, :] = calc_diff(spat_bin_dic_1[key], np.expand_dims(spat_bin_dic_2[key][:,trial_after_switch],1),"cos").flatten()
+
+            plt.subplot(2, 1, 2)
+            plt.plot(x_axis, np.average(cross_diff,1), color= col_map[i,:],marker= "o", label=str(spat_position[i])+" cm")
+            plt.legend()
+            plt.title("DIFFERENCE BETWEEN SINGLE TRIALS AFTER RULE SWITCH AND ALL TRIALS BEFORE RULE SWITCH")
+            plt.xlabel("TRIAL AFTER RULE SWITCH")
+            plt.xlim([0, nr_trials_after_switch + 1])
+            plt.ylabel("AVERAGE COS DIFFERENCE")
+            plt.grid()
+
+        plt.show()
 
     def cross_cos_diff_spat(self, spat_bin_dic_1, spat_bin_dic_2):
 
@@ -246,3 +301,53 @@ class TransitionAnalysis(Analysis):
         plt.show()
 
 
+class ComparisonAnalysis(Analysis):
+    ''' Base class for quantitative analysis'''
+
+    def __init__(self, data_sets, loc_sets, param_dic):
+
+        # get attributes from parent class
+        Analysis.__init__(self, param_dic)
+
+        # dictionary with firing times for different cells and different trials
+        self.data_sets = data_sets
+
+        # dictionary with locations for different trials
+        self.loc_sets = loc_sets
+
+        # how many cells are in the data set
+        self.nr_cells = len(next(iter(self.data_sets[0].values())))
+
+    def create_save_spatial_bin_dictionary(self):
+        # create "activity matrices" consisting of population vectors for each rule
+
+        act_mat, _ = get_activity_mat_spatial(next(iter(self.data_sets[0].values())),
+                                              self.param_dic, next(iter(self.loc_sets[0].values())))
+        # how many intervals
+        nr_intervals = act_mat.shape[1]
+        act_mat = []
+
+        # go through both data sets
+        for i, (data_set, loc_set) in enumerate(zip(self.data_sets,self.loc_sets)):
+
+            # initialize dictionary --> each entry in dictionary is a spatial bin --> contains all population vectors
+            # (from different trials) for this spatial interval
+            dic_spat_int = {}
+
+            for spat_int in range(nr_intervals):
+                dic_spat_int["INT" + str(spat_int)] = np.array([]).reshape(self.nr_cells, 0)
+
+            # go through all trials
+            for trial, key in enumerate(data_set):
+                act_mat, loc_vec_part = get_activity_mat_spatial(data_set[key], self.param_dic,
+                                                                 loc_set[key])
+                # write elements in dictionary
+                for int_count, key in enumerate(dic_spat_int):
+                    dic_spat_int[key] = np.hstack((dic_spat_int[key], np.expand_dims(act_mat[:,int_count],1)))
+
+            # save first dictionary as pickle
+            filename = "temp_data/quant_analysis/"+self.param_dic["data_descr"][i] +"_spatial_"+ \
+                       str(self.param_dic["spatial_bin_size"])
+            outfile = open(filename, 'wb')
+            pickle.dump(dic_spat_int, outfile)
+            outfile.close()
