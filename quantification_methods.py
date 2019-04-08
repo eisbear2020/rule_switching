@@ -34,6 +34,7 @@ from plotting_functions import plot_compare
 import seaborn as sns
 import matplotlib as mpl
 import os
+from collections import OrderedDict
 
 # set saving directory to current directory
 mpl.rcParams["savefig.directory"] = os.chdir(os.path.dirname(__file__))
@@ -142,7 +143,7 @@ class TransitionAnalysis(Analysis):
         pickle.dump(dic_spat_int_2, outfile)
         outfile.close()
 
-    def cross_diff_spat(self, spat_bin_dic_1, spat_bin_dic_2):
+    def cross_cos_diff_spat(self, spat_bin_dic_1, spat_bin_dic_2):
 
         if len(spat_bin_dic_1.keys()) != len(spat_bin_dic_2.keys()):
             print("Number of spatial bins in both dictionaries don't match")
@@ -156,8 +157,9 @@ class TransitionAnalysis(Analysis):
         n_2 = next(iter(spat_bin_dic_2.values())).shape[1]
         within_diff_1 = np.zeros((nr_intervals, int(n_1*(n_1 - 1)/2)))
         within_diff_2 = np.zeros((nr_intervals, int(n_2*(n_2 - 1)/2)))
+        stats_array = np.zeros((nr_intervals, 2))
 
-        # go through all spatial bins and calculate difference
+        # go through all spatial bins and calculate difference --> rows: spatial bins, columns: cos distances
         for i, key in enumerate(spat_bin_dic_1):
             cross_diff[i, :] = calc_diff(spat_bin_dic_1[key], spat_bin_dic_2[key], "cos").flatten()
             temp1 = calc_diff(spat_bin_dic_1[key], spat_bin_dic_1[key], "cos")
@@ -165,6 +167,11 @@ class TransitionAnalysis(Analysis):
             temp2 = calc_diff(spat_bin_dic_2[key], spat_bin_dic_2[key], "cos")
             within_diff_2[i,:] = temp2[np.triu_indices(temp2.shape[0],1)]
 
+        # for each spatial bin compare union of within_diff_1/within_diff_2 and cross_diff
+        for i, (w_d_1, w_d_2, c_d) in enumerate(zip(within_diff_1, within_diff_2,cross_diff)):
+            w_d = np.hstack((w_d_1, w_d_2))
+            stats_array[i,0],stats_array[i,1] = stats.kruskal(w_d, c_d)
+            # compare
 
         x_axis = np.arange(0,200,self.param_dic["spatial_bin_size"])
         x_axis = x_axis[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
@@ -185,6 +192,15 @@ class TransitionAnalysis(Analysis):
         plt.ylabel("AVERAGE DISTANCE (COS) - AVG & SEM")
         plt.title("ABSOLUTE")
 
+        # add significance marker
+        for i,p_v in enumerate(stats_array[:,1]):
+            print(p_v)
+            if p_v < 0.05:
+                plt.scatter(x_axis[i]+2,avg[i]+0.02, marker="*", edgecolors="Red",label="K-W, 0.05")
+        handles, labels = plt.gca().get_legend_handles_labels()
+        by_label = OrderedDict(zip(labels, handles))
+        plt.legend(by_label.values(), by_label.keys())
+
         plt.subplot(2, 2, 2)
         plt.scatter(x_axis, avg/avg_1)
         plt.xlabel("MAZE LOCATION / cm")
@@ -192,11 +208,39 @@ class TransitionAnalysis(Analysis):
         plt.title("NORMALIZED BY RULE 1")
         plt.grid()
 
+        # add significance marker
+        for i,p_v in enumerate(stats_array[:,1]):
+            print(p_v)
+            if p_v < 0.05:
+                plt.scatter(x_axis[i]+2,avg[i]/avg_1[i]+0.05, marker="*", edgecolors="Red",label="K-W, 0.05")
+        handles, labels = plt.gca().get_legend_handles_labels()
+        by_label = OrderedDict(zip(labels, handles))
+        plt.legend(by_label.values(), by_label.keys())
+
         plt.subplot(2, 2, 3)
         plt.scatter(x_axis, avg/avg_2)
         plt.xlabel("MAZE LOCATION / cm")
         plt.ylabel("AVERAGE DISTANCE (COS)")
         plt.title("NORMALIZED BY RULE 2")
+        plt.grid()
+
+        # add significance marker
+        for i,p_v in enumerate(stats_array[:,1]):
+            print(p_v)
+            if p_v < 0.05:
+                plt.scatter(x_axis[i]+2,avg[i]/avg_2[i]+0.05, marker="*", edgecolors="Red",label="K-W, 0.05")
+        handles, labels = plt.gca().get_legend_handles_labels()
+        by_label = OrderedDict(zip(labels, handles))
+        plt.legend(by_label.values(), by_label.keys())
+
+
+        plt.subplot(2, 2, 4)
+        plt.scatter(x_axis, stats_array[:,1])
+        plt.hlines(0.05,min(x_axis),max(x_axis),colors="Red",label="0.05")
+        plt.xlabel("MAZE LOCATION / cm")
+        plt.ylabel("P-VALUE")
+        plt.title("KRUSKAL: WITHIN-RULE vs. ACROSS-RULES")
+        plt.legend()
         plt.grid()
 
         plt.show()

@@ -29,7 +29,7 @@ importing/filtering/saving of data. Uses helper functions from filter_functions.
 ## filter_functions.py
 helper functions for selecting data
 
-# RESULTS
+# Results
 
 ## manifold_analysis.md
 
