@@ -12,4 +12,10 @@ Can we characterize the transition of the population states during rule switch?
 
 ![alt text](../plots/quant_transition_cos.png)
 
+* above plot considers union of all trials
 * can we tell something from different results of the normalization by rule 1 and rule b?
+
+![alt text](../plots/quant_transition_cos_trials.png)
+
+* continuous remapping for certain spatial positions. To measure the actual effect the 
+across-trial variability without rule switch needs to be taken into account.
