@@ -32,6 +32,11 @@ from plotting_functions import plot_2D_scatter
 from plotting_functions import plot_3D_scatter
 from plotting_functions import plot_compare
 import seaborn as sns
+import matplotlib as mpl
+import os
+
+# set saving directory to current directory
+mpl.rcParams["savefig.directory"] = os.chdir(os.path.dirname(__file__))
 
 ########################################################################################################################
 #   ANALYSIS BASE CLASS
@@ -161,13 +166,6 @@ class TransitionAnalysis(Analysis):
             within_diff_2[i,:] = temp2[np.triu_indices(temp2.shape[0],1)]
 
 
-        # calc_cohens_d(cross_diff[1,:])
-        # exit()
-
-        print(within_diff_1.shape)
-        print(within_diff_2.shape)
-        print(cross_diff.shape)
-
         x_axis = np.arange(0,200,self.param_dic["spatial_bin_size"])
         x_axis = x_axis[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
 
@@ -180,34 +178,26 @@ class TransitionAnalysis(Analysis):
         avg = np.average(cross_diff, axis=1)
         err = stats.sem(cross_diff, axis=1)
 
-        plt.hist(cross_diff[12,:])
-        plt.hist(within_diff_1[12,:])
-        #plt.hist(within_diff_2[12, :])
-        plt.show()
-
-        print(avg)
-        print(avg_1)
-        print(avg/avg_1)
-
         plt.subplot(2,2,1)
         plt.errorbar(x_axis,avg,yerr = err,fmt="o")
+        plt.grid()
         plt.xlabel("MAZE LOCATION / cm")
-        plt.ylabel("AVERAGE DISTANCE (COS)")
+        plt.ylabel("AVERAGE DISTANCE (COS) - AVG & SEM")
         plt.title("ABSOLUTE")
 
         plt.subplot(2, 2, 2)
-        plt.errorbar(x_axis, avg/avg_1, yerr=err_1/err, fmt="o")
+        plt.scatter(x_axis, avg/avg_1)
         plt.xlabel("MAZE LOCATION / cm")
         plt.ylabel("AVERAGE DISTANCE (COS)")
         plt.title("NORMALIZED BY RULE 1")
+        plt.grid()
 
         plt.subplot(2, 2, 3)
-        plt.errorbar(x_axis, avg/avg_2, yerr=err_2/err, fmt="o")
+        plt.scatter(x_axis, avg/avg_2)
         plt.xlabel("MAZE LOCATION / cm")
         plt.ylabel("AVERAGE DISTANCE (COS)")
         plt.title("NORMALIZED BY RULE 2")
-
-
+        plt.grid()
 
         plt.show()
 

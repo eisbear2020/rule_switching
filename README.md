@@ -28,3 +28,13 @@ contains functions that compute parts of a thorough analysis:
 importing/filtering/saving of data. Uses helper functions from filter_functions.py
 ## filter_functions.py
 helper functions for selecting data
+
+# RESULTS
+
+## manifold_analysis.md
+
+Contains all results of the qualitative manifold analysis.
+
+## quantitative_analysis.md
+
+Contains results of quantitative analysis.
