@@ -32,3 +32,17 @@ distance for each spatial bin
 
 * continuous remapping for certain spatial positions. To measure the actual effect the 
 across-trial variability without rule switch needs to be taken into account.
+
+# POPULATION VECTOR DIFFERENCE COMPARISON OF DIFFERENT RULES
+
+Do we see significant differences in the dynamics of the system for two different rules?
+
+**Separating trials**:
+* for each spatial bin and trial after the switch: 
+    * pair-wise cos differences between trail and each trial before the switch
+    --> get array for all comparisons
+    * taking the average
+* comparing trials of the next day session (_6, RULE WEST) with trials of the rule switch session
+with RULE LIGHT
+
+![alt text](../plots/quant_compare_cos_trials_4_6.png)
