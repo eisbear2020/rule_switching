@@ -26,7 +26,7 @@ from collections import OrderedDict
 import matplotlib.colors as clr
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.colors as colors
-
+from scipy import stats
 
 
 def plot_act_mat(act_mat,bin_interval):
@@ -340,3 +340,71 @@ def plot_compare(data, param_dic, data_sep, rule_sep = []):
     plt.show()
     # return figure for saving
     return fig
+
+
+def plot_remapping_summary(cross_diff, within_diff_1, within_diff_2, stats_array, param_dic):
+    x_axis = np.arange(0, 200, param_dic["spatial_bin_size"])
+    x_axis = x_axis[param_dic["spat_bins_excluded"][0]:param_dic["spat_bins_excluded"][-1]]
+
+    avg_1 = np.average(within_diff_1, axis=1)
+    avg_2 = np.average(within_diff_2, axis=1)
+
+    avg = np.average(cross_diff, axis=1)
+    err = stats.sem(cross_diff, axis=1)
+
+
+    plt.subplot(2, 2, 1)
+    plt.errorbar(x_axis, avg, yerr=err, fmt="o")
+    plt.grid()
+    plt.xlabel("MAZE LOCATION / cm")
+    plt.ylabel("AVERAGE DISTANCE (COS) - AVG & SEM")
+    plt.title("ABSOLUTE")
+
+    # add significance marker
+    for i, p_v in enumerate(stats_array[:, 1]):
+        if p_v < 0.05:
+            plt.scatter(x_axis[i] + 2, avg[i] + 0.02, marker="*", edgecolors="Red", label="K-W, 0.05")
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = OrderedDict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys())
+
+    plt.subplot(2, 2, 2)
+    plt.scatter(x_axis, avg / avg_1)
+    plt.xlabel("MAZE LOCATION / cm")
+    plt.ylabel("AVERAGE DISTANCE (COS)")
+    plt.title("NORMALIZED BY RULE 1")
+    plt.grid()
+
+    # add significance marker
+    for i, p_v in enumerate(stats_array[:, 1]):
+        if p_v < 0.05:
+            plt.scatter(x_axis[i] + 2, avg[i] / avg_1[i] + 0.05, marker="*", edgecolors="Red", label="K-W, 0.05")
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = OrderedDict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys())
+
+    plt.subplot(2, 2, 3)
+    plt.scatter(x_axis, avg / avg_2)
+    plt.xlabel("MAZE LOCATION / cm")
+    plt.ylabel("AVERAGE DISTANCE (COS)")
+    plt.title("NORMALIZED BY RULE 2")
+    plt.grid()
+
+    # add significance marker
+    for i, p_v in enumerate(stats_array[:, 1]):
+        if p_v < 0.05:
+            plt.scatter(x_axis[i] + 2, avg[i] / avg_2[i] + 0.05, marker="*", edgecolors="Red", label="K-W, 0.05")
+    handles, labels = plt.gca().get_legend_handles_labels()
+    by_label = OrderedDict(zip(labels, handles))
+    plt.legend(by_label.values(), by_label.keys())
+
+    plt.subplot(2, 2, 4)
+    plt.scatter(x_axis, stats_array[:, 1])
+    plt.hlines(0.05, min(x_axis), max(x_axis), colors="Red", label="0.05")
+    plt.xlabel("MAZE LOCATION / cm")
+    plt.ylabel("P-VALUE")
+    plt.title("KRUSKAL: WITHIN-RULE vs. ACROSS-RULES")
+    plt.legend()
+    plt.grid()
+
+    plt.show()

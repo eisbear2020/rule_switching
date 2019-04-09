@@ -31,6 +31,7 @@ import matplotlib.cm as cm
 from plotting_functions import plot_2D_scatter
 from plotting_functions import plot_3D_scatter
 from plotting_functions import plot_compare
+from plotting_functions import plot_remapping_summary
 import seaborn as sns
 import matplotlib as mpl
 import os
@@ -65,6 +66,134 @@ class Analysis():
 
         # array with separator indices for different trials
         self.data_sep = []
+
+        # storing cross-diff
+        self.cross_diff = []
+
+        self.within_diff_1 = []
+
+        self.within_diff_2 = []
+        # results of test statistic
+        self.stats_array = []
+
+    def cross_cos_diff(self, bin_dic_1, bin_dic_2):
+        # calculates the pair-wise cos difference within each set and across both sets
+
+        if len(bin_dic_1.keys()) != len(bin_dic_2.keys()):
+            print("Number of bins in both dictionaries don't match")
+            exit()
+
+        nr_intervals = len(bin_dic_1.keys())
+        nr_comparisons = next(iter(bin_dic_1.values())).shape[1] * next(iter(bin_dic_2.values())).shape[1]
+
+        cross_diff = np.zeros((nr_intervals, nr_comparisons))
+        n_1 = next(iter(bin_dic_1.values())).shape[1]
+        n_2 = next(iter(bin_dic_2.values())).shape[1]
+        within_diff_1 = np.zeros((nr_intervals, int(n_1*(n_1 - 1)/2)))
+        within_diff_2 = np.zeros((nr_intervals, int(n_2*(n_2 - 1)/2)))
+        stats_array = np.zeros((nr_intervals, 2))
+
+        # go through all spatial bins and calculate difference --> rows: spatial bins, columns: cos distances
+        for i, key in enumerate(bin_dic_1):
+            cross_diff[i, :] = calc_diff(bin_dic_1[key], bin_dic_2[key], "cos").flatten()
+            temp1 = calc_diff(bin_dic_1[key], bin_dic_1[key], "cos")
+            within_diff_1[i,:] = temp1[np.triu_indices(temp1.shape[0],1)]
+            temp2 = calc_diff(bin_dic_2[key], bin_dic_2[key], "cos")
+            within_diff_2[i,:] = temp2[np.triu_indices(temp2.shape[0],1)]
+
+        # for each spatial bin compare union of within_diff_1/within_diff_2 and cross_diff
+        for i, (w_d_1, w_d_2, c_d) in enumerate(zip(within_diff_1, within_diff_2, cross_diff)):
+            w_d = np.hstack((w_d_1, w_d_2))
+            stats_array[i, 0], stats_array[i, 1] = stats.kruskal(w_d, c_d)
+
+        # safe results
+        self.cross_diff = cross_diff
+        self.within_diff_1 = within_diff_1
+        self.within_diff_2 = within_diff_2
+        self.stats_array = stats_array
+
+    def plot_remap_results(self):
+
+        plot_remapping_summary(self.cross_diff, self.within_diff_1, self.within_diff_2, self.stats_array, self.param_dic)
+
+    def combine_bin_dictionaries(self, dic_1, dic_2, comb_dic_name):
+        # combines entries of two dictionaries
+        if len(dic_1.keys()) != len(dic_2.keys()):
+            print("Number of spatial bins in both dictionaries don't match")
+            exit()
+
+        # initialize dictionary --> each entry in dictionary is a spatial bin --> contains all population vectors
+        # (from different trials) for this spatial interval
+        combined_dic = {}
+
+        for key in dic_1:
+            combined_dic[key] = np.hstack((dic_1[key],dic_2[key]))
+
+        # save first dictionary as pickle
+        filename = "temp_data/quant_analysis/"+comb_dic_name
+        outfile = open(filename, 'wb')
+        pickle.dump(combined_dic, outfile)
+        outfile.close()
+
+    def leave_one_out(self, dic_1, dic_2):
+        # calculate cross difference with all cells and drop cells that do not contribute to difference
+
+        nr_cells = next(iter(dic_1.values())).shape[0]
+        nr_bins = len(dic_1.keys())
+        cell_to_p_value_contribution = np.zeros(nr_cells)
+        cell_to_diff_contribution = np.zeros((nr_cells,nr_bins))
+
+        # first cross diff using all cells
+        self.cross_cos_diff(dic_1, dic_2)
+        init_stats = self.stats_array
+        init_cross = self.cross_diff
+
+        # go through all cells
+        for cell_ID in range(nr_cells):
+            # make copies of both dictionaries
+            dic_1_c = dic_1.copy()
+            dic_2_c = dic_2.copy()
+
+            for key in dic_1_c:
+                # delete cell from copies of both dictionaries
+                dic_1_c[key] = np.delete(dic_1_c[key],cell_ID, axis=0)
+                dic_2_c[key] = np.delete(dic_2_c[key], cell_ID, axis=0)
+
+            self.cross_cos_diff(dic_1_c, dic_2_c)
+            cell_to_p_value_contribution[cell_ID] = np.sum(self.stats_array[:,1]-init_stats[:,1])
+            cell_to_diff_contribution[cell_ID,:] = np.average(self.cross_diff,axis=1) - np.average(init_cross, axis = 1)
+
+        plt.imshow(cell_to_diff_contribution.T, cmap="jet")
+        plt.colorbar()
+        plt.show()
+
+        dic_1_c = dic_1.copy()
+        dic_2_c = dic_2.copy()
+
+        for key in dic_1_c:
+            # delete cell from copies of both dictionaries
+            dic_1_c[key] = np.delete(dic_1_c[key], [46,69], axis=0)
+            dic_2_c[key] = np.delete(dic_2_c[key], [46,69], axis=0)
+
+        return dic_1_c, dic_2_c
+
+
+        # plt.hist(cell_to_diff_contribution, bins=20)
+        # plt.show()
+        #
+        # # create new data set with only cells that decrease p-value if present
+        #
+        # dic_1_c = dic_1.copy()
+        # dic_2_c = dic_2.copy()
+        #
+        # for key in dic_1_c:
+        #     # delete cell from copies of both dictionaries
+        #     dic_1_c[key] = dic_1_c[key][np.where(np.average(cell_to_diff_contribution, axis = 1) < 0),:]
+        #     dic_2_c[key] = dic_2_c[key][np.where(np.average(cell_to_diff_contribution, axis = 1) < 0),:]
+        #
+        # self.cross_cos_diff(dic_1_c, dic_2_c)
+        # self.plot_remap_results()
+
 
 
 class TransitionAnalysis(Analysis):
@@ -171,7 +300,7 @@ class TransitionAnalysis(Analysis):
             plt.legend()
             plt.grid()
             plt.xlim([min(x_axis), max(x_axis) + 20])
-            plt.title("DIFFERENCE BETWEEN SINGLE TRIALS AFTER RULE SWITCH AND ALL TRIALS BEFORE RULE SWITCH")
+            plt.title("DIFFERENCE BETWEEN SINGLE TRIALS AFTER RULE SWITCH AND ALL TRIALS BEFORE RULE SWITCH (INCL. PREV. DAY)")
             plt.xlabel("MAZE POSITION")
             plt.ylabel("AVERAGE COS DIFFERENCE")
 
@@ -190,7 +319,7 @@ class TransitionAnalysis(Analysis):
             plt.subplot(2, 1, 2)
             plt.plot(x_axis, np.average(cross_diff,1), color= col_map[i,:],marker= "o", label=str(spat_position[i])+" cm")
             plt.legend()
-            plt.title("DIFFERENCE BETWEEN SINGLE TRIALS AFTER RULE SWITCH AND ALL TRIALS BEFORE RULE SWITCH")
+            plt.title("DIFFERENCE BETWEEN SINGLE TRIALS AFTER RULE SWITCH AND ALL TRIALS BEFORE RULE SWITCH (INCL. PREV. DAY)")
             plt.xlabel("TRIAL AFTER RULE SWITCH")
             plt.xlim([0, nr_trials_after_switch + 1])
             plt.ylabel("AVERAGE COS DIFFERENCE")
@@ -198,107 +327,12 @@ class TransitionAnalysis(Analysis):
 
         plt.show()
 
-    def cross_cos_diff_spat(self, spat_bin_dic_1, spat_bin_dic_2):
+    def characterize_cells(self, bin_dic_1, bin_dic_2):
 
-        if len(spat_bin_dic_1.keys()) != len(spat_bin_dic_2.keys()):
-            print("Number of spatial bins in both dictionaries don't match")
-            exit()
+        dic1, dic2 = self.leave_one_out(bin_dic_1, bin_dic_2)
 
-        nr_intervals = len(spat_bin_dic_1.keys())
-        nr_comparisons = next(iter(spat_bin_dic_1.values())).shape[1] * next(iter(spat_bin_dic_2.values())).shape[1]
+        self.cross_cos_diff_spat_trials(dic1,dic2)
 
-        cross_diff = np.zeros((nr_intervals, nr_comparisons))
-        n_1 = next(iter(spat_bin_dic_1.values())).shape[1]
-        n_2 = next(iter(spat_bin_dic_2.values())).shape[1]
-        within_diff_1 = np.zeros((nr_intervals, int(n_1*(n_1 - 1)/2)))
-        within_diff_2 = np.zeros((nr_intervals, int(n_2*(n_2 - 1)/2)))
-        stats_array = np.zeros((nr_intervals, 2))
-
-        # go through all spatial bins and calculate difference --> rows: spatial bins, columns: cos distances
-        for i, key in enumerate(spat_bin_dic_1):
-            cross_diff[i, :] = calc_diff(spat_bin_dic_1[key], spat_bin_dic_2[key], "cos").flatten()
-            temp1 = calc_diff(spat_bin_dic_1[key], spat_bin_dic_1[key], "cos")
-            within_diff_1[i,:] = temp1[np.triu_indices(temp1.shape[0],1)]
-            temp2 = calc_diff(spat_bin_dic_2[key], spat_bin_dic_2[key], "cos")
-            within_diff_2[i,:] = temp2[np.triu_indices(temp2.shape[0],1)]
-
-        # for each spatial bin compare union of within_diff_1/within_diff_2 and cross_diff
-        for i, (w_d_1, w_d_2, c_d) in enumerate(zip(within_diff_1, within_diff_2,cross_diff)):
-            w_d = np.hstack((w_d_1, w_d_2))
-            stats_array[i,0],stats_array[i,1] = stats.kruskal(w_d, c_d)
-            # compare
-
-        x_axis = np.arange(0,200,self.param_dic["spatial_bin_size"])
-        x_axis = x_axis[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
-
-        avg_1 = np.average(within_diff_1, axis=1)
-        err_1 = stats.sem(within_diff_1, axis=1)
-
-        avg_2 = np.average(within_diff_2, axis=1)
-        err_2 = stats.sem(within_diff_2, axis=1)
-
-        avg = np.average(cross_diff, axis=1)
-        err = stats.sem(cross_diff, axis=1)
-
-        plt.subplot(2,2,1)
-        plt.errorbar(x_axis,avg,yerr = err,fmt="o")
-        plt.grid()
-        plt.xlabel("MAZE LOCATION / cm")
-        plt.ylabel("AVERAGE DISTANCE (COS) - AVG & SEM")
-        plt.title("ABSOLUTE")
-
-        # add significance marker
-        for i,p_v in enumerate(stats_array[:,1]):
-            print(p_v)
-            if p_v < 0.05:
-                plt.scatter(x_axis[i]+2,avg[i]+0.02, marker="*", edgecolors="Red",label="K-W, 0.05")
-        handles, labels = plt.gca().get_legend_handles_labels()
-        by_label = OrderedDict(zip(labels, handles))
-        plt.legend(by_label.values(), by_label.keys())
-
-        plt.subplot(2, 2, 2)
-        plt.scatter(x_axis, avg/avg_1)
-        plt.xlabel("MAZE LOCATION / cm")
-        plt.ylabel("AVERAGE DISTANCE (COS)")
-        plt.title("NORMALIZED BY RULE 1")
-        plt.grid()
-
-        # add significance marker
-        for i,p_v in enumerate(stats_array[:,1]):
-            print(p_v)
-            if p_v < 0.05:
-                plt.scatter(x_axis[i]+2,avg[i]/avg_1[i]+0.05, marker="*", edgecolors="Red",label="K-W, 0.05")
-        handles, labels = plt.gca().get_legend_handles_labels()
-        by_label = OrderedDict(zip(labels, handles))
-        plt.legend(by_label.values(), by_label.keys())
-
-        plt.subplot(2, 2, 3)
-        plt.scatter(x_axis, avg/avg_2)
-        plt.xlabel("MAZE LOCATION / cm")
-        plt.ylabel("AVERAGE DISTANCE (COS)")
-        plt.title("NORMALIZED BY RULE 2")
-        plt.grid()
-
-        # add significance marker
-        for i,p_v in enumerate(stats_array[:,1]):
-            print(p_v)
-            if p_v < 0.05:
-                plt.scatter(x_axis[i]+2,avg[i]/avg_2[i]+0.05, marker="*", edgecolors="Red",label="K-W, 0.05")
-        handles, labels = plt.gca().get_legend_handles_labels()
-        by_label = OrderedDict(zip(labels, handles))
-        plt.legend(by_label.values(), by_label.keys())
-
-
-        plt.subplot(2, 2, 4)
-        plt.scatter(x_axis, stats_array[:,1])
-        plt.hlines(0.05,min(x_axis),max(x_axis),colors="Red",label="0.05")
-        plt.xlabel("MAZE LOCATION / cm")
-        plt.ylabel("P-VALUE")
-        plt.title("KRUSKAL: WITHIN-RULE vs. ACROSS-RULES")
-        plt.legend()
-        plt.grid()
-
-        plt.show()
 
 
 class ComparisonAnalysis(Analysis):
@@ -351,3 +385,59 @@ class ComparisonAnalysis(Analysis):
             outfile = open(filename, 'wb')
             pickle.dump(dic_spat_int, outfile)
             outfile.close()
+
+    def cross_cos_diff_spat_trials(self, spat_bin_dic_1, spat_bin_dic_2):
+
+        if len(spat_bin_dic_1.keys()) != len(spat_bin_dic_2.keys()):
+            print("Number of spatial bins in both dictionaries don't match")
+            exit()
+
+        nr_trials_rule_1 = next(iter(spat_bin_dic_1.values())).shape[1]
+        nr_trials_rule_2 = next(iter(spat_bin_dic_2.values())).shape[1]
+        nr_intervals = len(spat_bin_dic_1.keys())
+        x_axis = np.arange(0,200,self.param_dic["spatial_bin_size"])
+        x_axis = x_axis[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
+
+        col_map = cm.rainbow(np.linspace(0, 1, nr_trials_rule_2))
+
+        # go through all trials for rule 1 and compare each trial with all trials for rule 2
+        # --> each entry in dictionary is a spatial bin --> contains all population vectors
+
+        for trial_rule_2 in range(nr_trials_rule_2):
+            cross_diff = np.zeros((nr_intervals,nr_trials_rule_1))
+
+            # go through all spatial bins and calculate difference --> rows: spatial bins, columns: cos distances
+            for i, key in enumerate(spat_bin_dic_2):
+                cross_diff[i, :] = calc_diff(spat_bin_dic_1[key], np.expand_dims(spat_bin_dic_2[key][:,trial_rule_2],1),"cos").flatten()
+
+            plt.subplot(2,1,1)
+            plt.plot(x_axis, np.average(cross_diff,1), color= col_map[trial_rule_2,:], marker= "o", label="TRIAL "+str(trial_rule_2))
+            plt.legend()
+            plt.grid()
+            plt.xlim([min(x_axis), max(x_axis) + 20])
+            plt.title("DIFFERENCE BETWEEN EACH TRIAL OF RULE 2 AND ALL TRIALS OF RULE 1")
+            plt.xlabel("MAZE POSITION")
+            plt.ylabel("AVERAGE COS DIFFERENCE")
+
+        # go through all spatial bins and see how the difference changes with trials after rule switch
+        # --> each entry in dictionary is a spatial bin --> contains all population vectors
+
+        col_map = cm.tab20(np.linspace(0, 1, len(x_axis)))
+        spat_position = x_axis
+        x_axis = np.arange(nr_trials_rule_2)
+
+        for i, key in enumerate(spat_bin_dic_2):
+            cross_diff = np.zeros((nr_trials_rule_2, nr_trials_rule_1))
+            for trial_after_switch in range(nr_trials_rule_2):
+                cross_diff[trial_after_switch, :] = calc_diff(spat_bin_dic_1[key], np.expand_dims(spat_bin_dic_2[key][:,trial_after_switch],1),"cos").flatten()
+
+            plt.subplot(2, 1, 2)
+            plt.plot(x_axis, np.average(cross_diff,1), color= col_map[i,:],marker= "o", label=str(spat_position[i])+" cm")
+            plt.legend()
+            plt.title("DIFFERENCE BETWEEN EACH TRIAL OF RULE 2 AND ALL TRIALS OF RULE 1")
+            plt.xlabel("TRIAL ID RULE 2")
+            plt.xlim([0, nr_trials_rule_2 + 1])
+            plt.ylabel("AVERAGE COS DIFFERENCE")
+            plt.grid()
+
+        plt.show()
