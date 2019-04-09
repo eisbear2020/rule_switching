@@ -67,3 +67,16 @@ with RULE LIGHT
     * taking the average
     
 ![alt text](../plots/quant_compare_cos_trials_2_6.png)
+
+* relatively constant population states 
+* between 60 and 110 cm there seem to be clusters of different dynamics 
+    * can maybe check with parameters of the experiments what the difference might be 
+    due to
+    
+# COMPARISON OF POPULATION VECTORS FOR SAME RULE BEFORE/AFTER SLEEP
+
+* remapping also happens without a rule switch
+
+![alt text](../plots/quant_compare_cos_RULE1.png)
+
+![alt text](../plots/quant_compare_cos_trials_RULE1.png)
