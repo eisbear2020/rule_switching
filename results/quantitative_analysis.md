@@ -1,4 +1,4 @@
-# POPULATION VECTOR DIFFERENCE DURING RULE SWITCH: HPC
+# POPULATION VECTOR DIFFERENCE (REMAPPING) DURING RULE SWITCH: HPC
 
 Can we characterize the transition of the population states during rule switch?
 
@@ -33,11 +33,23 @@ distance for each spatial bin
 * continuous remapping for certain spatial positions. To measure the actual effect the 
 across-trial variability without rule switch needs to be taken into account.
 
-# POPULATION VECTOR DIFFERENCE COMPARISON OF DIFFERENT RULES
+# COMPARISON OF POPULATION VECTORS FOR DIFFERENT RULES
 
 Do we see significant differences in the dynamics of the system for two different rules?
 
-**Separating trials**:
+**Overal distance: RULE 1 (_2) vs. RULE 2 (_6)**:
+
+* calculate pair-wise cos distance between trials of RULE 1 and RULE 2 for each
+spatial bin
+* plot average/SEM of these pair-wise distances for each spatial bin
+* normalization: divide average of across-rule cos distances by within rule cos 
+distance for each spatial bin
+* significance: across-rules distance vs. union of within-rule distances
+
+![alt text](../plots/quant_compare_cos_2_6.png)
+
+
+**Separating trials: RULE 1 for rule switching session vs. RULE 2**:
 * for each spatial bin and trial after the switch: 
     * pair-wise cos differences between trail and each trial before the switch
     --> get array for all comparisons
@@ -46,3 +58,12 @@ Do we see significant differences in the dynamics of the system for two differen
 with RULE LIGHT
 
 ![alt text](../plots/quant_compare_cos_trials_4_6.png)
+
+
+**Separating trials: RULE 1 vs. RULE 2**:
+* for each spatial bin and trial of RULE 2: 
+    * pair-wise cos differences between trial and each trial of RULE 1
+    --> get array for all comparisons
+    * taking the average
+    
+![alt text](../plots/quant_compare_cos_trials_2_6.png)
