@@ -37,7 +37,7 @@ across-trial variability without rule switch needs to be taken into account.
 
 Do we see significant differences in the dynamics of the system for two different rules?
 
-**Overal distance: RULE 1 (_2) vs. RULE 2 (_6)**:
+**Overal distance: RULE 1 (_2/_4) vs. RULE 2 (_6)**:
 
 * calculate pair-wise cos distance between trials of RULE 1 and RULE 2 for each
 spatial bin
@@ -46,10 +46,10 @@ spatial bin
 distance for each spatial bin
 * significance: across-rules distance vs. union of within-rule distances
 
-![alt text](../plots/quant_compare_cos_2_6.png)
+![alt text](../plots/quant_compare_cos_2_4_6.png)
 
 
-**Separating trials: RULE 1 for rule switching session vs. RULE 2**:
+**Separating trials: RULE 1 (_2) for rule switching session vs. RULE 2 (_6)**:
 * for each spatial bin and trial after the switch: 
     * pair-wise cos differences between trail and each trial before the switch
     --> get array for all comparisons
@@ -60,13 +60,13 @@ with RULE LIGHT
 ![alt text](../plots/quant_compare_cos_trials_4_6.png)
 
 
-**Separating trials: RULE 1 vs. RULE 2**:
+**Separating trials: RULE 1 (_2,_4) vs. RULE 2 (_6)**:
 * for each spatial bin and trial of RULE 2: 
     * pair-wise cos differences between trial and each trial of RULE 1
     --> get array for all comparisons
     * taking the average
     
-![alt text](../plots/quant_compare_cos_trials_2_6.png)
+![alt text](../plots/quant_compare_cos_trials_2_4_6.png)
 
 * relatively constant population states 
 * between 60 and 110 cm there seem to be clusters of different dynamics 
