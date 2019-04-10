@@ -222,8 +222,8 @@ if __name__ == '__main__':
     #
     # new_transition_analysis.plot_remap_results()
 
-    new_transition_analysis.characterize_cells(pickle.load(open("temp_data/quant_analysis/SWITCH_RULE LIGHT_spatial", "rb")),
-                                 pickle.load(open("temp_data/quant_analysis/SWITCH_RULE WEST_spatial", "rb")))
+    new_transition_analysis.characterize_cells(pickle.load(open("temp_data/quant_analysis/RULE_LIGHT_spatial_2_4", "rb")),
+                                 pickle.load(open("temp_data/quant_analysis/RULE WEST_spatial", "rb")))
 
 #######################################################################################################################
 #   STATE TRANSITION ANALYSIS

@@ -83,6 +83,21 @@ distribution of within and across rule distance:
     * can maybe check with parameters of the experiments what the difference might be 
     due to
     
+## Identifying cells that contribute to difference
+
+* average firing rate using both rules
+* effect size: diff / pooled std
+* contribution to cos diff: leave-one-out analysis
+* change of p-value for KW (within div. vs. across div.) using leave-one-out analysis
+
+![alt text](../plots/quant_compare_cos_cells.png)
+
+* removing cells 46 and 69:
+
+![alt text](../plots/quant_compare_cos_trials_2_removed_cells.png)
+
+* difference seem to depend on other cells after the initial transition as well
+
 # COMPARISON OF POPULATION VECTORS FOR SAME RULE BEFORE/AFTER SLEEP
 
 * remapping also happens without a rule switch --> seems to be happening 
