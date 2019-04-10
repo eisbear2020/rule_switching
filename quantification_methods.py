@@ -104,25 +104,25 @@ class Analysis():
             within_diff_2[i,:] = temp2[np.triu_indices(temp2.shape[0],1)]
 
 
-        #plot distributions for each bin
-
-        # row for plot
-        c_r = -1
-        c_p = 0
-        fig, ax = plt.subplots(6, 3)
-        for i, (w_d_1, w_d_2, c_d) in enumerate(zip(within_diff_1, within_diff_2, cross_diff)):
-            w_d = np.hstack((w_d_1, w_d_2))
-            if not np.mod(i, 3):
-                c_r += 1
-                c_p = 0
-            ax[c_r,c_p].hist(w_d, label= "WITHIN", bins=40)
-            ax[c_r,c_p].vlines(np.median(w_d),0,10, label="MEDIAN WITHIN",colors="blue")
-            ax[c_r,c_p].hist(c_d,label="CROSS DIFF",bins=40)
-            ax[c_r, c_p].vlines(np.median(c_d),0,10, label="MEDIAN CROSS",colors="red")
-            ax[c_r,c_p].legend()
-
-            c_p += 1
-        plt.show()
+        # #plot distributions for each bin
+        #
+        # # row for plot
+        # c_r = -1
+        # c_p = 0
+        # fig, ax = plt.subplots(6, 3)
+        # for i, (w_d_1, w_d_2, c_d) in enumerate(zip(within_diff_1, within_diff_2, cross_diff)):
+        #     w_d = np.hstack((w_d_1, w_d_2))
+        #     if not np.mod(i, 3):
+        #         c_r += 1
+        #         c_p = 0
+        #     ax[c_r,c_p].hist(w_d, label= "WITHIN", bins=40)
+        #     ax[c_r,c_p].vlines(np.median(w_d),0,10, label="MEDIAN WITHIN",colors="blue")
+        #     ax[c_r,c_p].hist(c_d,label="CROSS DIFF",bins=40)
+        #     ax[c_r, c_p].vlines(np.median(c_d),0,10, label="MEDIAN CROSS",colors="red")
+        #     ax[c_r,c_p].legend()
+        #
+        #     c_p += 1
+        # plt.show()
 
         # for each spatial bin compare union of within_diff_1/within_diff_2 and cross_diff
         for i, (w_d_1, w_d_2, c_d) in enumerate(zip(within_diff_1, within_diff_2, cross_diff)):
@@ -185,7 +185,7 @@ class Analysis():
 
             self.cross_cos_diff(dic_1_c, dic_2_c)
             cell_to_p_value_contribution[cell_ID,:] = init_stats[:,1]-self.stats_array[:,1]
-            cell_to_diff_contribution[cell_ID,:] = np.average(init_cross, axis = 1) - np.average(self.cross_diff,axis=1)
+            cell_to_diff_contribution[cell_ID,:] = np.median(init_cross, axis = 1) - np.median(self.cross_diff,axis=1)
 
         return cell_to_diff_contribution, cell_to_p_value_contribution
 
