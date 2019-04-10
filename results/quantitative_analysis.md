@@ -22,6 +22,10 @@ distance for each spatial bin
 * above plot considers union of all trials
 * can we tell something from different results of the normalization by rule 1 and rule b?
 
+histograms of within vs. across rule cos distance
+
+![alt text](../plots/quant_transition_cos_histograms.png)
+
 **Separating trials**:
 * for each spatial bin and trial after the switch: 
     * pair-wise cos differences between trail and each trial before the switch
@@ -32,6 +36,20 @@ distance for each spatial bin
 
 * continuous remapping for certain spatial positions. To measure the actual effect the 
 across-trial variability without rule switch needs to be taken into account.
+
+## Identifying cells that contribute to difference
+
+* average firing rate using both rules
+* effect size: diff / pooled std
+* contribution to cos diff: leave-one-out analysis
+* change of p-value for KW (within div. vs. across div.) using leave-one-out analysis
+
+![alt text](../plots/quant_transition_cos_cells.png)
+
+* removing cells 46 and 69 significantly reduces the cosine difference for the rule switch
+for the last couple of spatial bins 
+
+![alt text](../plots/quant_transition_cos_trials_2_removed_cells.png)
 
 # COMPARISON OF POPULATION VECTORS FOR DIFFERENT RULES
 
@@ -48,23 +66,15 @@ distance for each spatial bin
 
 ![alt text](../plots/quant_compare_cos_2_4_6.png)
 
+distribution of within and across rule distance:
 
-**Separating trials: RULE 1 (_2) for rule switching session vs. RULE 2 (_6)**:
-* for each spatial bin and trial after the switch: 
-    * pair-wise cos differences between trail and each trial before the switch
-    --> get array for all comparisons
-    * taking the average
-* comparing trials of the next day session (_6, RULE WEST) with trials of the rule switch session
-with RULE LIGHT
-
-![alt text](../plots/quant_compare_cos_trials_4_6.png)
-
+![alt text](../plots/quant_compare_cos_histograms.png)
 
 **Separating trials: RULE 1 (_2,_4) vs. RULE 2 (_6)**:
 * for each spatial bin and trial of RULE 2: 
     * pair-wise cos differences between trial and each trial of RULE 1
     --> get array for all comparisons
-    * taking the average
+    * taking the median
     
 ![alt text](../plots/quant_compare_cos_trials_2_4_6.png)
 
@@ -75,8 +85,11 @@ with RULE LIGHT
     
 # COMPARISON OF POPULATION VECTORS FOR SAME RULE BEFORE/AFTER SLEEP
 
-* remapping also happens without a rule switch
+* remapping also happens without a rule switch --> seems to be happening 
+in different spatial locations
 
 ![alt text](../plots/quant_compare_cos_RULE1.png)
+
+![alt text](../plots/quant_compare_cos_RULE1_hist.png)
 
 ![alt text](../plots/quant_compare_cos_trials_RULE1.png)

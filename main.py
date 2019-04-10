@@ -188,14 +188,10 @@ if __name__ == '__main__':
     #      pickle.load(open("temp_data/quant_analysis/RULE WEST_spatial", "rb")))
     # new_comparison.plot_remap_results()
 
-    # new_comparison.cross_cos_diff_spat_trials(pickle.load(open("temp_data/quant_analysis/RULE_LIGHT_spatial_2_4", "rb")),
-    #                                           pickle.load(open("temp_data/quant_analysis/RULE WEST_spatial", "rb")))
+    new_comparison.cross_cos_diff(pickle.load(open("temp_data/quant_analysis/RULE LIGHT_spatial", "rb")),
+                                              pickle.load(open("temp_data/quant_analysis/SWITCH_RULE LIGHT_spatial", "rb")))
 
-    # leave one out analysis
-
-    # new_comparison.leave_one_out(pickle.load(open("temp_data/quant_analysis/SWITCH_RULE LIGHT_spatial", "rb")),
-    #                                           pickle.load(open("temp_data/quant_analysis/SWITCH_RULE WEST_spatial", "rb")))
-
+    new_comparison.plot_remap_results()
 ########################################################################################################################
 #   TRANSITION ANALYSIS (RULE A --> RULE B)
 ########################################################################################################################
@@ -212,8 +208,8 @@ if __name__ == '__main__':
 
     # QUANTITATIVE ANALYSIS
     # ------------------------------------------------------------------------------------------------------------------
-    new_rule_trial = 7
-    new_transition_analysis = TransitionAnalysis(res_rule_switch, whl_lin_rule_switch,param_dic, new_rule_trial)
+    # new_rule_trial = 7
+    # new_transition_analysis = TransitionAnalysis(res_rule_switch, whl_lin_rule_switch,param_dic, new_rule_trial)
 
     #new_transition_analysis.create_save_spatial_bin_dictionary()
 
@@ -223,11 +219,13 @@ if __name__ == '__main__':
     #
     # new_transition_analysis.cross_cos_diff(pickle.load(open("temp_data/quant_analysis/RULE_LIGHT_spatial_2_4", "rb")),
     #                                             pickle.load(open("temp_data/quant_analysis/SWITCH_RULE WEST_spatial", "rb")))
+    #
+    # new_transition_analysis.plot_remap_results()
 
-    new_transition_analysis.characterize_cells(pickle.load(open("temp_data/quant_analysis/SWITCH_RULE LIGHT_spatial", "rb")),
-                                 pickle.load(open("temp_data/quant_analysis/SWITCH_RULE WEST_spatial", "rb")))
+    # new_transition_analysis.characterize_cells(pickle.load(open("temp_data/quant_analysis/SWITCH_RULE LIGHT_spatial", "rb")),
+    #                              pickle.load(open("temp_data/quant_analysis/SWITCH_RULE WEST_spatial", "rb")))
 
-########################################################################################################################
+#######################################################################################################################
 #   STATE TRANSITION ANALYSIS
 ########################################################################################################################
 

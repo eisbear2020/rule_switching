@@ -352,6 +352,15 @@ def calc_loc_and_speed(whl):
 
 
 def calc_cohens_d(dat1, dat2):
-    print("TO IMPLEMENT")
+
     # calculates cohens D --> assumption of normal distributions
-    #pooled_std = np.sqrt(((dat1.shape[])))
+    pooled_std = np.sqrt(((dat1.shape[1]-1)*np.std(dat1,axis=1)**2+(dat2.shape[1]-1)*np.std(dat2,axis=1)**2)/
+                         (dat1.shape[1]+dat2.shape[1]-2))
+    # add small value to avoid division by zero
+    pooled_std += 0.000001
+
+    diff_avg = np.average(dat1,axis=1) - np.average(dat2,axis=1)
+
+    return diff_avg/pooled_std
+
+

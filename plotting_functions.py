@@ -27,7 +27,8 @@ import matplotlib.colors as clr
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.colors as colors
 from scipy import stats
-
+from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
+from mpl_toolkits.axes_grid1.colorbar import colorbar
 
 def plot_act_mat(act_mat,bin_interval):
 # plot activation matrix (matrix of population vectors)
@@ -346,54 +347,54 @@ def plot_remapping_summary(cross_diff, within_diff_1, within_diff_2, stats_array
     x_axis = np.arange(0, 200, param_dic["spatial_bin_size"])
     x_axis = x_axis[param_dic["spat_bins_excluded"][0]:param_dic["spat_bins_excluded"][-1]]
 
-    avg_1 = np.average(within_diff_1, axis=1)
-    avg_2 = np.average(within_diff_2, axis=1)
+    med_1 = np.median(within_diff_1, axis=1)
+    med_2 = np.median(within_diff_2, axis=1)
 
-    avg = np.average(cross_diff, axis=1)
+    med = np.median(cross_diff, axis=1)
     err = stats.sem(cross_diff, axis=1)
 
 
     plt.subplot(2, 2, 1)
-    plt.errorbar(x_axis, avg, yerr=err, fmt="o")
+    plt.errorbar(x_axis, med, yerr=err, fmt="o")
     plt.grid()
     plt.xlabel("MAZE LOCATION / cm")
-    plt.ylabel("AVERAGE DISTANCE (COS) - AVG & SEM")
+    plt.ylabel("MEDIAN DISTANCE (COS) - MED & SEM")
     plt.title("ABSOLUTE")
 
     # add significance marker
     for i, p_v in enumerate(stats_array[:, 1]):
         if p_v < 0.05:
-            plt.scatter(x_axis[i] + 2, avg[i] + 0.02, marker="*", edgecolors="Red", label="K-W, 0.05")
+            plt.scatter(x_axis[i] + 2, med[i] + 0.02, marker="*", edgecolors="Red", label="K-W, 0.05")
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = OrderedDict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys())
 
     plt.subplot(2, 2, 2)
-    plt.scatter(x_axis, avg / avg_1)
+    plt.scatter(x_axis, med / med_1)
     plt.xlabel("MAZE LOCATION / cm")
-    plt.ylabel("AVERAGE DISTANCE (COS)")
+    plt.ylabel("MEDIAN DISTANCE (COS)")
     plt.title("NORMALIZED BY RULE 1")
     plt.grid()
 
     # add significance marker
     for i, p_v in enumerate(stats_array[:, 1]):
         if p_v < 0.05:
-            plt.scatter(x_axis[i] + 2, avg[i] / avg_1[i] + 0.05, marker="*", edgecolors="Red", label="K-W, 0.05")
+            plt.scatter(x_axis[i] + 2, med[i] / med_1[i] + 0.05, marker="*", edgecolors="Red", label="K-W, 0.05")
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = OrderedDict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys())
 
     plt.subplot(2, 2, 3)
-    plt.scatter(x_axis, avg / avg_2)
+    plt.scatter(x_axis, med / med_2)
     plt.xlabel("MAZE LOCATION / cm")
-    plt.ylabel("AVERAGE DISTANCE (COS)")
+    plt.ylabel("MEDIAN DISTANCE (COS)")
     plt.title("NORMALIZED BY RULE 2")
     plt.grid()
 
     # add significance marker
     for i, p_v in enumerate(stats_array[:, 1]):
         if p_v < 0.05:
-            plt.scatter(x_axis[i] + 2, avg[i] / avg_2[i] + 0.05, marker="*", edgecolors="Red", label="K-W, 0.05")
+            plt.scatter(x_axis[i] + 2, med[i] / med_2[i] + 0.05, marker="*", edgecolors="Red", label="K-W, 0.05")
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = OrderedDict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys())
@@ -406,5 +407,62 @@ def plot_remapping_summary(cross_diff, within_diff_1, within_diff_2, stats_array
     plt.title("KRUSKAL: WITHIN-RULE vs. ACROSS-RULES")
     plt.legend()
     plt.grid()
+
+    plt.show()
+
+
+def plot_cell_charact(cell_avg_rate_map, cohens_d, cell_to_diff_contribution, cell_to_p_value_contribution,xlabel):
+
+    fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4)
+    fig.subplots_adjust(wspace=0.1)
+
+    im1 = ax1.imshow(cell_avg_rate_map, interpolation='nearest', aspect='auto',cmap="jet",extent=[min(xlabel),max(xlabel),cell_avg_rate_map.shape[0]-0.5,0.5])
+    ax1_divider = make_axes_locatable(ax1)
+    # add an axes to the right of the main axes.
+    cax1 = ax1_divider.append_axes("top", size="7%", pad="2%")
+    cb1 = colorbar(im1, cax=cax1,orientation="horizontal")
+    cax1.xaxis.set_ticks_position("top")
+    ax1.set_xlabel("LINEARIZED POSITION / cm")
+    ax1.set_ylabel("CELL ID")
+    cax1.set_title("AVERAGE FIRING RATE")
+
+    # hide y label
+    ax2.set_yticklabels([])
+    im2 = ax2.imshow(cohens_d, interpolation='nearest', aspect='auto',cmap="jet",extent=[min(xlabel),max(xlabel),cell_avg_rate_map.shape[0]-0.5,0.5])
+    ax2_divider = make_axes_locatable(ax2)
+    # add an axes above the main axes.
+    cax2 = ax2_divider.append_axes("top", size="7%", pad="2%")
+    cb2 = colorbar(im2, cax=cax2, orientation="horizontal")
+    # change tick position to top. Tick position defaults to bottom and overlaps
+    # the image.
+    cax2.xaxis.set_ticks_position("top")
+    ax2.set_xlabel("LINEARIZED POSITION / cm")
+    cax2.set_title("EFFECT SIZE: RULE A vs. RULE B")
+
+    # hide y label
+    ax3.set_yticklabels([])
+    im3 = ax3.imshow(cell_to_diff_contribution, interpolation='nearest', aspect='auto',cmap="jet",extent=[min(xlabel),max(xlabel),cell_avg_rate_map.shape[0]-0.5,0.5])
+    ax3_divider = make_axes_locatable(ax3)
+    # add an axes above the main axes.
+    cax3 = ax3_divider.append_axes("top", size="7%", pad="2%")
+    cb3 = colorbar(im3, cax=cax3, orientation="horizontal")
+    # change tick position to top. Tick position defaults to bottom and overlaps
+    # the image.
+    cax3.xaxis.set_ticks_position("top")
+    ax3.set_xlabel("LINEARIZED POSITION / cm")
+    cax3.set_title("CONTRIBUTION TO DIFF (RULE A vs. RULE B)")
+
+    # hide y label
+    ax4.set_yticklabels([])
+    im4 = ax4.imshow(cell_to_p_value_contribution, interpolation='nearest', aspect='auto',cmap="jet",extent=[min(xlabel),max(xlabel),cell_avg_rate_map.shape[0]-0.5,0.5])
+    ax4_divider = make_axes_locatable(ax4)
+    # add an axes above the main axes.
+    cax4 = ax4_divider.append_axes("top", size="7%", pad="2%")
+    cb4 = colorbar(im4, cax=cax4, orientation="horizontal")
+    # change tick position to top. Tick position defaults to bottom and overlaps
+    # the image.
+    cax4.xaxis.set_ticks_position("top")
+    ax4.set_xlabel("LINEARIZED POSITION / cm")
+    cax4.set_title("CHANGE OF P-VALUE KW(RULE A vs. RULE B)")
 
     plt.show()
