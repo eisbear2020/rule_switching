@@ -17,6 +17,15 @@ contains different analysis approaches for manifolds and uses functions from com
 * ManifoldTransition: evaluates the manifold change e.g during rule switch
 * ManifoldCompare:  compares results of two different conditions using dimensionality reduction and transforming each trial separately
 
+## quantification_methods.py
+contains different analysis approaches to quantify the results from the 
+manifold analysis
+
+* BinDictionary: class for creation & modification of binned dictionaries. One dictionary contains one entry
+ per bin. One bin contains all population vectors as column vectors of different trials
+
+* Analysis: class that analysis the data contained in binned dictionaries
+
 ## comp_functions.py
 contains functions that compute parts of a thorough analysis:
 

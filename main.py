@@ -15,6 +15,8 @@
 #           - comparison analysis (RULE A vs. RULE B)
 #           - state transition analysis (difference vectors between population states)
 #
+#   TODO: think about parameter dictionary --> maybe split into two: one for manifold and one for quantitative
+#
 ########################################################################################################################
 
 import pickle
@@ -24,8 +26,9 @@ from manifold_methods import ManifoldTransition
 from manifold_methods import ManifoldCompare
 from comp_functions import calc_loc_and_speed
 
-from quantification_methods import TransitionAnalysis
-from quantification_methods import ComparisonAnalysis
+from quantification_methods import BinDictionary
+from quantification_methods import Analysis
+
 
 if __name__ == '__main__':
 
@@ -87,11 +90,18 @@ if __name__ == '__main__':
     # PCA --> p2: number of components
     param_dic["dr_method_p2"] = 3
 
-
     # number of trials to compare
     param_dic["nr_of_trials"] = 21
     # selected trial
     param_dic["sel_trial"] = 3
+
+    # QUANTITATIVE ANALYSIS
+    # ------------------------------------------------------------------------------------------------------------------
+    # statistical method: Kruskall-Wallis --> "KW", Mann-Whitney-U --> "MWU"
+    param_dic["stats_method"] = "MWU"
+
+    # alpha value
+    param_dic["stats_alpha"] = 0.01
 
     # PLOTTING PARAMETERS
     # ------------------------------------------------------------------------------------------------------------------
@@ -100,6 +110,9 @@ if __name__ == '__main__':
     param_dic["save_plot"] = False
     # lines in scatter plot
     param_dic["lines"] = True
+
+    # saving directory for bin dictionaries
+    param_dic["saving_dir_bin_dic"] = "temp_data/quant_analysis/"
 
 
     # length of spatial segment for plotting (track [200cm] will be divided into equal length segments)
@@ -158,7 +171,7 @@ if __name__ == '__main__':
 ########################################################################################################################
 
     # MANIFOLD ANALYSIS
-    # ------------------------------------------------------------------------------------------------------------------
+    ####################################################################################################################
 
     # look at one rule across multiple trials
     # ------------------------------------------------------------------------------------------------------------------
@@ -174,30 +187,28 @@ if __name__ == '__main__':
     # new_comparison.state_analysis()
 
     # QUANTITATIVE ANALYSIS
+    ####################################################################################################################
+
+    # create binned dictionaries
     # ------------------------------------------------------------------------------------------------------------------
-    # new_comparison = ComparisonAnalysis([res_rule_light, res_rule_west],[whl_lin_rule_light, whl_lin_rule_west],
-    #                                     param_dic)
+    # dic = BinDictionary(param_dic)
+    # dic.create_spatial_bin_dictionary(res_rule_light, whl_lin_rule_light, "RULE_LIGHT")
+    # dic.create_spatial_bin_dictionary(res_rule_west, whl_lin_rule_west, "RULE_WEST")
+    #dic.combine_bin_dictionaries("RULE_LIGHT_spatial","SWITCH_LIGHT_spatial","RULE_LIGHT_2_4")
 
-    # # create dictionaries
-    # new_comparison.create_save_spatial_bin_dictionary()
-    # new_comparison.combine_bin_dictionaries(pickle.load(open("temp_data/quant_analysis/RULE WEST_spatial", "rb")),
-    #      pickle.load(open("temp_data/quant_analysis/SWITCH_RULE WEST_spatial", "rb")),"RULE_WEST_spatial_4_6")
 
-    # # compare RULE A and RULE B
-    # new_comparison.cross_cos_diff(pickle.load(open("temp_data/quant_analysis/RULE_LIGHT_spatial_2_4", "rb")),
-    #      pickle.load(open("temp_data/quant_analysis/RULE WEST_spatial", "rb")))
-    # new_comparison.plot_remap_results()
+    # compare RULE A and RULE B
+    # ------------------------------------------------------------------------------------------------------------------
+    # new_compare = Analysis("RULE_LIGHT_2_4", "RULE_WEST_spatial", param_dic)
+    # new_compare.cross_cos_diff()
+    # new_compare.cross_cos_diff_spat_trials()
 
-    # new_comparison.cross_cos_diff(pickle.load(open("temp_data/quant_analysis/RULE LIGHT_spatial", "rb")),
-    #                                           pickle.load(open("temp_data/quant_analysis/SWITCH_RULE LIGHT_spatial", "rb")))
-    #
-    # new_comparison.plot_remap_results()
 ########################################################################################################################
 #   TRANSITION ANALYSIS (RULE A --> RULE B)
 ########################################################################################################################
 
     # MANIFOLD ANALYSIS
-    # ------------------------------------------------------------------------------------------------------------------
+    ####################################################################################################################
 
     # trial with new rule
     # new_rule_trial = 9
@@ -207,23 +218,23 @@ if __name__ == '__main__':
     # new_analysis.plot_in_one_fig_color_position()
 
     # QUANTITATIVE ANALYSIS
+    ####################################################################################################################
+
+    # create binned dictionaries
     # ------------------------------------------------------------------------------------------------------------------
-    new_rule_trial = 7
-    new_transition_analysis = TransitionAnalysis(res_rule_switch, whl_lin_rule_switch,param_dic, new_rule_trial)
+    # dic = BinDictionary(param_dic)
+    # new_rule_trial = 7
+    # dic.create_spatial_bin_dictionaries_transition(res_rule_switch, whl_lin_rule_switch, new_rule_trial, "LIGHT", "WEST")
 
-    #new_transition_analysis.create_save_spatial_bin_dictionary()
+    # new_transition = Analysis("SWITCH_LIGHT_spatial", "SWITCH_WEST_spatial", param_dic)
+    # new_transition.cross_cos_diff()
+    # new_transition.cross_cos_diff_spat_trials()
+    # new_transition.characterize_cells()
+    # new_transition.remove_cells([46,69])
 
-    # load spatial bin dictionaries
-    # new_transition_analysis.cross_cos_diff_spat_trials(pickle.load(open("temp_data/quant_analysis/RULE_LIGHT_spatial_2_4", "rb")),
-    # pickle.load(open("temp_data/quant_analysis/SWITCH_RULE WEST_spatial","rb")))
-    #
-    # new_transition_analysis.cross_cos_diff(pickle.load(open("temp_data/quant_analysis/RULE_LIGHT_spatial_2_4", "rb")),
-    #                                             pickle.load(open("temp_data/quant_analysis/SWITCH_RULE WEST_spatial", "rb")))
-    #
-    # new_transition_analysis.plot_remap_results()
-
-    new_transition_analysis.characterize_cells(pickle.load(open("temp_data/quant_analysis/RULE_LIGHT_spatial_2_4", "rb")),
-                                 pickle.load(open("temp_data/quant_analysis/RULE WEST_spatial", "rb")))
+    # new_transition = Analysis("RULE_LIGHT_spatial", "SWITCH_LIGHT_spatial", param_dic)
+    # new_transition.cross_cos_diff()
+    # new_transition.cross_cos_diff_spat_trials()
 
 #######################################################################################################################
 #   STATE TRANSITION ANALYSIS

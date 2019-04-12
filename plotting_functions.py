@@ -363,8 +363,9 @@ def plot_remapping_summary(cross_diff, within_diff_1, within_diff_2, stats_array
 
     # add significance marker
     for i, p_v in enumerate(stats_array[:, 1]):
-        if p_v < 0.05:
-            plt.scatter(x_axis[i] + 2, med[i] + 0.02, marker="*", edgecolors="Red", label="K-W, 0.05")
+        if p_v < param_dic["stats_alpha"]:
+            plt.scatter(x_axis[i] + 2, med[i] + 0.02, marker="*", edgecolors="Red",
+                        label=param_dic["stats_method"]+", "+str(param_dic["stats_alpha"]))
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = OrderedDict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys())
@@ -373,13 +374,14 @@ def plot_remapping_summary(cross_diff, within_diff_1, within_diff_2, stats_array
     plt.scatter(x_axis, med / med_1)
     plt.xlabel("MAZE LOCATION / cm")
     plt.ylabel("MEDIAN DISTANCE (COS)")
-    plt.title("NORMALIZED BY RULE 1")
+    plt.title("NORMALIZED BY DATA SET 1")
     plt.grid()
 
     # add significance marker
     for i, p_v in enumerate(stats_array[:, 1]):
-        if p_v < 0.05:
-            plt.scatter(x_axis[i] + 2, med[i] / med_1[i] + 0.05, marker="*", edgecolors="Red", label="K-W, 0.05")
+        if p_v < param_dic["stats_alpha"]:
+            plt.scatter(x_axis[i] + 2, med[i] / med_1[i] + 0.05, marker="*", edgecolors="Red",
+                        label=param_dic["stats_method"]+", "+str(param_dic["stats_alpha"]))
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = OrderedDict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys())
@@ -388,23 +390,24 @@ def plot_remapping_summary(cross_diff, within_diff_1, within_diff_2, stats_array
     plt.scatter(x_axis, med / med_2)
     plt.xlabel("MAZE LOCATION / cm")
     plt.ylabel("MEDIAN DISTANCE (COS)")
-    plt.title("NORMALIZED BY RULE 2")
+    plt.title("NORMALIZED BY DATA SET 2")
     plt.grid()
 
     # add significance marker
     for i, p_v in enumerate(stats_array[:, 1]):
-        if p_v < 0.05:
-            plt.scatter(x_axis[i] + 2, med[i] / med_2[i] + 0.05, marker="*", edgecolors="Red", label="K-W, 0.05")
+        if p_v < param_dic["stats_alpha"]:
+            plt.scatter(x_axis[i] + 2, med[i] / med_2[i] + 0.05, marker="*", edgecolors="Red",
+                        label=param_dic["stats_method"]+", "+str(param_dic["stats_alpha"]))
     handles, labels = plt.gca().get_legend_handles_labels()
     by_label = OrderedDict(zip(labels, handles))
     plt.legend(by_label.values(), by_label.keys())
 
     plt.subplot(2, 2, 4)
     plt.scatter(x_axis, stats_array[:, 1])
-    plt.hlines(0.05, min(x_axis), max(x_axis), colors="Red", label="0.05")
+    plt.hlines(param_dic["stats_alpha"], min(x_axis), max(x_axis), colors="Red", label=str(param_dic["stats_alpha"]))
     plt.xlabel("MAZE LOCATION / cm")
     plt.ylabel("P-VALUE")
-    plt.title("KRUSKAL: WITHIN-RULE vs. ACROSS-RULES")
+    plt.title(param_dic["stats_method"]+": WITHIN-RULE vs. ACROSS-RULES")
     plt.legend()
     plt.grid()
 
