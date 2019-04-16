@@ -486,7 +486,9 @@ class Analysis:
         nr_cells = 10
 
         # check contribution of first ten cells after sorting
-        contribution_array = np.full((nr_cells, cell_to_diff_contribution.shape[1]),np.nan)
+        contribution_array = np.full((nr_cells+1, cell_to_diff_contribution.shape[1]),np.nan)
+        # make first column all zero
+        contribution_array[0, :] = 0
 
         # go through spatial bins
         for i, spat_bin in enumerate(cell_to_diff_contribution.T):
@@ -495,12 +497,12 @@ class Analysis:
             # sort cells with positive contribution according to magnitude of contribution
             temp = np.cumsum(np.flip(np.sort(temp)))
             # copy to contribution array
-            contribution_array[:min(nr_cells, temp.shape[0]), i] = temp[:min(nr_cells, temp.shape[0])]
+            contribution_array[1:min(nr_cells, temp.shape[0])+1, i] = temp[:min(nr_cells, temp.shape[0])]
 
         col_map = cm.rainbow(np.linspace(0, 1, x_axis.shape[0]))
 
         for i, contribution in enumerate(contribution_array.T):
-            plt.plot(np.arange(1, nr_cells+1), contribution, color=col_map[i, :], label=str(x_axis[i])+" cm",
+            plt.plot(np.arange(0, nr_cells+1), contribution, color=col_map[i, :], label=str(x_axis[i])+" cm",
                      marker="o")
 
         plt.title("CELL CONTRIBUTION TO DIFFERENCE")

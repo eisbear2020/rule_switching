@@ -226,7 +226,7 @@ if __name__ == '__main__':
     # new_rule_trial = 7
     # dic.create_spatial_bin_dictionaries_transition(res_rule_switch, whl_lin_rule_switch, new_rule_trial, "LIGHT", "WEST")
 
-    new_transition = Analysis("RULE_LIGHT_spatial", "SWITCH_LIGHT_spatial", param_dic)
+    new_transition = Analysis("SWITCH_LIGHT_spatial", "SWITCH_WEST_spatial", param_dic)
     # new_transition.cross_cos_diff()
     # new_transition.cross_cos_diff_spat_trials()
     # new_transition.characterize_cells()
