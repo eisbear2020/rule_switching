@@ -106,7 +106,7 @@ distribution of within and across rule distance:
 
 ![alt text](../plots/quant_cell_contrib_switch.png)
 
-##rule light (2, 4) vs. rule west (6)
+## rule light (2, 4) vs. rule west (6)
 
 * relative contribution/nr. of cells comparing rule light vs. rule west
 during rule switch
@@ -118,6 +118,17 @@ during rule switch
 * relative contribution/nr. of cells to difference
 
 ![alt text](../plots/quant_cell_contrib_recon_light.png)
+
+* 3 cases:
+
+  * cum. rel. contribution low: cannot account for majority difference by single
+  cells using leave-one-out --> global remapping
+
+  * steep raise for first couple of cells: major contribution to difference from
+  few cells --> local remapping
+
+  * monotonically increasing curve: several cells contribute majorly to
+  difference --> between global and local remapping
 
 # COMPARISON OF POPULATION VECTORS FOR SAME RULE BEFORE/AFTER SLEEP
 
