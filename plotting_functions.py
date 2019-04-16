@@ -29,6 +29,7 @@ import matplotlib.colors as colors
 from scipy import stats
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 from mpl_toolkits.axes_grid1.colorbar import colorbar
+from matplotlib.colors import LogNorm
 
 
 def plot_act_mat(act_mat,bin_interval):
@@ -142,7 +143,6 @@ def plot_2D_scatter(ax,mds,param_dic,data_sep = None, loc_vec = []):
 
     ax.set_yticklabels([])
     ax.set_xticklabels([])
-
 
 def plot_3D_scatter(ax, mds, param_dic, data_sep=None, loc_vec=[]):
     # generates 3D scatter plot with selected data --> for more than 1 data set, data_sep needs to be defined to
@@ -445,7 +445,8 @@ def plot_cell_charact(cell_avg_rate_map, cohens_d, cell_to_diff_contribution, ce
 
     # hide y label
     ax3.set_yticklabels([])
-    im3 = ax3.imshow(cell_to_diff_contribution, interpolation='nearest', aspect='auto',cmap="jet",extent=[min(xlabel),max(xlabel),cell_avg_rate_map.shape[0]-0.5,0.5])
+    im3 = ax3.imshow(np.log(cell_to_diff_contribution), interpolation='nearest',
+                     aspect='auto',cmap="jet",extent=[min(xlabel),max(xlabel),cell_avg_rate_map.shape[0]-0.5,0.5])
     ax3_divider = make_axes_locatable(ax3)
     # add an axes above the main axes.
     cax3 = ax3_divider.append_axes("top", size="7%", pad="2%")
@@ -454,7 +455,7 @@ def plot_cell_charact(cell_avg_rate_map, cohens_d, cell_to_diff_contribution, ce
     # the image.
     cax3.xaxis.set_ticks_position("top")
     ax3.set_xlabel("LINEARIZED POSITION / cm")
-    cax3.set_title("REL. CONTRIBUTION TO DIFF (RULE A vs. RULE B)")
+    cax3.set_title("REL. CONTRIBUTION TO DIFF (RULE A vs. RULE B) / LOG")
 
     # # hide y label
     # ax4.set_yticklabels([])

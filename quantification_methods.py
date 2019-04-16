@@ -281,10 +281,10 @@ class Analysis:
                 if not np.mod(i, 3):
                     c_r += 1
                     c_p = 0
-                ax[c_r, c_p].hist(w_d, label= "WITHIN", bins=40)
-                ax[c_r, c_p].vlines(np.median(w_d),0,10, label="MEDIAN WITHIN",colors="blue")
-                ax[c_r, c_p].hist(c_d,label="CROSS DIFF",bins=40)
-                ax[c_r, c_p].vlines(np.median(c_d),0,10, label="MEDIAN CROSS",colors="red")
+                ax[c_r, c_p].hist(w_d, label="WITHIN", bins=40)
+                ax[c_r, c_p].vlines(np.median(w_d), 0, 10, label="MEDIAN WITHIN", colors="blue")
+                ax[c_r, c_p].hist(c_d, label="CROSS DIFF", bins=40)
+                ax[c_r, c_p].vlines(np.median(c_d), 0, 10, label="MEDIAN CROSS", colors="red")
                 ax[c_r, c_p].legend()
                 ax[c_r, c_p].set_title("INT "+str(i))
 
@@ -329,8 +329,7 @@ class Analysis:
             # calculate cross diff for modified dic with deleted cell
             cross_diff_mod, _, _, stats_array_mod = self.cross_cos_diff(False, dic_1_c, dic_2_c)
             cell_to_p_value_contribution[cell_ID, :] = self.stats_array[:, 1] - stats_array_mod[:, 1]
-            cell_to_diff_contribution[cell_ID, :] = 1 - \
-                                                    np.median(cross_diff_mod, axis=1)/np.median(self.cross_diff, axis=1)
+            cell_to_diff_contribution[cell_ID, :] = np.median(self.cross_diff, axis=1)/np.median(cross_diff_mod, axis=1)
 
         return cell_to_diff_contribution, cell_to_p_value_contribution
 
@@ -482,8 +481,10 @@ class Analysis:
 
         cell_to_diff_contribution, _ = self.leave_one_out()
 
+        cell_to_diff_contribution = 1-1/cell_to_diff_contribution
+
         # cells to consider
-        nr_cells = 10
+        nr_cells = 30
 
         # check contribution of first ten cells after sorting
         contribution_array = np.full((nr_cells+1, cell_to_diff_contribution.shape[1]),np.nan)
