@@ -30,8 +30,9 @@ from scipy import stats
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 from mpl_toolkits.axes_grid1.colorbar import colorbar
 
+
 def plot_act_mat(act_mat,bin_interval):
-# plot activation matrix (matrix of population vectors)
+    # plot activation matrix (matrix of population vectors)
     plt.imshow(act_mat, vmin=0, vmax=act_mat.max(), cmap='jet', aspect='auto')
     plt.ylabel("CELL ID")
     plt.xlabel("TIME BINS / " + str(bin_interval) + " s")
@@ -39,9 +40,10 @@ def plot_act_mat(act_mat,bin_interval):
     a = plt.colorbar()
     a.set_label("SPIKES")
 
-def plot_2D_scatter(ax,mds,param_dic,data_sep = [], loc_vec = []):
-# generates 2D scatter plot with selected data --> for more than 1 data set, data_sep needs to be defined to separate
-# the data sets
+
+def plot_2D_scatter(ax,mds,param_dic,data_sep = None, loc_vec = []):
+    # generates 2D scatter plot with selected data --> for more than 1 data set, data_sep needs to be defined to
+    # separate the data sets
     # for more than one data set
     if data_sep:
         # if lines between points should be drawn
@@ -66,7 +68,7 @@ def plot_2D_scatter(ax,mds,param_dic,data_sep = [], loc_vec = []):
                 l_track = 200
                 nr_seg = int(l_track/s_l)
                 col_map_blue = cm.Reds(np.linspace(0, 1, nr_seg + 5))
-                col_map_red = cm.Blues(np.linspace(0, 1, nr_seg +5 ))
+                col_map_red = cm.Blues(np.linspace(0, 1, nr_seg + 5))
                 col_map_blue = col_map_blue[5:,:]
                 col_map_red = col_map_red[5:, :]
                 # linearized track is 200 cm long
@@ -142,9 +144,9 @@ def plot_2D_scatter(ax,mds,param_dic,data_sep = [], loc_vec = []):
     ax.set_xticklabels([])
 
 
-def plot_3D_scatter(ax,mds,param_dic,data_sep = [], loc_vec = []):
-# generates 3D scatter plot with selected data --> for more than 1 data set, data_sep needs to be defined to separate
-# the data sets
+def plot_3D_scatter(ax, mds, param_dic, data_sep=None, loc_vec=[]):
+    # generates 3D scatter plot with selected data --> for more than 1 data set, data_sep needs to be defined to
+    # separate the data sets
 
     # for more than one data set
     if data_sep:
@@ -258,7 +260,6 @@ def plot_compare(data, param_dic, data_sep, rule_sep = []):
 
     else:
         col_map = cm.rainbow(np.linspace(0, 1, len(data_sep)))
-
 
     # 2D plot
     if param_dic["dr_method_p2"] == 2:
@@ -416,7 +417,7 @@ def plot_remapping_summary(cross_diff, within_diff_1, within_diff_2, stats_array
 
 def plot_cell_charact(cell_avg_rate_map, cohens_d, cell_to_diff_contribution, cell_to_p_value_contribution,xlabel):
 
-    fig, (ax1, ax2, ax3, ax4) = plt.subplots(1, 4)
+    fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
     fig.subplots_adjust(wspace=0.1)
 
     im1 = ax1.imshow(cell_avg_rate_map, interpolation='nearest', aspect='auto',cmap="jet",extent=[min(xlabel),max(xlabel),cell_avg_rate_map.shape[0]-0.5,0.5])
@@ -453,19 +454,19 @@ def plot_cell_charact(cell_avg_rate_map, cohens_d, cell_to_diff_contribution, ce
     # the image.
     cax3.xaxis.set_ticks_position("top")
     ax3.set_xlabel("LINEARIZED POSITION / cm")
-    cax3.set_title("CONTRIBUTION TO DIFF (RULE A vs. RULE B)")
+    cax3.set_title("REL. CONTRIBUTION TO DIFF (RULE A vs. RULE B)")
 
-    # hide y label
-    ax4.set_yticklabels([])
-    im4 = ax4.imshow(cell_to_p_value_contribution, interpolation='nearest', aspect='auto',cmap="jet",extent=[min(xlabel),max(xlabel),cell_avg_rate_map.shape[0]-0.5,0.5])
-    ax4_divider = make_axes_locatable(ax4)
-    # add an axes above the main axes.
-    cax4 = ax4_divider.append_axes("top", size="7%", pad="2%")
-    cb4 = colorbar(im4, cax=cax4, orientation="horizontal")
-    # change tick position to top. Tick position defaults to bottom and overlaps
-    # the image.
-    cax4.xaxis.set_ticks_position("top")
-    ax4.set_xlabel("LINEARIZED POSITION / cm")
-    cax4.set_title("CHANGE OF P-VALUE KW(RULE A vs. RULE B)")
+    # # hide y label
+    # ax4.set_yticklabels([])
+    # im4 = ax4.imshow(cell_to_p_value_contribution, interpolation='nearest', aspect='auto',cmap="jet",extent=[min(xlabel),max(xlabel),cell_avg_rate_map.shape[0]-0.5,0.5])
+    # ax4_divider = make_axes_locatable(ax4)
+    # # add an axes above the main axes.
+    # cax4 = ax4_divider.append_axes("top", size="7%", pad="2%")
+    # cb4 = colorbar(im4, cax=cax4, orientation="horizontal")
+    # # change tick position to top. Tick position defaults to bottom and overlaps
+    # # the image.
+    # cax4.xaxis.set_ticks_position("top")
+    # ax4.set_xlabel("LINEARIZED POSITION / cm")
+    # cax4.set_title("CHANGE OF P-VALUE KW(RULE A vs. RULE B)")
 
     plt.show()

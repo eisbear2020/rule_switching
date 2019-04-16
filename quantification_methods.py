@@ -302,7 +302,7 @@ class Analysis:
 
         # if separate dictionaries are used --> returned values
         else:
-            return cross_diff, within_diff_1, within_diff_2,stats_array
+            return cross_diff, within_diff_1, within_diff_2, stats_array
 
     def leave_one_out(self):
         # calculate cross difference with all cells and drop cells that do not contribute to difference
@@ -323,14 +323,14 @@ class Analysis:
 
             for key in dic_1_c:
                 # delete cell from copies of both dictionaries
-                dic_1_c[key] = np.delete(dic_1_c[key],cell_ID, axis=0)
+                dic_1_c[key] = np.delete(dic_1_c[key], cell_ID, axis=0)
                 dic_2_c[key] = np.delete(dic_2_c[key], cell_ID, axis=0)
 
             # calculate cross diff for modified dic with deleted cell
             cross_diff_mod, _, _, stats_array_mod = self.cross_cos_diff(False, dic_1_c, dic_2_c)
             cell_to_p_value_contribution[cell_ID, :] = self.stats_array[:, 1] - stats_array_mod[:, 1]
-            cell_to_diff_contribution[cell_ID, :] = np.median(self.cross_diff, axis=1) - \
-                                                    np.median(cross_diff_mod, axis=1)
+            cell_to_diff_contribution[cell_ID, :] = 1 - \
+                                                    np.median(cross_diff_mod, axis=1)/np.median(self.cross_diff, axis=1)
 
         return cell_to_diff_contribution, cell_to_p_value_contribution
 
@@ -475,3 +475,36 @@ class Analysis:
         # self.cross_cos_diff(dic_1_c, dic_2_c)
         # self.plot_remap_results()
 
+    def cell_contribution(self):
+        # check how many cells contribute how much to the difference between two conditions (e.g. RULES)
+        x_axis = np.arange(0, 200, self.param_dic["spatial_bin_size"])
+        x_axis = x_axis[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
+
+        cell_to_diff_contribution, _ = self.leave_one_out()
+
+        # cells to consider
+        nr_cells = 10
+
+        # check contribution of first ten cells after sorting
+        contribution_array = np.full((nr_cells, cell_to_diff_contribution.shape[1]),np.nan)
+
+        # go through spatial bins
+        for i, spat_bin in enumerate(cell_to_diff_contribution.T):
+            # select all cells that contribute to diff
+            temp = spat_bin[spat_bin > 0]
+            # sort cells with positive contribution according to magnitude of contribution
+            temp = np.cumsum(np.flip(np.sort(temp)))
+            # copy to contribution array
+            contribution_array[:min(nr_cells, temp.shape[0]), i] = temp[:min(nr_cells, temp.shape[0])]
+
+        col_map = cm.rainbow(np.linspace(0, 1, x_axis.shape[0]))
+
+        for i, contribution in enumerate(contribution_array.T):
+            plt.plot(np.arange(1, nr_cells+1), contribution, color=col_map[i, :], label=str(x_axis[i])+" cm",
+                     marker="o")
+
+        plt.title("CELL CONTRIBUTION TO DIFFERENCE")
+        plt.ylabel("CUM. REL. CONTRIBUTION TO DIFFERENCE")
+        plt.xlabel("NR. CELLS")
+        plt.legend()
+        plt.show()
