@@ -100,7 +100,7 @@ distribution of within and across rule distance:
 
 # CELL CONTRIBUTION TO DIFFERENCE
 
-##rule light vs. rule west during rule switch
+## rule light vs. rule west during rule switch
 
 * relative contribution/nr. of cells comparing
 
