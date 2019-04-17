@@ -83,7 +83,7 @@ distribution of within and across rule distance:
     * can maybe check with parameters of the experiments what the difference might be
     due to
 
-## Identifying cells that contribute to difference
+## Identifying cells that contribute to difference: RULE 1 (_2,_4) vs. RULE 2 (_6):
 
 * average firing rate using both rules
 * effect size: diff / pooled std
