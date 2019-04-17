@@ -104,7 +104,7 @@ distribution of within and across rule distance:
 
 ![alt text](../plots/quant_cell_contrib_switch.png)
 
-## rule light (2, 4) vs. rule west (6)
+## rule light (_2, _4) vs. rule west (_6)
 
 ![alt text](../plots/quant_cell_contrib_2_4_6.png)
 
@@ -119,7 +119,7 @@ distribution of within and across rule distance:
   * monotonically increasing curve: several cells contribute majorly to
   difference --> between global and local remapping
 
-## rule light before (2) /after sleep (4)
+## rule light before (_2) /after sleep (_4)
 
 ![alt text](../plots/quant_cell_contrib_recon_light.png)
 

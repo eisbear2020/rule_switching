@@ -42,6 +42,7 @@ from plotting_functions import plot_remapping_summary
 from plotting_functions import plot_cell_charact
 import matplotlib as mpl
 import os
+from statsmodels import robust
 
 # set saving directory to current directory
 mpl.rcParams["savefig.directory"] = os.chdir(os.path.dirname(__file__))
@@ -311,6 +312,8 @@ class Analysis:
         nr_bins = len(self.bin_dic_1.keys())
         cell_to_p_value_contribution = np.zeros((nr_cells, nr_bins))
         cell_to_diff_contribution = np.zeros((nr_cells, nr_bins))
+        # relative contribution
+        rel_cell_to_diff_contribution = np.zeros((nr_cells, nr_bins))
 
         # first cross diff using all cells
         self.cross_cos_diff(False)
@@ -329,9 +332,13 @@ class Analysis:
             # calculate cross diff for modified dic with deleted cell
             cross_diff_mod, _, _, stats_array_mod = self.cross_cos_diff(False, dic_1_c, dic_2_c)
             cell_to_p_value_contribution[cell_ID, :] = self.stats_array[:, 1] - stats_array_mod[:, 1]
-            cell_to_diff_contribution[cell_ID, :] = np.median(self.cross_diff, axis=1)/np.median(cross_diff_mod, axis=1)
 
-        return cell_to_diff_contribution, cell_to_p_value_contribution
+            cell_to_diff_contribution[cell_ID, :] = np.median(self.cross_diff, axis=1)-np.median(cross_diff_mod, axis=1)
+
+            rel_cell_to_diff_contribution[cell_ID, :] = np.median(cross_diff_mod, axis=1) / \
+                                                        np.median(self.cross_diff, axis=1)
+
+        return cell_to_diff_contribution, rel_cell_to_diff_contribution, cell_to_p_value_contribution
 
     def cell_rule_diff(self):
         # calculate change in average firing rate and standard error of the mean for each cell and bin between rules
@@ -441,9 +448,13 @@ class Analysis:
 
         cell_avg_rate_map = self.cell_avg_rate_map()
         cohens_d = self.cell_rule_diff()
-        cell_to_diff_contribution, cell_to_p_value_contribution = self.leave_one_out()
+        _, rel_cell_to_diff_contribution, cell_to_p_value_contribution = self.leave_one_out()
 
-        plot_cell_charact(cell_avg_rate_map, cohens_d, cell_to_diff_contribution, cell_to_p_value_contribution,x_axis)
+        # invert relative contribution for log --> if cell increases diff --> positive value
+        rel_cell_to_diff_contribution = 1/rel_cell_to_diff_contribution
+
+        plot_cell_charact(cell_avg_rate_map, cohens_d, rel_cell_to_diff_contribution,
+                          cell_to_p_value_contribution, x_axis)
 
     def remove_cells(self, cell_ID_list):
         # performs different analysis steps with a modified dictionary (with removed cells)
@@ -479,35 +490,100 @@ class Analysis:
         x_axis = np.arange(0, 200, self.param_dic["spatial_bin_size"])
         x_axis = x_axis[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
 
-        cell_to_diff_contribution, _ = self.leave_one_out()
+        cell_to_diff_contribution, rel_cell_to_diff_contribution, _ = self.leave_one_out()
 
-        cell_to_diff_contribution = 1-1/cell_to_diff_contribution
+        # are interested in contributions that make difference larger --> 1 - rel.cell.contr.
+        rel_cell_to_diff_contribution = 1-rel_cell_to_diff_contribution
 
         # cells to consider
         nr_cells = 30
 
-        # check contribution of first ten cells after sorting
-        contribution_array = np.full((nr_cells+1, cell_to_diff_contribution.shape[1]),np.nan)
+        # check contribution of first n cells after sorting
+        rel_contribution_array = np.full((nr_cells+1, rel_cell_to_diff_contribution.shape[1]), np.nan)
+        contribution_array = np.full((nr_cells + 1, cell_to_diff_contribution.shape[1]), np.nan)
+
         # make first column all zero
+        rel_contribution_array[0, :] = 0
         contribution_array[0, :] = 0
+
+        # go through spatial bins
+        for i, spat_bin in enumerate(rel_cell_to_diff_contribution.T):
+            # select all cells that contribute to diff
+            temp = spat_bin[spat_bin > 0]
+            # sort cells with positive contribution according to magnitude of contribution
+            temp = np.cumsum(np.flip(np.sort(temp), axis=0))
+            # copy to contribution array
+            rel_contribution_array[1:min(nr_cells, temp.shape[0])+1, i] = temp[:min(nr_cells, temp.shape[0])]
+
+        fig, axes = plt.subplots(2, 2)
+
+        col_map = cm.rainbow(np.linspace(0, 1, x_axis.shape[0]))
+
+        ax1 = axes[0,0]
+
+        for i, contribution in enumerate(rel_contribution_array.T):
+            ax1.plot(np.arange(0, nr_cells+1), contribution, color=col_map[i, :], label=str(x_axis[i])+" cm",
+                     marker="o")
+
+        ax1.set_title("RELATIVE CELL CONTRIBUTION TO DIFFERENCE")
+        ax1.set_ylabel("CUM. REL. CONTRIBUTION TO DIFFERENCE")
+        ax1.set_xlabel("NR. CELLS")
+        ax1.legend()
 
         # go through spatial bins
         for i, spat_bin in enumerate(cell_to_diff_contribution.T):
             # select all cells that contribute to diff
             temp = spat_bin[spat_bin > 0]
             # sort cells with positive contribution according to magnitude of contribution
-            temp = np.cumsum(np.flip(np.sort(temp)))
+            temp = np.cumsum(np.flip(np.sort(temp), axis=0))
             # copy to contribution array
             contribution_array[1:min(nr_cells, temp.shape[0])+1, i] = temp[:min(nr_cells, temp.shape[0])]
 
         col_map = cm.rainbow(np.linspace(0, 1, x_axis.shape[0]))
 
+        ax2 = axes[0, 1]
+
         for i, contribution in enumerate(contribution_array.T):
-            plt.plot(np.arange(0, nr_cells+1), contribution, color=col_map[i, :], label=str(x_axis[i])+" cm",
+            ax2.plot(np.arange(0, nr_cells+1), contribution, color=col_map[i, :], label=str(x_axis[i])+" cm",
                      marker="o")
 
-        plt.title("CELL CONTRIBUTION TO DIFFERENCE")
-        plt.ylabel("CUM. REL. CONTRIBUTION TO DIFFERENCE")
-        plt.xlabel("NR. CELLS")
-        plt.legend()
+        ax2.set_title("ABS. CELL CONTRIBUTION TO DIFFERENCE")
+        ax2.set_ylabel("CUM. CONTRIBUTION TO DIFFERENCE")
+        ax2.set_xlabel("NR. CELLS")
+        ax2.legend()
+
+        norm_contribution = np.zeros(contribution_array.shape[1])
+        norm_rel_contribution = np.zeros(contribution_array.shape[1])
+
+        # go through contribution vector and and
+        for i, (contribution, rel_contribution) in enumerate(zip(contribution_array.T,rel_contribution_array.T)):
+            # go trough cell contribution
+            for cell_ID in range(1, contribution.shape[0]):
+                if abs(rel_contribution[cell_ID] - rel_contribution[cell_ID -1]) > 0.005:
+                    norm_contribution[i] = contribution[cell_ID]/cell_ID
+                    norm_rel_contribution[i] = rel_contribution[cell_ID] / cell_ID
+                else:
+                    break
+
+        # plot for each spatial bin: magnitude of difference & contribution normalized by nr. of cells
+        width = 8
+
+        ax3 = axes[1, 0]
+        ax3.bar(x_axis, norm_rel_contribution, width,color="orange")
+        ax3.set_title("REMAPPING CHARACTERISTICS (RELATIVE)")
+        ax3.set_ylabel("REL. CONTRIBUTION / NR. CELLS")
+        ax3.set_xlabel("MAZE POSITION")
+
+        overal_diff = np.median(self.cross_diff, axis=1)
+        mad = robust.mad(self.cross_diff, c = 1, axis=1)
+
+        ax4 = axes[1, 1]
+        ax4.bar(x_axis, overal_diff,width,yerr=mad, label="CROSS DIFF")
+        ax4.bar(x_axis, norm_contribution, width, label="NORMALIZED CONTRIBUTION",color="orange")
+        ax4.set_title("REMAPPING CHARACTERISTICS")
+        ax4.set_ylabel("CROSS DIFF (AVG & MAD) \n ABS. CONTRIBUTION / NR. CELLS")
+        ax4.set_xlabel("MAZE POSITION")
+        ax4.legend()
+        fig.suptitle("LEAVE ONE OUT ANALYSIS")
+
         plt.show()
