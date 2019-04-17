@@ -541,7 +541,7 @@ class ManifoldCompare(Manifold):
 
         # for jaccard distance --> make difference matrix signed binary
         if self.dr_method_p1 == "jaccard":
-            dat_mat = np.sign(dat_mat)
+            dat_mat = abs(np.sign(dat_mat))
 
         # apply dimensionality reduction to data
         self.reduce_dimension(dat_mat)

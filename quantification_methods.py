@@ -587,3 +587,24 @@ class Analysis:
         fig.suptitle("LEAVE ONE OUT ANALYSIS")
 
         plt.show()
+
+
+class StateTransitionAnalysis:
+    """ Class state transition analysis"""
+
+    def __init__(self, data_set, loc_set, param_dic):
+
+        self.data_set = data_set
+        self.loc_set = loc_set
+        self.param_dic = param_dic
+
+
+    # TODO: euclidean distance, angle, number of inhibitions/activations
+    def summary(self):
+        act_mat, loc_vec = get_activity_mat_spatial(self.data_set[key_data_set], self.param_dic,
+                                                         loc_set[key_data_set])
+
+
+
+
+

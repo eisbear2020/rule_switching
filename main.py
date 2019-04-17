@@ -28,6 +28,7 @@ from comp_functions import calc_loc_and_speed
 
 from quantification_methods import BinDictionary
 from quantification_methods import Analysis
+from quantification_methods import StateTransitionAnalysis
 
 
 if __name__ == '__main__':
@@ -57,10 +58,10 @@ if __name__ == '__main__':
     # ------------------------------------------------------------------------------------------------------------------
 
     # binning with "temporal","spatial"
-    param_dic["binning_method"] = "spatial"
+    param_dic["binning_method"] = "temporal"
 
     # interval for temporal binning in s
-    param_dic["time_bin_size"] = 0.5
+    param_dic["time_bin_size"] = 0.1
 
     # interval for spatial binning in cm
     param_dic["spatial_bin_size"] = 10
@@ -83,12 +84,12 @@ if __name__ == '__main__':
     # first parameter of method:
     # MDS --> p1: difference measure ["jaccard","cos","euclidean"]
     # PCA --> p1 does not exist --> ""
-    param_dic["dr_method_p1"] = "cos"
+    param_dic["dr_method_p1"] = "jaccard"
 
     # second parameter of method:
     # MDS --> p2: number of components
     # PCA --> p2: number of components
-    param_dic["dr_method_p2"] = 3
+    param_dic["dr_method_p2"] = 2
 
     # number of trials to compare
     param_dic["nr_of_trials"] = 21
@@ -109,7 +110,7 @@ if __name__ == '__main__':
     # saving figure
     param_dic["save_plot"] = False
     # lines in scatter plot
-    param_dic["lines"] = True
+    param_dic["lines"] = False
 
     # saving directory for bin dictionaries
     param_dic["saving_dir_bin_dic"] = "temp_data/quant_analysis/"
@@ -226,28 +227,32 @@ if __name__ == '__main__':
     # new_rule_trial = 7
     # dic.create_spatial_bin_dictionaries_transition(res_rule_switch, whl_lin_rule_switch, new_rule_trial, "LIGHT", "WEST")
 
-    new_transition = Analysis("RULE_LIGHT_spatial", "SWITCH_LIGHT_spatial", param_dic)
+    # new_transition = Analysis("SWITCH_LIGHT_spatial", "SWITCH_WEST_spatial", param_dic)
     # new_transition.cross_cos_diff()
     # new_transition.cross_cos_diff_spat_trials()
     # new_transition.characterize_cells()
     # new_transition.remove_cells([45, 73])
     # new_transition.remove_cells(np.arange(0, 60))
-    new_transition.cell_contribution()
+    # new_transition.cell_contribution()
 
 #######################################################################################################################
 #   STATE TRANSITION ANALYSIS
 ########################################################################################################################
 
     # MANIFOLD ANALYSIS
-    # ------------------------------------------------------------------------------------------------------------------
+    ####################################################################################################################
 
     # looking at one rule
-
-    # state_transition_analysis = SingleManifold(res_rule_west, whl_lin_rule_west, param_dic)
-    # state_transition_analysis.state_transition_analysis()
+    # ------------------------------------------------------------------------------------------------------------------
+    state_transition_analysis = SingleManifold(res_rule_west, whl_lin_rule_west, param_dic)
+    state_transition_analysis.state_transition_analysis()
 
     # comparing two rules
-
+    # ------------------------------------------------------------------------------------------------------------------
     # new_comparison = ManifoldCompare([res_rule_light, res_rule_west],[whl_lin_rule_light, whl_lin_rule_west], param_dic)
     # new_comparison.state_transition_analysis()
 
+    # QUANTITATIVE ANALYSIS
+    ####################################################################################################################
+
+    # new_state_transition = StateTransitionAnalysis(res_rule_light, whl_lin_rule_light, param_dic)
