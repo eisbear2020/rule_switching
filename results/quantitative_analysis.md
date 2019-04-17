@@ -102,6 +102,8 @@ distribution of within and across rule distance:
 
 ## rule light vs. rule west during rule switch
 
+* orange bars: the higher the values the more local is the remapping
+
 ![alt text](../plots/quant_cell_contrib_switch.png)
 
 ## rule light (_2, _4) vs. rule west (_6)
