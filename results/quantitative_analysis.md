@@ -154,3 +154,15 @@ in different spatial locations
 ### rule west (_6)
 
 ![alt text](../plots/quant_state_transition_euc_west.png)
+
+## Angle between subsequent state transitions
+
+### rule light (_2)
+
+![alt text](../plots/quant_state_transition_angle_light.png)
+
+### rule west (_6)
+
+![alt text](../plots/quant_state_transition_angle_west.png)
+
+* what is the explanation for 120 deg?
