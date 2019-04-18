@@ -35,7 +35,10 @@ import pickle
 import matplotlib.pyplot as plt
 from scipy import stats
 from comp_functions import get_activity_mat_spatial
+from comp_functions import get_activity_mat_time
+
 from comp_functions import calc_diff
+from comp_functions import pop_vec_euclidean_dist
 from comp_functions import calc_cohens_d
 import matplotlib.cm as cm
 from plotting_functions import plot_remapping_summary
@@ -498,6 +501,9 @@ class Analysis:
         # cells to consider
         nr_cells = 30
 
+        # cells for remapping characteristics
+        n_first_cells = 5
+
         # check contribution of first n cells after sorting
         rel_contribution_array = np.full((nr_cells+1, rel_cell_to_diff_contribution.shape[1]), np.nan)
         contribution_array = np.full((nr_cells + 1, cell_to_diff_contribution.shape[1]), np.nan)
@@ -554,8 +560,9 @@ class Analysis:
 
         norm_contribution = np.zeros(contribution_array.shape[1])
         norm_rel_contribution = np.zeros(contribution_array.shape[1])
+        first_n_cells_contribution = np.zeros(contribution_array.shape[1])
 
-        # go through contribution vector and and
+        # go through contribution vector and get relative contribution / nr. of cells
         for i, (contribution, rel_contribution) in enumerate(zip(contribution_array.T,rel_contribution_array.T)):
             # go trough cell contribution
             for cell_ID in range(1, contribution.shape[0]):
@@ -564,6 +571,12 @@ class Analysis:
                     norm_rel_contribution[i] = rel_contribution[cell_ID] / cell_ID
                 else:
                     break
+
+
+        # go through contribution vector and get contribution of first n cells
+        for i, contribution in enumerate(contribution_array.T):
+            # go trough cell contribution
+            first_n_cells_contribution[i] = contribution[n_first_cells]
 
         # plot for each spatial bin: magnitude of difference & contribution normalized by nr. of cells
         width = 8
@@ -579,9 +592,9 @@ class Analysis:
 
         ax4 = axes[1, 1]
         ax4.bar(x_axis, overal_diff,width,yerr=mad, label="CROSS DIFF")
-        ax4.bar(x_axis, norm_contribution, width, label="NORMALIZED CONTRIBUTION",color="orange")
-        ax4.set_title("REMAPPING CHARACTERISTICS")
-        ax4.set_ylabel("CROSS DIFF (AVG & MAD) \n ABS. CONTRIBUTION / NR. CELLS")
+        ax4.bar(x_axis, first_n_cells_contribution, width, label="CONTR. OF "+str(n_first_cells)+" CELLS", color="orange")
+        ax4.set_title("CONTRIBUTION TO CROSS DIFF BY "+str(n_first_cells)+" MOST INFLUENTIAL CELLS")
+        ax4.set_ylabel("CROSS DIFF (AVG & MAD) \n CUM CONTRIBUTION OF "+str(n_first_cells)+" CELLS")
         ax4.set_xlabel("MAZE POSITION")
         ax4.legend()
         fig.suptitle("LEAVE ONE OUT ANALYSIS")
@@ -598,11 +611,59 @@ class StateTransitionAnalysis:
         self.loc_set = loc_set
         self.param_dic = param_dic
 
-
     # TODO: euclidean distance, angle, number of inhibitions/activations
-    def summary(self):
-        act_mat, loc_vec = get_activity_mat_spatial(self.data_set[key_data_set], self.param_dic,
-                                                         loc_set[key_data_set])
+    def euclidean(self):
+
+        # check how many trials
+        nr_trials = len(self.data_set.keys())
+
+        # check how many bins are created
+        act_mat, _ = get_activity_mat_time(next(iter(self.data_set.values())), self.param_dic,
+                                                         next(iter(self.loc_set.values())))
+        nr_bins = act_mat.shape[1]
+
+        bin_interval = self.param_dic["spatial_bin_size"]
+        # length of linearized path: 200 cm
+        nr_intervals = int(200 / bin_interval)
+
+        # initialize dictionary with positions
+        distance_dic = {}
+        for i in range(nr_intervals):
+            distance_dic["INT"+str(i)] = np.empty((1, 0))
+
+        # go through all trials
+        for i, key in enumerate(self.data_set):
+            # get binned activity matrix
+            act_mat, loc_mat = get_activity_mat_time(self.data_set[key], self.param_dic,self.loc_set[key])
+            # get distances
+            dist_array = pop_vec_euclidean_dist(act_mat)
+            # drop last position --> distance returns n-1 long row vector
+            loc_mat = loc_mat[:-1]
+            # assign values to dictionary accccording to spatial position
+            for int_counter in range(nr_intervals):
+                # define spatial interval
+                start_interval = int_counter * bin_interval
+                end_interval = (int_counter + 1) * bin_interval
+                # find entries that are within interval
+                distance_dic["INT"+str(int_counter)] = np.hstack((distance_dic["INT"+str(int_counter)],
+                    np.expand_dims(dist_array[(start_interval <= loc_mat) & (loc_mat < end_interval)],axis=0)))
+
+
+        # plot
+        x_axis = np.linspace(bin_interval,bin_interval*nr_intervals,nr_intervals)
+        med = np.full(x_axis.shape[0],np.nan)
+        for i, key in enumerate(distance_dic):
+            if distance_dic[key].size == 0:
+                continue
+            med[i] = np.median(distance_dic[key],axis=1)
+            err = robust.mad(distance_dic[key], c=1, axis=1)
+            plt.errorbar(x_axis[i], med[i], yerr=err,ecolor="gray")
+        plt.plot(x_axis,med, marker="o",color="black")
+        plt.title("EUCL. DISTANCE BETWEEN SUBSEQUENT POP. VECTORS")
+        plt.ylabel("EUCLIDEAN DISTANCE - MED & MAD")
+        plt.xlabel("MAZE POSITION / CM")
+        plt.show()
+
 
 
 

@@ -142,3 +142,15 @@ in different spatial locations
 ![alt text](../plots/quant_compare_cos_RULE1_hist.png)
 
 ![alt text](../plots/quant_compare_cos_trials_RULE1.png)
+
+# STATE TRANSITION ANALYSIS
+
+## Euclidean distance between subsequent population vectors
+
+### rule light (_2)
+
+![alt text](../plots/quant_state_transition_euc_light.png)
+
+### rule west (_6)
+
+![alt text](../plots/quant_state_transition_euc_west.png)

@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
     startarm = [1]
     goalarm = [2]
-    ruletype = [1,3] #3: light
+    ruletype = [1,3] #1: east, 2: west, 3: light
     errortrial = [1]
 
     trial_sel = {"startarm": startarm,"goalarm": goalarm, "ruletype":ruletype, "errortrial": errortrial}

@@ -30,6 +30,7 @@ from scipy import stats
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 from mpl_toolkits.axes_grid1.colorbar import colorbar
 from matplotlib.colors import LogNorm
+from statsmodels import robust
 
 
 def plot_act_mat(act_mat,bin_interval):
@@ -352,14 +353,14 @@ def plot_remapping_summary(cross_diff, within_diff_1, within_diff_2, stats_array
     med_2 = np.median(within_diff_2, axis=1)
 
     med = np.median(cross_diff, axis=1)
-    err = stats.sem(cross_diff, axis=1)
+    err = robust.mad(cross_diff, c=1, axis=1)
 
 
     plt.subplot(2, 2, 1)
     plt.errorbar(x_axis, med, yerr=err, fmt="o")
     plt.grid()
     plt.xlabel("MAZE LOCATION / cm")
-    plt.ylabel("MEDIAN DISTANCE (COS) - MED & SEM")
+    plt.ylabel("MEDIAN DISTANCE (COS) - MED & MAD")
     plt.title("ABSOLUTE")
 
     # add significance marker

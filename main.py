@@ -84,7 +84,7 @@ if __name__ == '__main__':
     # first parameter of method:
     # MDS --> p1: difference measure ["jaccard","cos","euclidean"]
     # PCA --> p1 does not exist --> ""
-    param_dic["dr_method_p1"] = "jaccard"
+    param_dic["dr_method_p1"] = "euclidean"
 
     # second parameter of method:
     # MDS --> p2: number of components
@@ -110,7 +110,7 @@ if __name__ == '__main__':
     # saving figure
     param_dic["save_plot"] = False
     # lines in scatter plot
-    param_dic["lines"] = False
+    param_dic["lines"] = True
 
     # saving directory for bin dictionaries
     param_dic["saving_dir_bin_dic"] = "temp_data/quant_analysis/"
@@ -200,9 +200,10 @@ if __name__ == '__main__':
 
     # compare RULE A and RULE B
     # ------------------------------------------------------------------------------------------------------------------
-    # new_compare = Analysis("RULE_LIGHT_2_4", "RULE_WEST_spatial", param_dic)
+    # new_compare = Analysis("RULE_LIGHT_spatial", "SWITCH_LIGHT_spatial", param_dic)
     # new_compare.cross_cos_diff()
     # new_compare.cross_cos_diff_spat_trials()
+    # new_compare.remove_cells([46,69])
 
 ########################################################################################################################
 #   TRANSITION ANALYSIS (RULE A --> RULE B)
@@ -231,7 +232,7 @@ if __name__ == '__main__':
     # new_transition.cross_cos_diff()
     # new_transition.cross_cos_diff_spat_trials()
     # new_transition.characterize_cells()
-    # new_transition.remove_cells([45, 73])
+    # new_transition.remove_cells([46,69])
     # new_transition.remove_cells(np.arange(0, 60))
     # new_transition.cell_contribution()
 
@@ -244,8 +245,8 @@ if __name__ == '__main__':
 
     # looking at one rule
     # ------------------------------------------------------------------------------------------------------------------
-    state_transition_analysis = SingleManifold(res_rule_west, whl_lin_rule_west, param_dic)
-    state_transition_analysis.state_transition_analysis()
+    # state_transition_analysis = SingleManifold(res_rule_light, whl_lin_rule_light, param_dic)
+    # state_transition_analysis.state_transition_analysis()
 
     # comparing two rules
     # ------------------------------------------------------------------------------------------------------------------
@@ -255,4 +256,5 @@ if __name__ == '__main__':
     # QUANTITATIVE ANALYSIS
     ####################################################################################################################
 
-    # new_state_transition = StateTransitionAnalysis(res_rule_light, whl_lin_rule_light, param_dic)
+    new_state_transition = StateTransitionAnalysis(res_rule_west, whl_lin_rule_west, param_dic)
+    new_state_transition.euclidean()

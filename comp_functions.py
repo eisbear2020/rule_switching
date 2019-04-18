@@ -185,7 +185,6 @@ def get_activity_mat_time(firing_times,param_dic,location=[]):
         loc_vec = loc_vec[int_sel]
         speed_vec = speed_vec[int_sel]
 
-
     return act_mat, loc_vec
 
 
@@ -304,6 +303,16 @@ def pop_vec_diff(data_set):
     for i,pop_vec in enumerate(data_set.T[:-1,:]):
         diffMat.T[i,:] = data_set.T[i+1,:] - data_set.T[i,:]
     return diffMat
+
+def pop_vec_euclidean_dist(data_set):
+    # computes euclidean distance between column vectors of data set
+    # returns row vector with euclidean distances
+    dist_mat = np.zeros(data_set.shape[1]-1)
+
+    for i,_ in enumerate(data_set.T[:-1,:]):
+        dist_mat[i] = distance.euclidean(data_set.T[i+1,:],data_set.T[i,:])
+    return dist_mat
+
 
 
 def calc_loc_and_speed(whl):
