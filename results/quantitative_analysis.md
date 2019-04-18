@@ -8,18 +8,17 @@ Can we characterize the transition of the population states during rule switch?
 
 ## Results using spatial bins (10cm)
 
-* RULE 1: light, RULE 2: west
+* DATA SET 1: rule light, DATA SET 2: rule west
 
 **Overall distance**:
 * calculate pair-wise cos distance between trials of RULE 1 and RULE 2 for each
 spatial bin
-* plot average/SEM of these pair-wise distances for each spatial bin
-* normalization: divide average of across-rule cos distances by within rule cos
+* plot MED/MAD of these pair-wise distances for each spatial bin
+* normalization: divide median of across-rule cos distances by within rule cos median
 distance for each spatial bin
 
 ![alt text](../plots/quant_transition_cos.png)
 
-* above plot considers union of all trials
 * can we tell something from different results of the normalization by rule 1 and rule b?
 
 histograms of within vs. across rule cos distance
@@ -30,7 +29,7 @@ histograms of within vs. across rule cos distance
 * for each spatial bin and trial after the switch:
     * pair-wise cos differences between trail and each trial before the switch
     --> get array for all comparisons
-    * taking the average
+    * taking the median
 
 ![alt text](../plots/quant_transition_cos_trials.png)
 
@@ -42,14 +41,19 @@ across-trial variability without rule switch needs to be taken into account.
 * average firing rate using both rules
 * effect size: diff / pooled std
 * contribution to cos diff: leave-one-out analysis
-* change of p-value for KW (within div. vs. across div.) using leave-one-out analysis
 
-![alt text](../plots/quant_transition_cos_cells.png)
+![alt text](../plots/quant_transition_cos_cells_char.png)
 
 * removing cells 46 and 69 significantly reduces the cosine difference for the rule switch
 for the last couple of spatial bins
 
 ![alt text](../plots/quant_transition_cos_trials_2_removed_cells.png)
+
+* difference is not statistically significant anymore:
+
+![alt text](../plots/quant_transition_cos_2_removed_cells.png)
+
+
 
 # COMPARISON OF POPULATION VECTORS FOR DIFFERENT RULES
 
@@ -59,8 +63,8 @@ Do we see significant differences in the dynamics of the system for two differen
 
 * calculate pair-wise cos distance between trials of RULE 1 and RULE 2 for each
 spatial bin
-* plot average/SEM of these pair-wise distances for each spatial bin
-* normalization: divide average of across-rule cos distances by within rule cos
+* plot MED/MAD of these pair-wise distances for each spatial bin
+* normalization: divide median of across-rule cos distances by within rule cos median
 distance for each spatial bin
 * significance: across-rules distance vs. union of within-rule distances
 
@@ -88,7 +92,6 @@ distribution of within and across rule distance:
 * average firing rate using both rules
 * effect size: diff / pooled std
 * contribution to cos diff: leave-one-out analysis
-* change of p-value for KW (within div. vs. across div.) using leave-one-out analysis
 
 ![alt text](../plots/quant_compare_cos_cells.png)
 
@@ -96,7 +99,11 @@ distribution of within and across rule distance:
 
 ![alt text](../plots/quant_compare_cos_trials_2_removed_cells.png)
 
-* difference seem to depend on other cells after the initial transition as well
+* difference seem to depend on other cells after the initial transition as well:
+
+![alt text](../plots/quant_compare_cos_2_removed_cells.png)
+
+* significance is still given for the last 30 cm
 
 # CELL CONTRIBUTION TO DIFFERENCE
 
