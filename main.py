@@ -256,5 +256,10 @@ if __name__ == '__main__':
     # QUANTITATIVE ANALYSIS
     ####################################################################################################################
 
-    new_state_transition = StateTransitionAnalysis(res_rule_west, whl_lin_rule_west, param_dic)
-    new_state_transition.euclidean()
+    new_state_transition = StateTransitionAnalysis(res_rule_switch, whl_lin_rule_switch, param_dic)
+
+    # euclidean distance between subsequent steps
+    # ------------------------------------------------------------------------------------------------------------------
+    # new_state_transition.euclidean()
+    # new_state_transition.angle()
+    new_state_transition.operations()

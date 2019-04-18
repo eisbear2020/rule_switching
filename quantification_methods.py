@@ -36,10 +36,11 @@ import matplotlib.pyplot as plt
 from scipy import stats
 from comp_functions import get_activity_mat_spatial
 from comp_functions import get_activity_mat_time
-
+from comp_functions import pop_vec_diff
 from comp_functions import calc_diff
 from comp_functions import pop_vec_euclidean_dist
 from comp_functions import calc_cohens_d
+from comp_functions import angle_between_col_vectors
 import matplotlib.cm as cm
 from plotting_functions import plot_remapping_summary
 from plotting_functions import plot_cell_charact
@@ -613,14 +614,7 @@ class StateTransitionAnalysis:
 
     # TODO: euclidean distance, angle, number of inhibitions/activations
     def euclidean(self):
-
-        # check how many trials
-        nr_trials = len(self.data_set.keys())
-
-        # check how many bins are created
-        act_mat, _ = get_activity_mat_time(next(iter(self.data_set.values())), self.param_dic,
-                                                         next(iter(self.loc_set.values())))
-        nr_bins = act_mat.shape[1]
+        # calculates euclidean distance between subsequent population vectors
 
         bin_interval = self.param_dic["spatial_bin_size"]
         # length of linearized path: 200 cm
@@ -628,17 +622,21 @@ class StateTransitionAnalysis:
 
         # initialize dictionary with positions
         distance_dic = {}
+        rel_distance_dic = {}
         for i in range(nr_intervals):
             distance_dic["INT"+str(i)] = np.empty((1, 0))
+            rel_distance_dic["INT" + str(i)] = np.empty((1, 0))
 
         # go through all trials
         for i, key in enumerate(self.data_set):
             # get binned activity matrix
             act_mat, loc_mat = get_activity_mat_time(self.data_set[key], self.param_dic,self.loc_set[key])
             # get distances
-            dist_array = pop_vec_euclidean_dist(act_mat)
+            dist_array, rel_dist_array = pop_vec_euclidean_dist(act_mat)
             # drop last position --> distance returns n-1 long row vector
             loc_mat = loc_mat[:-1]
+            # drop last position --> relative distance has length n-2
+            rel_loc_mat = loc_mat[:-1]
             # assign values to dictionary accccording to spatial position
             for int_counter in range(nr_intervals):
                 # define spatial interval
@@ -648,24 +646,245 @@ class StateTransitionAnalysis:
                 distance_dic["INT"+str(int_counter)] = np.hstack((distance_dic["INT"+str(int_counter)],
                     np.expand_dims(dist_array[(start_interval <= loc_mat) & (loc_mat < end_interval)],axis=0)))
 
+                # find entries that are within interval
+                rel_distance_dic["INT"+str(int_counter)] = np.hstack((rel_distance_dic["INT"+str(int_counter)],
+                    np.expand_dims(rel_dist_array[(start_interval <= rel_loc_mat) & (rel_loc_mat < end_interval)],axis=0)))
+
 
         # plot
+
+        fig, ax = plt.subplots(2,2)
+
+        ax1 = ax[0,0]
         x_axis = np.linspace(bin_interval,bin_interval*nr_intervals,nr_intervals)
         med = np.full(x_axis.shape[0],np.nan)
+        all_med_values = np.empty((1, 0))
         for i, key in enumerate(distance_dic):
             if distance_dic[key].size == 0:
                 continue
             med[i] = np.median(distance_dic[key],axis=1)
+            all_med_values = np.hstack((all_med_values,distance_dic[key]))
             err = robust.mad(distance_dic[key], c=1, axis=1)
-            plt.errorbar(x_axis[i], med[i], yerr=err,ecolor="gray")
-        plt.plot(x_axis,med, marker="o",color="black")
-        plt.title("EUCL. DISTANCE BETWEEN SUBSEQUENT POP. VECTORS")
-        plt.ylabel("EUCLIDEAN DISTANCE - MED & MAD")
-        plt.xlabel("MAZE POSITION / CM")
+            ax1.errorbar(x_axis[i], med[i], yerr=err,ecolor="gray")
+        ax1.plot(x_axis,med, marker="o",color="black")
+        ax1.set_title("EUCL. DISTANCE BETWEEN SUBSEQUENT POP. VECTORS")
+        ax1.set_ylabel("EUCLIDEAN DISTANCE - MED & MAD")
+        ax1.set_xlabel("MAZE POSITION / CM")
+
+        ax2 = ax[0, 1]
+
+        # calculate relative step length
+        rel_med = np.full(x_axis.shape[0],np.nan)
+        all_rel_med_values = np.empty((1, 0))
+        for i, key in enumerate(rel_distance_dic):
+            if rel_distance_dic[key].size == 0:
+                continue
+            rel_med[i] = np.median(rel_distance_dic[key],axis=1)
+            all_rel_med_values = np.hstack((all_rel_med_values, rel_distance_dic[key]))
+            err = robust.mad(rel_distance_dic[key], c=1, axis=1)
+            ax2.errorbar(x_axis[i], rel_med[i], yerr=err,ecolor="gray")
+        ax2.plot(x_axis,rel_med, marker="o",color="black")
+        ax2.set_title("RELATIVE CHANGE OF EUCL. DISTANCE BETWEEN SUBSEQUENT TRANSITIONS")
+        ax2.set_ylabel("RELATIVE CHANGE")
+        ax2.set_xlabel("MAZE POSITION / CM")
+
+        # TODO: hist of all values not only the medians
+
+        ax3 = ax[1, 0]
+        ax3.hist(all_med_values[~np.isnan(all_med_values)],bins=50)
+        ax3.set_title("HIST OF EUCL. DISTANCE BETWEEN SUBSEQUENT POP. VECTORS")
+        ax3.set_xlabel("EUCLIDEAN DISTANCE")
+        ax3.set_ylabel("COUNTS")
+        ax4 = ax[1, 1]
+        ax4.hist(all_rel_med_values[~np.isnan(all_rel_med_values)],bins=50)
+        ax4.set_title("HIST OF RELATIVE CHANGE OF EUCL. DISTANCE BETWEEN SUBSEQUENT TRANSITIONS")
+        ax4.set_xlabel("RELATIVE CHANGE")
+        ax4.set_ylabel("COUNTS")
+
         plt.show()
 
+    def angle(self):
+        # calculates angles between subsequent transitions
+
+        bin_interval = self.param_dic["spatial_bin_size"]
+        # length of linearized path: 200 cm
+        nr_intervals = int(200 / bin_interval)
+
+        # initialize dictionary with positions
+        angle_dic = {}
+        rel_angle_dic = {}
+        for i in range(nr_intervals):
+            angle_dic["INT"+str(i)] = np.empty((1, 0))
+            rel_angle_dic["INT" + str(i)] = np.empty((1, 0))
+
+        # go through all trials
+        for i, key in enumerate(self.data_set):
+            # get binned activity matrix
+            act_mat, loc_mat = get_activity_mat_time(self.data_set[key], self.param_dic,self.loc_set[key])
+            # get difference matrix: transitions between pop-vectors
+            diff_matrix = pop_vec_diff(act_mat)
+            # calculate angles
+            angle_array, rel_angle_array = angle_between_col_vectors(diff_matrix)
+            # drop last two position --> angle returns n-2 long row vector
+            loc_mat = loc_mat[:-2]
+            rel_loc_mat = loc_mat[:-1]
+            # assign values to dictionary accccording to spatial position
+            for int_counter in range(nr_intervals):
+                # define spatial interval
+                start_interval = int_counter * bin_interval
+                end_interval = (int_counter + 1) * bin_interval
+                # find entries that are within interval
+                angle_dic["INT"+str(int_counter)] = np.hstack((angle_dic["INT"+str(int_counter)],
+                    np.expand_dims(angle_array[(start_interval <= loc_mat) & (loc_mat < end_interval)],axis=0)))
+
+                # find entries that are within interval
+                rel_angle_dic["INT"+str(int_counter)] = np.hstack((rel_angle_dic["INT"+str(int_counter)],
+                    np.expand_dims(rel_angle_array[(start_interval <= rel_loc_mat) & (rel_loc_mat < end_interval)],axis=0)))
 
 
 
+        # plot
+
+        fig, ax = plt.subplots(2,2)
+
+        ax1 = ax[0,0]
+        x_axis = np.linspace(bin_interval,bin_interval*nr_intervals,nr_intervals)
+        med = np.full(x_axis.shape[0],np.nan)
+        all_values = np.empty((1, 0))
+        for i, key in enumerate(angle_dic):
+            if angle_dic[key].size == 0:
+                continue
+            med[i] = np.median(angle_dic[key],axis=1)
+            all_values = np.hstack((all_values, angle_dic[key]))
+            err = robust.mad(angle_dic[key], c=1, axis=1)
+            ax1.errorbar(x_axis[i], med[i], yerr=err,ecolor="gray")
+        ax1.plot(x_axis,med, marker="o",color="black")
+        ax1.set_title("ANGLE BETWEEN SUBSEQUENT TRANSITIONS")
+        ax1.set_ylabel("ANGLE / DEG - MED & MAD")
+        ax1.set_xlabel("MAZE POSITION / CM")
+
+        ax2 = ax[0, 1]
+
+        # calculate relative step length
+        rel_med = np.full(x_axis.shape[0],np.nan)
+        all_rel_values = np.empty((1, 0))
+        for i, key in enumerate(angle_dic):
+            if angle_dic[key].size == 0:
+                continue
+            rel_med[i] = np.median(rel_angle_dic[key],axis=1)
+            all_rel_values = np.hstack((all_rel_values, rel_angle_dic[key]))
+            err = robust.mad(rel_angle_dic[key], c=1, axis=1)
+            ax2.errorbar(x_axis[i], rel_med[i], yerr=err,ecolor="gray")
+        ax2.plot(x_axis, rel_med, marker="o",color="black")
+        ax2.set_title("RELATIVE CHANGE OF ANGLE BETWEEN SUBSEQUENT TRANSITIONS")
+        ax2.set_ylabel("RELATIVE CHANGE")
+        ax2.set_xlabel("MAZE POSITION / CM")
+
+        ax3 = ax[1, 0]
+        ax3.hist(all_values[~np.isnan(all_values)],bins=50)
+        ax3.set_title("HIST OF ANGLE SUBSEQUENT TRANSITIONS")
+        ax3.set_xlabel("ANGLE / DEG")
+        ax3.set_ylabel("COUNTS")
+        ax4 = ax[1, 1]
+        ax4.hist(all_rel_values[~np.isnan(all_rel_values) & ~np.isinf(all_rel_values)],bins=50)
+        ax4.set_title("HIST OF RELATIVE CHANGE OF ANGLE BETWEEN SUBSEQUENT TRANSITIONS")
+        ax4.set_xlabel("RELATIVE CHANGE")
+        ax4.set_ylabel("COUNTS")
+
+        plt.show()
+
+    def operations(self):
+        # calculates number of zeros (no change), +1 (activation) and -1 (inhibition) in population difference
+        # vectors
+
+        bin_interval = self.param_dic["spatial_bin_size"]
+        # length of linearized path: 200 cm
+        nr_intervals = int(200 / bin_interval)
+
+        # initialize dictionary with positions
+        operation_dic = {}
+        for i in range(nr_intervals):
+            operation_dic["INT"+str(i)] = np.empty((3, 0))
+
+        # go through all trials
+        for i, key in enumerate(self.data_set):
+
+            # get binned activity matrix
+            act_mat, loc_mat = get_activity_mat_time(self.data_set[key], self.param_dic,self.loc_set[key])
+            # get difference matrix: transitions between pop-vectors and make the signed binary
+            diff_matrix = np.sign(pop_vec_diff(act_mat))
+            count_operations = np.zeros((3,diff_matrix.shape[1]))
+
+            # go through all difference vectors and count
+            for e, diff_vec in enumerate(diff_matrix.T):
+                unique, counts = np.unique(diff_vec, return_counts=True)
+                for f, operation in enumerate(unique):
+                    count_operations[int(operation)+1,e] = counts[f]
+
+            # drop last position --> difference vector is n-1 long
+            loc_mat = np.expand_dims(loc_mat[:-1], axis = 0)
+
+            # assign values to dictionary accccording to spatial position
+            for int_counter in range(nr_intervals):
+                # define spatial interval
+                start_interval = int_counter * bin_interval
+                end_interval = (int_counter + 1) * bin_interval
+                # find entries that are within interval
+                operation_dic["INT"+str(int_counter)] = np.hstack((operation_dic["INT"+str(int_counter)],
+                    count_operations[:,np.squeeze((start_interval <= loc_mat) & (loc_mat < end_interval))]))
+
+        # plot
+
+        fig, ax = plt.subplots(2, 2)
+
+        ax1 = ax[0, 0]
+        x_axis = np.linspace(bin_interval, bin_interval * nr_intervals, nr_intervals)
+        med = np.full(x_axis.shape[0], np.nan)
+        all_values = np.empty((1, 0))
+        for i, key in enumerate(operation_dic):
+            if operation_dic[key].size == 0:
+                continue
+            med[i] = np.median(operation_dic[key][0])
+            #all_values = np.hstack((all_values, operation_dic[key][0]))
+            err = robust.mad(operation_dic[key][0], c=1)
+            ax1.errorbar(x_axis[i], med[i], yerr=err, ecolor="gray")
+        ax1.plot(x_axis, med, marker="o", color="black")
+        ax1.set_title("NUMBER OF SILENCED CELLS")
+        ax1.set_ylabel("NR. CELLS")
+        ax1.set_xlabel("MAZE POSITION / CM")
+
+        ax2 = ax[0, 1]
+        x_axis = np.linspace(bin_interval, bin_interval * nr_intervals, nr_intervals)
+        med = np.full(x_axis.shape[0], np.nan)
+        all_values = np.empty((1, 0))
+        for i, key in enumerate(operation_dic):
+            if operation_dic[key].size == 0:
+                continue
+            med[i] = np.median(operation_dic[key][1])
+            #all_values = np.hstack((all_values, operation_dic[key][0]))
+            err = robust.mad(operation_dic[key][1], c=1)
+            ax2.errorbar(x_axis[i], med[i], yerr=err, ecolor="gray")
+        ax2.plot(x_axis, med, marker="o", color="black")
+        ax2.set_title("NUMBER OF UNCHANGED CELLS")
+        ax2.set_ylabel("NR. CELLS")
+        ax2.set_xlabel("MAZE POSITION / CM")
+
+        ax3 = ax[1, 0]
+        x_axis = np.linspace(bin_interval, bin_interval * nr_intervals, nr_intervals)
+        med = np.full(x_axis.shape[0], np.nan)
+        all_values = np.empty((1, 0))
+        for i, key in enumerate(operation_dic):
+            if operation_dic[key].size == 0:
+                continue
+            med[i] = np.median(operation_dic[key][2])
+            #all_values = np.hstack((all_values, operation_dic[key][0]))
+            err = robust.mad(operation_dic[key][2], c=1)
+            ax3.errorbar(x_axis[i], med[i], yerr=err, ecolor="gray")
+        ax3.plot(x_axis, med, marker="o", color="black")
+        ax3.set_title("NUMBER OF ACTIVATED CELLS")
+        ax3.set_ylabel("NR. CELLS")
+        ax3.set_xlabel("MAZE POSITION / CM")
 
 
+
+        plt.show()

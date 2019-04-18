@@ -188,6 +188,16 @@ def get_activity_mat_time(firing_times,param_dic,location=[]):
     return act_mat, loc_vec
 
 
+def unit_vector(vector):
+    # Returns the unit vector of the vector
+    return vector / np.linalg.norm(vector)
+
+def angle_between(v1, v2):
+    #  Returns the angle in radians between vectors 'v1' and 'v2'::
+    v1_u = unit_vector(v1)
+    v2_u = unit_vector(v2)
+    return np.rad2deg(np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0)))
+
 def calc_pop_vector_entropy(act_mat):
     # calculates shannon entropy for each population vector in act_mat
     pop_vec_entropy = np.zeros(act_mat.shape[1])
@@ -295,7 +305,6 @@ def calc_diff(a, b, diff_meas):
     return D
 
 
-
 def pop_vec_diff(data_set):
     # computes difference vectors between subsequent population vectors and returns matrix of difference vectors
     # calculate transition vector between two subsequent population states --> rows: cells, col: time bins
@@ -304,14 +313,39 @@ def pop_vec_diff(data_set):
         diffMat.T[i,:] = data_set.T[i+1,:] - data_set.T[i,:]
     return diffMat
 
+
 def pop_vec_euclidean_dist(data_set):
     # computes euclidean distance between column vectors of data set
     # returns row vector with euclidean distances
     dist_mat = np.zeros(data_set.shape[1]-1)
 
-    for i,_ in enumerate(data_set.T[:-1,:]):
+    for i, _ in enumerate(data_set.T[:-1,:]):
         dist_mat[i] = distance.euclidean(data_set.T[i+1,:],data_set.T[i,:])
-    return dist_mat
+
+    # calculate relative change between subsequent vectors
+    rel_dist_mat = np.zeros(dist_mat.shape[0] - 1)
+
+    for i, _ in enumerate(dist_mat[:-1]):
+        rel_dist_mat[i] = abs(1- dist_mat[i+1]/dist_mat[i])
+
+    return dist_mat, rel_dist_mat
+
+
+def angle_between_col_vectors(data_set):
+    # computes angle between two subsequent transitions --> transitions: from one pop-vec to the next
+    # returns row vector with angles in radiant
+    angle_mat = np.zeros(data_set.shape[1]-1)
+
+    for i,_ in enumerate(data_set.T[:-1,:]):
+        angle_mat[i] = angle_between(data_set.T[i+1,:],data_set.T[i,:])
+
+    # calculate relative change between subsequent vectors
+    rel_angle_mat = np.zeros(angle_mat.shape[0] - 1)
+
+    for i, _ in enumerate(angle_mat[:-1]):
+        rel_angle_mat[i] = abs(1- angle_mat[i+1]/angle_mat[i])
+
+    return angle_mat, rel_angle_mat
 
 
 

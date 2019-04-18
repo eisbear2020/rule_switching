@@ -166,3 +166,21 @@ in different spatial locations
 ![alt text](../plots/quant_state_transition_angle_west.png)
 
 * what is the explanation for 120 deg?
+
+## Operations 
+
+* using difference vectors between two subsequent population vectors 
+* making difference vectors signed binary
+* counting -1 (silencing), 0 (unchanged), +1 (activated)
+
+### rule light (_2)
+
+![alt text](../plots/quant_state_transition_operations_light.png)
+
+### rule west (_6)
+
+![alt text](../plots/quant_state_transition_operations_west.png)
+
+### rule switch (_4)
+
+![alt text](../plots/quant_state_transition_operations_switch.png)
