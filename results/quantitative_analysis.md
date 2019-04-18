@@ -128,10 +128,6 @@ distribution of within and across rule distance:
   * monotonically increasing curve: several cells contribute majorly to
   difference --> between global and local remapping
 
-## rule light before (_2) /after sleep (_4)
-
-![alt text](../plots/quant_cell_contrib_recon_light.png)
-
 # COMPARISON OF POPULATION VECTORS FOR SAME RULE BEFORE/AFTER SLEEP
 
 * remapping also happens without a rule switch --> seems to be happening
@@ -142,6 +138,8 @@ in different spatial locations
 ![alt text](../plots/quant_compare_cos_RULE1_hist.png)
 
 ![alt text](../plots/quant_compare_cos_trials_RULE1.png)
+
+![alt text](../plots/quant_cell_contrib_recon_light.png)
 
 # STATE TRANSITION ANALYSIS
 
