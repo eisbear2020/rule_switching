@@ -35,8 +35,6 @@ contains functions that compute parts of a thorough analysis:
 
 ## select_data.py
 importing/filtering/saving of data. Uses helper functions from filter_functions.py
-## filter_functions.py
-helper functions for selecting data
 
 # Results
 

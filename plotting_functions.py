@@ -151,6 +151,8 @@ def plot_3D_scatter(ax, mds, param_dic, data_sep=None, loc_vec=[]):
 
     # for more than one data set
     if data_sep:
+        data_sep = int(data_sep)
+
         # if lines between points should be drawn
         if param_dic["lines"]:
             for i,c in enumerate(mds):

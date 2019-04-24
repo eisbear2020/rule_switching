@@ -27,6 +27,7 @@
 #                   - remove_cells: cross_cos_diff and cross_cos_diff_trials with modified dictionaries leaving out
 #                     defined cells
 #
+#       TODO: implement non spatial methods
 #
 ########################################################################################################################
 
@@ -76,9 +77,28 @@ class BinDictionary:
         # set default saving directory
         self.saving_dir = param_dic["saving_dir_bin_dic"]
 
+        # file name for saving
+        self.file_name = param_dic["file_name"]
+
+    def check_and_create_dic(self):
+        # if dictionary does not exist yet --> create a new one
+        if not os.path.isfile(self.saving_dir + self.file_name):
+            dic = {
+                "spatial": {},
+                "temporal": {}
+            }
+
+        # if dictionary exists --> return
+        else:
+            dic = pickle.load(open(self.saving_dir + self.file_name, "rb"))
+        return dic
+
     def create_spatial_bin_dictionaries_transition(self, data_set, loc_set, new_rule_trial, dic_1_name, dic_2_name):
         # separates one data set into two binned dictionaries depending on the new rule trial
         # create "activity matrices" consisting of population vectors for each rule
+
+        # check if dictionary exists already
+        dic = self.check_and_create_dic()
 
         # how many cells are in the data set
         nr_cells = len(next(iter(data_set.values())))
@@ -113,20 +133,21 @@ class BinDictionary:
                 for int_count, key in enumerate(dic_spat_int_2):
                     dic_spat_int_2[key] = np.hstack((dic_spat_int_2[key], np.expand_dims(act_mat[:, int_count], 1)))
 
-        # save first dictionary as pickle
-        filename = self.saving_dir + "SWITCH_" + dic_1_name + "_spatial"
-        outfile = open(filename, 'wb')
-        pickle.dump(dic_spat_int_1, outfile)
-        outfile.close()
+        # save to dictionary
+        dic["spatial"]["SWITCH_" + dic_1_name] = dic_spat_int_1
+        dic["spatial"]["SWITCH_" + dic_2_name] = dic_spat_int_2
 
-        # save second dictionary as pickle
-        filename = self.saving_dir + "SWITCH_" + dic_2_name + "_spatial"
+        # save first dictionary as pickle
+        filename = self.saving_dir+self.file_name
         outfile = open(filename, 'wb')
-        pickle.dump(dic_spat_int_2, outfile)
+        pickle.dump(dic, outfile)
         outfile.close()
 
     def create_spatial_bin_dictionary(self, data_set, loc_set, dic_name):
         # create "activity matrices" consisting of population vectors for each rule
+
+        # check if dictionary exists already
+        dic = self.check_and_create_dic()
 
         # how many cells are in the data set
         nr_cells = len(next(iter(data_set.values())))
@@ -152,17 +173,22 @@ class BinDictionary:
             for int_count, key in enumerate(dic_spat_int):
                 dic_spat_int[key] = np.hstack((dic_spat_int[key], np.expand_dims(act_mat[:, int_count], 1)))
 
+        dic["spatial"][dic_name] = dic_spat_int
+
         # save first dictionary as pickle
-        filename = self.saving_dir + dic_name + "_spatial"
+        filename = self.saving_dir+self.file_name
         outfile = open(filename, 'wb')
-        pickle.dump(dic_spat_int, outfile)
+        pickle.dump(dic, outfile)
         outfile.close()
 
     def combine_bin_dictionaries(self, dic_1_name, dic_2_name, comb_dic_name):
         # takes two dictionaries and combines them in one
 
-        dic_1 = pickle.load(open(self.saving_dir+dic_1_name, "rb"))
-        dic_2 = pickle.load(open(self.saving_dir+dic_2_name, "rb"))
+        # check if dictionary exists already
+        dic = self.check_and_create_dic()
+
+        dic_1 = dic["spatial"][dic_1_name]
+        dic_2 = dic["spatial"][dic_2_name]
 
         # combines entries of two dictionaries
         if len(dic_1.keys()) != len(dic_2.keys()):
@@ -176,16 +202,18 @@ class BinDictionary:
         for key in dic_1:
             combined_dic[key] = np.hstack((dic_1[key],dic_2[key]))
 
-        # save first dictionary as pickle
-        filename = self.saving_dir+comb_dic_name
-        outfile = open(filename, 'wb')
-        pickle.dump(combined_dic, outfile)
-        outfile.close()
+        dic["spatial"][comb_dic_name] = combined_dic
 
+        # save first dictionary as pickle
+        filename = self.saving_dir+self.file_name
+        outfile = open(filename, 'wb')
+        pickle.dump(dic, outfile)
+        outfile.close()
 
 ########################################################################################################################
 #   ANALYSIS BASE CLASS
 ########################################################################################################################
+
 
 class Analysis:
     """Base class for quantitative analysis """
@@ -193,10 +221,11 @@ class Analysis:
     def __init__(self, dic_1_name, dic_2_name, param_dic):
 
         self.saving_dir = param_dic["saving_dir_bin_dic"]
+        self.file_name = param_dic["file_name"]
 
         # bin dictionaries
-        self.bin_dic_1 = pickle.load(open(self.saving_dir + dic_1_name, "rb"))
-        self.bin_dic_2 = pickle.load(open(self.saving_dir + dic_2_name, "rb"))
+        self.bin_dic_1 = pickle.load(open(self.saving_dir + self.file_name, "rb"))["spatial"][dic_1_name]
+        self.bin_dic_2 = pickle.load(open(self.saving_dir + self.file_name, "rb"))["spatial"][dic_2_name]
 
         # binning method
         self.binning_method = param_dic["binning_method"]
@@ -573,11 +602,21 @@ class Analysis:
                 else:
                     break
 
+        # check if first n cells exist for all spatial positions
+        n_cells_exist = True
 
-        # go through contribution vector and get contribution of first n cells
-        for i, contribution in enumerate(contribution_array.T):
-            # go trough cell contribution
-            first_n_cells_contribution[i] = contribution[n_first_cells]
+        while n_cells_exist:
+            n_cells_exist = False
+            # go through contribution vector and get contribution of first n cells
+            for i, contribution in enumerate(contribution_array.T):
+                if np.isnan(contribution[n_first_cells]):
+                    first_n_cells_contribution = np.zeros(contribution_array.shape[1])
+                    n_first_cells -= 1
+                    n_cells_exist = True
+                    break
+                else:
+                    # go trough cell contribution
+                    first_n_cells_contribution[i] = contribution[n_first_cells]
 
         # plot for each spatial bin: magnitude of difference & contribution normalized by nr. of cells
         width = 8
@@ -612,7 +651,6 @@ class StateTransitionAnalysis:
         self.loc_set = loc_set
         self.param_dic = param_dic
 
-    # TODO: euclidean distance, angle, number of inhibitions/activations
     def euclidean(self):
         # calculates euclidean distance between subsequent population vectors
 

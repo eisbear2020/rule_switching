@@ -17,13 +17,13 @@ spatial bin
 * normalization: divide median of across-rule cos distances by within rule cos median
 distance for each spatial bin
 
-![alt text](../plots/quant_transition_cos.png)
+![alt text](../plots/mjc189-1905-0517/quant_transition_cos.png)
 
 * can we tell something from different results of the normalization by rule 1 and rule b?
 
 histograms of within vs. across rule cos distance
 
-![alt text](../plots/quant_transition_cos_histograms.png)
+![alt text](../plots/mjc189-1905-0517/quant_transition_cos_histograms.png)
 
 **Separating trials**:
 * for each spatial bin and trial after the switch:
@@ -31,7 +31,7 @@ histograms of within vs. across rule cos distance
     --> get array for all comparisons
     * taking the median
 
-![alt text](../plots/quant_transition_cos_trials.png)
+![alt text](../plots/mjc189-1905-0517/quant_transition_cos_trials.png)
 
 * continuous remapping for certain spatial positions. To measure the actual effect the
 across-trial variability without rule switch needs to be taken into account.
@@ -42,16 +42,16 @@ across-trial variability without rule switch needs to be taken into account.
 * effect size: diff / pooled std
 * contribution to cos diff: leave-one-out analysis
 
-![alt text](../plots/quant_transition_cos_cells_char.png)
+![alt text](../plots/mjc189-1905-0517/quant_transition_cos_cells_char.png)
 
 * removing cells 46 and 69 significantly reduces the cosine difference for the rule switch
 for the last couple of spatial bins
 
-![alt text](../plots/quant_transition_cos_trials_2_removed_cells.png)
+![alt text](../plots/mjc189-1905-0517/quant_transition_cos_trials_2_removed_cells.png)
 
 * difference is not statistically significant anymore:
 
-![alt text](../plots/quant_transition_cos_2_removed_cells.png)
+![alt text](../plots/mjc189-1905-0517/quant_transition_cos_2_removed_cells.png)
 
 
 
@@ -68,11 +68,11 @@ spatial bin
 distance for each spatial bin
 * significance: across-rules distance vs. union of within-rule distances
 
-![alt text](../plots/quant_compare_cos_2_4_6.png)
+![alt text](../plots/mjc189-1905-0517/quant_compare_cos_2_4_6.png)
 
 distribution of within and across rule distance:
 
-![alt text](../plots/quant_compare_cos_histograms.png)
+![alt text](../plots/mjc189-1905-0517/quant_compare_cos_histograms.png)
 
 **Separating trials: RULE 1 (_2,_4) vs. RULE 2 (_6)**:
 * for each spatial bin and trial of RULE 2:
@@ -80,7 +80,7 @@ distribution of within and across rule distance:
     --> get array for all comparisons
     * taking the median
 
-![alt text](../plots/quant_compare_cos_trials_2_4_6.png)
+![alt text](../plots/mjc189-1905-0517/quant_compare_cos_trials_2_4_6.png)
 
 * relatively constant population states
 * between 60 and 110 cm there seem to be clusters of different dynamics
@@ -93,15 +93,15 @@ distribution of within and across rule distance:
 * effect size: diff / pooled std
 * contribution to cos diff: leave-one-out analysis
 
-![alt text](../plots/quant_compare_cos_cells.png)
+![alt text](../plots/mjc189-1905-0517/quant_compare_cos_cells.png)
 
 * removing cells 46 and 69:
 
-![alt text](../plots/quant_compare_cos_trials_2_removed_cells.png)
+![alt text](../plots/mjc189-1905-0517/quant_compare_cos_trials_2_removed_cells.png)
 
 * difference seem to depend on other cells after the initial transition as well:
 
-![alt text](../plots/quant_compare_cos_2_removed_cells.png)
+![alt text](../plots/mjc189-1905-0517/quant_compare_cos_2_removed_cells.png)
 
 * significance is still given for the last 30 cm
 
@@ -111,11 +111,11 @@ distribution of within and across rule distance:
 
 * orange bars: the higher the values the more local is the remapping
 
-![alt text](../plots/quant_cell_contrib_switch.png)
+![alt text](../plots/mjc189-1905-0517/quant_cell_contrib_switch.png)
 
 ## rule light (_2, _4) vs. rule west (_6)
 
-![alt text](../plots/quant_cell_contrib_2_4_6.png)
+![alt text](../plots/mjc189-1905-0517/quant_cell_contrib_2_4_6.png)
 
 * 3 cases:
 
@@ -133,13 +133,13 @@ distribution of within and across rule distance:
 * remapping also happens without a rule switch --> seems to be happening
 in different spatial locations
 
-![alt text](../plots/quant_compare_cos_RULE1.png)
+![alt text](../plots/mjc189-1905-0517/quant_compare_cos_RULE1.png)
 
-![alt text](../plots/quant_compare_cos_RULE1_hist.png)
+![alt text](../plots/mjc189-1905-0517/quant_compare_cos_RULE1_hist.png)
 
-![alt text](../plots/quant_compare_cos_trials_RULE1.png)
+![alt text](../plots/mjc189-1905-0517/quant_compare_cos_trials_RULE1.png)
 
-![alt text](../plots/quant_cell_contrib_recon_light.png)
+![alt text](../plots/mjc189-1905-0517/quant_cell_contrib_recon_light.png)
 
 # STATE TRANSITION ANALYSIS
 
@@ -147,21 +147,21 @@ in different spatial locations
 
 ### rule light (_2)
 
-![alt text](../plots/quant_state_transition_euc_light.png)
+![alt text](../plots/mjc189-1905-0517/quant_state_transition_euc_light.png)
 
 ### rule west (_6)
 
-![alt text](../plots/quant_state_transition_euc_west.png)
+![alt text](../plots/mjc189-1905-0517/quant_state_transition_euc_west.png)
 
 ## Angle between subsequent state transitions
 
 ### rule light (_2)
 
-![alt text](../plots/quant_state_transition_angle_light.png)
+![alt text](../plots/mjc189-1905-0517/quant_state_transition_angle_light.png)
 
 ### rule west (_6)
 
-![alt text](../plots/quant_state_transition_angle_west.png)
+![alt text](../plots/mjc189-1905-0517/quant_state_transition_angle_west.png)
 
 * what is the explanation for 120 deg?
 
@@ -173,12 +173,12 @@ in different spatial locations
 
 ### rule light (_2)
 
-![alt text](../plots/quant_state_transition_operations_light.png)
+![alt text](../plots/mjc189-1905-0517/quant_state_transition_operations_light.png)
 
 ### rule west (_6)
 
-![alt text](../plots/quant_state_transition_operations_west.png)
+![alt text](../plots/mjc189-1905-0517/quant_state_transition_operations_west.png)
 
 ### rule switch (_4)
 
-![alt text](../plots/quant_state_transition_operations_switch.png)
+![alt text](../plots/mjc189-1905-0517/quant_state_transition_operations_switch.png)

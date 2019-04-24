@@ -20,45 +20,111 @@
 ########################################################################################################################
 
 import pickle
+import os
 import numpy as np
+
+# pre-selection
+# ----------------------------------------------------------------------------------------------------------------------
+from select_data import save_selected_data
+
+# manifold methods
+# ----------------------------------------------------------------------------------------------------------------------
 from manifold_methods import SingleManifold
 from manifold_methods import ManifoldTransition
 from manifold_methods import ManifoldCompare
-from comp_functions import calc_loc_and_speed
 
+# quantification methods
+# ----------------------------------------------------------------------------------------------------------------------
 from quantification_methods import BinDictionary
 from quantification_methods import Analysis
 from quantification_methods import StateTransitionAnalysis
 
+# data description dictionary
+data_description_dictionary = {
+    "1": "RULE EAST",
+    "2": "RULE WEST",
+    "3": "RULE LIGHT"
+}
+
 
 if __name__ == '__main__':
 
-########################################################################################################################
-#   PARAMETERS
-########################################################################################################################
+    ####################################################################################################################
+    #   DEFINE DATA INPUT
+    ####################################################################################################################
 
-    # FILE PARAMETERS
+    data_selection_dictionary = {
+        "data_dir": "../02 Data",
+        # define session name
+        "session_name": "mjc189-1905-0517",
+        # select cell type:
+        # p1: pyramidal cells of the HPC, p2 - p3: pyramidal cells of the PFC ,b1: inter-neurons of HPC
+        # b2 - b3: inter-neurons of HPC
+        "cell_type_array": ["p2", "p3"],
+        "start_arm": [1],
+        "goal_arm": [3],
+        # select rule type:
+        # 1: east, 2: west, 3: light
+        "rule_type": [2, 3],
+        "error_trial": [1]
+    }
+
+    file_name = data_selection_dictionary["session_name"]+"_ct_"+str(data_selection_dictionary["cell_type_array"])\
+                + "_sa_" + str(data_selection_dictionary["start_arm"]) + "_ga_" + \
+                str(data_selection_dictionary["goal_arm"]) + "_et_" + str(data_selection_dictionary["error_trial"])
+
+    session_name = data_selection_dictionary["session_name"]
+
+    # check if data exists as pickle --> if not, create pickled data
+    if not os.path.isfile("temp_data/"+file_name):
+        save_selected_data(data_selection_dictionary)
+
+    ####################################################################################################################
+    #   LOADING THE DATA
+    ####################################################################################################################
+
+    infile = open("temp_data/" + file_name, 'rb')
+    data = pickle.load(infile)
+    infile.close()
+
+    # spike data
     # ------------------------------------------------------------------------------------------------------------------
-    # HPC data, rule 3: light and rule 2: west
-    file_rule_3 = "mjc189-1905-0517_2_ct_['p1']_sa_[1]_ga_[3]_rt_[3]_et_[1]"
-    file_rule_2 = "mjc189-1905-0517_6_ct_['p1']_sa_[1]_ga_[3]_rt_[2]_et_[1]"
-    file_rule_switch = "mjc189-1905-0517_4_ct_['p1']_sa_[1]_ga_[3]_rt_[2, 3]_et_[1]"
-    #file_rule_switch = "mjc190-1607-0515_4_ct_['p1']_sa_[1]_ga_[2]_rt_[1, 3]_et_[1]"
+    res_data_set_2 = data["2"]["res"]
+    res_data_set_4 = data["4"]["res"]
+    res_data_set_6 = data["6"]["res"]
+
+    # location data
+    # ------------------------------------------------------------------------------------------------------------------
+    whl_lin_data_set_2 = data["2"]["whl_lin"]
+    whl_lin_data_set_4 = data["4"]["whl_lin"]
+    whl_lin_data_set_6 = data["6"]["whl_lin"]
+
+    # info
+    # ------------------------------------------------------------------------------------------------------------------
+    new_rule_trial = data["4"]["info"]["new_rule_trial"]
+    rule_order = data["4"]["info"]["rule_order"]
+
+    ####################################################################################################################
+    #   PARAMETERS
+    ####################################################################################################################
 
     # dictionary for all other parameters
     param_dic = {}
 
     # DATA DESCRIPTION
     # ------------------------------------------------------------------------------------------------------------------
+    param_dic["data_descr"] = [data_description_dictionary[str(rule_order[0])],
+                               data_description_dictionary[str(rule_order[1])]]
 
-    # description of data
-    param_dic["data_descr"] = ["RULE LIGHT", "RULE WEST"]
+    # session and file name
+    param_dic["session_name"] = session_name
+    param_dic["file_name"] = file_name
 
     # ANALYSIS PARAMETERS
     # ------------------------------------------------------------------------------------------------------------------
 
     # binning with "temporal","spatial"
-    param_dic["binning_method"] = "temporal"
+    param_dic["binning_method"] = "spatial"
 
     # interval for temporal binning in s
     param_dic["time_bin_size"] = 0.1
@@ -67,7 +133,7 @@ if __name__ == '__main__':
     param_dic["spatial_bin_size"] = 10
 
     # spatial bins to exclude: e.g. first 2 (e.g 0-10cm and 10-20cm) and last (190-200cm) --> [2,-1]
-    param_dic["spat_bins_excluded"] = [2,-1]
+    param_dic["spat_bins_excluded"] = [2, -1]
 
     # filter high synchrony events/immobility using the speed in cm/s --> cm/2
     # without filter --> set to []
@@ -84,12 +150,12 @@ if __name__ == '__main__':
     # first parameter of method:
     # MDS --> p1: difference measure ["jaccard","cos","euclidean"]
     # PCA --> p1 does not exist --> ""
-    param_dic["dr_method_p1"] = "euclidean"
+    param_dic["dr_method_p1"] = "cos"
 
     # second parameter of method:
     # MDS --> p2: number of components
     # PCA --> p2: number of components
-    param_dic["dr_method_p2"] = 2
+    param_dic["dr_method_p2"] = 3
 
     # number of trials to compare
     param_dic["nr_of_trials"] = 21
@@ -98,7 +164,7 @@ if __name__ == '__main__':
 
     # QUANTITATIVE ANALYSIS
     # ------------------------------------------------------------------------------------------------------------------
-    # statistical method: Kruskall-Wallis --> "KW", Mann-Whitney-U --> "MWU"
+    # statistical method: Kruskal-Wallis --> "KW", Mann-Whitney-U --> "MWU"
     param_dic["stats_method"] = "MWU"
 
     # alpha value
@@ -113,8 +179,7 @@ if __name__ == '__main__':
     param_dic["lines"] = True
 
     # saving directory for bin dictionaries
-    param_dic["saving_dir_bin_dic"] = "temp_data/quant_analysis/"
-
+    param_dic["saving_dir_bin_dic"] = "temp_data/binned_dictionaries/"
 
     # length of spatial segment for plotting (track [200cm] will be divided into equal length segments)
     # set to 20: TODO --> adapt for different lengths
@@ -137,36 +202,6 @@ if __name__ == '__main__':
     # param_dic["axis_lim"] = axis_lim
     param_dic["axis_lim"] =[]
 
-
-########################################################################################################################
-#   LOADING THE DATA
-########################################################################################################################
-
-    # spike data
-    # ------------------------------------------------------------------------------------------------------------------
-    infile_3 = open("temp_data/res_"+file_rule_3, 'rb')
-    res_rule_light = pickle.load(infile_3)
-    infile_3.close()
-    infile_2 = open("temp_data/res_"+file_rule_2, 'rb')
-    res_rule_west = pickle.load(infile_2)
-    infile_2.close()
-    infile_23 = open("temp_data/res_"+file_rule_switch, 'rb')
-    res_rule_switch = pickle.load(infile_23)
-    infile_23.close()
-
-    # location data
-    # ------------------------------------------------------------------------------------------------------------------
-    infile_3 = open("temp_data/whl_lin_" + file_rule_3, 'rb')
-    whl_lin_rule_light = pickle.load(infile_3)
-    infile_3.close()
-    infile_2 = open("temp_data/whl_lin_" + file_rule_2, 'rb')
-    whl_lin_rule_west = pickle.load(infile_2)
-    infile_2.close()
-    infile_23 = open("temp_data/whl_lin_" + file_rule_switch, 'rb')
-    whl_lin_rule_switch = pickle.load(infile_23)
-    infile_23.close()
-
-
 ########################################################################################################################
 #   COMPARISON ANALYSIS
 ########################################################################################################################
@@ -176,16 +211,17 @@ if __name__ == '__main__':
 
     # look at one rule across multiple trials
     # ------------------------------------------------------------------------------------------------------------------
-    # new_analysis = SingleManifold(res_rule_light, whl_lin_rule_light, param_dic)
+    # new_analysis = SingleManifold(res_data_set_2, whl_lin_data_set_2, param_dic)
     # new_analysis.state_analysis()
     # new_analysis.plot_in_one_fig_color_position()
 
     # compare two rules using dimensionality reduction for the combined data (reduce to 2 or 3 dimensions)
     # ------------------------------------------------------------------------------------------------------------------
 
-    # new_comparison = ManifoldCompare([res_rule_light, res_rule_west],[whl_lin_rule_light, whl_lin_rule_west],
-    #                                   param_dic)
-    # new_comparison.state_analysis()
+    new_comparison = ManifoldCompare([res_data_set_2, res_data_set_6], [whl_lin_data_set_2, whl_lin_data_set_6],
+                                      param_dic)
+    new_comparison.state_analysis()
+    new_comparison.plot_in_one_fig_color_position()
 
     # QUANTITATIVE ANALYSIS
     ####################################################################################################################
@@ -193,15 +229,16 @@ if __name__ == '__main__':
     # create binned dictionaries
     # ------------------------------------------------------------------------------------------------------------------
     # dic = BinDictionary(param_dic)
-    # dic.create_spatial_bin_dictionary(res_rule_light, whl_lin_rule_light, "RULE_LIGHT")
-    # dic.create_spatial_bin_dictionary(res_rule_west, whl_lin_rule_west, "RULE_WEST")
-    #dic.combine_bin_dictionaries("RULE_LIGHT_spatial","SWITCH_LIGHT_spatial","RULE_LIGHT_2_4")
-
+    # dic.create_spatial_bin_dictionary(res_data_set_2, whl_lin_data_set_2, param_dic["data_descr"][0])
+    # dic.create_spatial_bin_dictionary(res_data_set_6, whl_lin_data_set_6, param_dic["data_descr"][1])
+    # dic.combine_bin_dictionaries("RULE LIGHT", "SWITCH_RULE LIGHT", "RULE LIGHT_2_4")
 
     # compare RULE A and RULE B
     # ------------------------------------------------------------------------------------------------------------------
-    # new_compare = Analysis("RULE_LIGHT_spatial", "SWITCH_LIGHT_spatial", param_dic)
+    # new_compare = Analysis("RULE LIGHT", "RULE WEST", param_dic)
     # new_compare.cross_cos_diff()
+    # new_compare.characterize_cells()
+    # new_compare.cell_contribution()
     # new_compare.cross_cos_diff_spat_trials()
     # new_compare.remove_cells([46,69])
 
@@ -212,9 +249,7 @@ if __name__ == '__main__':
     # MANIFOLD ANALYSIS
     ####################################################################################################################
 
-    # trial with new rule
-    # new_rule_trial = 9
-    # new_analysis = ManifoldTransition(res_rule_switch, whl_lin_rule_switch, param_dic)
+    # new_analysis = ManifoldTransition(res_data_set_4, whl_lin_data_set_4, param_dic)
     # new_analysis.state_analysis()
     # new_analysis.plot_in_one_fig(new_rule_trial)
     # new_analysis.plot_in_one_fig_color_position()
@@ -225,10 +260,10 @@ if __name__ == '__main__':
     # create binned dictionaries
     # ------------------------------------------------------------------------------------------------------------------
     # dic = BinDictionary(param_dic)
-    # new_rule_trial = 7
-    # dic.create_spatial_bin_dictionaries_transition(res_rule_switch, whl_lin_rule_switch, new_rule_trial, "LIGHT", "WEST")
-
-    # new_transition = Analysis("SWITCH_LIGHT_spatial", "SWITCH_WEST_spatial", param_dic)
+    # dic.create_spatial_bin_dictionaries_transition(res_data_set_4, whl_lin_data_set_4, new_rule_trial,
+    #                                                param_dic["data_descr"][0], param_dic["data_descr"][1])
+    #
+    # new_transition = Analysis("SWITCH_RULE LIGHT", "SWITCH_RULE WEST", param_dic)
     # new_transition.cross_cos_diff()
     # new_transition.cross_cos_diff_spat_trials()
     # new_transition.characterize_cells()
@@ -245,21 +280,21 @@ if __name__ == '__main__':
 
     # looking at one rule
     # ------------------------------------------------------------------------------------------------------------------
-    # state_transition_analysis = SingleManifold(res_rule_light, whl_lin_rule_light, param_dic)
+    # state_transition_analysis = SingleManifold(res_data_set_1, whl_lin_data_set1, param_dic)
     # state_transition_analysis.state_transition_analysis()
 
     # comparing two rules
     # ------------------------------------------------------------------------------------------------------------------
-    # new_comparison = ManifoldCompare([res_rule_light, res_rule_west],[whl_lin_rule_light, whl_lin_rule_west], param_dic)
+    # new_comparison = ManifoldCompare([res_data_set_1, res_data_set_2],[whl_lin_data_set1, whl_lin_data_set2], param_dic)
     # new_comparison.state_transition_analysis()
 
     # QUANTITATIVE ANALYSIS
     ####################################################################################################################
 
-    new_state_transition = StateTransitionAnalysis(res_rule_switch, whl_lin_rule_switch, param_dic)
+    # new_state_transition = StateTransitionAnalysis(res_rule_switch, whl_lin_rule_switch, param_dic)
 
     # euclidean distance between subsequent steps
     # ------------------------------------------------------------------------------------------------------------------
     # new_state_transition.euclidean()
     # new_state_transition.angle()
-    new_state_transition.operations()
+    # new_state_transition.operations()

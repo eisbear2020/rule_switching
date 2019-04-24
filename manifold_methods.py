@@ -56,6 +56,7 @@ from plotting_functions import plot_compare
 #   MANIFOLD BASE CLASS
 ########################################################################################################################
 
+
 class Manifold():
     ''' Base class for manifold analysis'''
 
@@ -100,9 +101,8 @@ class Manifold():
         # array with separator indices for different trials
         self.data_sep = []
 
-
     def reduce_dimension(self,dat_mat):
-    # reduces the dimension using one of the defined methods
+        # reduces the dimension using one of the defined methods
 
         # clear in case there was a previous result
         self.result_dr = []
@@ -114,7 +114,6 @@ class Manifold():
             self.result_dr = perform_PCA(dat_mat, self.param_dic)
         elif self.dr_method == "TSNE":
             self.result_dr = perform_TSNE(dat_mat, self.param_dic)
-
 
     def plot_in_one_fig(self,rule_sep = []):
         # plots results as scatter plot separating either trials (default) or rules
@@ -219,11 +218,8 @@ class SingleManifold(Manifold):
         self.reduce_dimension(dat_mat)
         self.plot_in_one_fig_color_position()
 
-
-
-
     def plot_in_multi_figs(self):
-    # plots results as scatter plot in different figures
+        # plots results as scatter plot in different figures
 
         # row for plot
         c_r = 0
@@ -263,9 +259,8 @@ class SingleManifold(Manifold):
         if self.save_plot:
             fig.savefig("plots/"+self.plot_file_name+".png")
 
-
     def plot_in_one_fig_color_position(self):
-    # plots results as scatter plot and colors lines according to location
+        # plots results as scatter plot and colors lines according to location
 
         # 2D plot
         if self.dr_method_p2 == 2:
@@ -275,7 +270,7 @@ class SingleManifold(Manifold):
             for data_ID in range(self.nr_trials_to_compare):
                 data_subset = self.result_dr[int(self.data_sep[data_ID]):int(self.data_sep[data_ID+1]), :]
                 loc_vec_subset = self.loc_vec[int(self.data_sep[data_ID]):int(self.data_sep[data_ID+1])]
-                plot_2D_scatter(ax, data_subset, self.param_dic,[],loc_vec_subset)
+                plot_2D_scatter(ax, data_subset, self.param_dic,None,loc_vec_subset)
 
         # 3D plot
         elif self.dr_method_p2 == 3:
@@ -284,7 +279,7 @@ class SingleManifold(Manifold):
             ax = fig.add_subplot(111,projection='3d')
             for data_ID in range(self.nr_trials_to_compare):
                 data = self.result_dr[int(self.data_sep[data_ID]):int(self.data_sep[data_ID+1]), :]
-                plot_3D_scatter(ax, data, self.param_dic,[],self.loc_vec)
+                plot_3D_scatter(ax, data, self.param_dic,None,self.loc_vec)
 
         fig.suptitle(self.dr_method+" : "+self.dr_method_p1, fontweight='bold')
         handles, labels = fig.gca().get_legend_handles_labels()
@@ -298,6 +293,7 @@ class SingleManifold(Manifold):
 ########################################################################################################################
 #   MANIFOLD TRANSITION ANALYSIS
 ########################################################################################################################
+
 
 class ManifoldTransition(SingleManifold):
     ''' Methods for analyzing manifold transition'''
@@ -381,8 +377,8 @@ class ManifoldCompare(Manifold):
         self.nr_cells = len(next(iter(self.data_sets[0].values())))
 
     def state_analysis(self):
-    # combines multiple data sets, reduces the dimension and plots sets in different colors in 2D/3D for one data set of each
-    # condition
+        # combines multiple data sets, reduces the dimension and plots sets in different colors in 2D/3D for one data
+        # set of each condition
 
         # initialize data matrix
         dat_mat = np.array([]).reshape(self.nr_cells, 0)
@@ -415,10 +411,9 @@ class ManifoldCompare(Manifold):
         self.reduce_dimension(dat_mat)
         self.plot_in_one_fig(self.rule_sep[0])
 
-
     def state_analysis_selected_trial(self, trial_nr):
-    # combines two data sets, reduces the dimension and plots sets in different colors in 2D/3D for one data set of each
-    # condition
+        # combines two data sets, reduces the dimension and plots sets in different colors in 2D/3D for one data set of
+        # each condition
         # get trial ID from both sets
         trial_ID_set1 = list(self.data_sets[0].keys())[trial_nr]
         trial_ID_set2 = list(self.data_sets[1].keys())[trial_nr]
@@ -454,7 +449,8 @@ class ManifoldCompare(Manifold):
         plt.show()
 
         def manifold_compare(data_sets, param_dic):
-            # compares results of two different conditions using dimensionality reduction. Transforms each trial individually
+            # compares results of two different conditions using dimensionality reduction. Transforms each trial
+            # individually
             nr_trials_to_compare = param_dic["nr_of_trials"]
             # comparing same number of trials even if one condition has more trials
             for data_set in data_sets:
@@ -512,7 +508,6 @@ class ManifoldCompare(Manifold):
         # nr of trials to compare
         trial_counter = 0
 
-
         # go through all data sets
         for data_set_ID, (data_set,loc_set) in enumerate(zip(self.data_sets,self.loc_sets)):
             # concatenate all trials and save separator for trials
@@ -548,9 +543,8 @@ class ManifoldCompare(Manifold):
         self.plot_in_one_fig(self.rule_sep[0])
         self.plot_in_one_fig_color_position()
 
-
     def plot_in_one_fig_color_position(self):
-    # plots results as scatter plot and colors lines according to location
+        # plots results as scatter plot and colors lines according to location
 
         # 2D plot
         if self.dr_method_p2 == 2:
@@ -558,7 +552,6 @@ class ManifoldCompare(Manifold):
             fig, ax = plt.subplots()
             data_sep = self.data_sep[self.rule_sep[0]+1]+1
             plot_2D_scatter(ax, self.result_dr, self.param_dic,data_sep,self.loc_vec)
-
 
         # 3D plot
         elif self.dr_method_p2 == 3:
