@@ -56,12 +56,20 @@ def get_activity_mat_spatial(firing_times,param_dic,location):
     # trim speed to same length as firing data --> remove last location entries
     speed = speed[:(last_firing-first_firing)]
 
+    #TODO: delete section below
+    # plt.plot(speed)
+    # plt.plot(loc)
+    # plt.hlines(5,0,loc.shape[0])
+    # plt.show()
+    # len_after_filtering = len([x for x in speed if x >  param_dic["speed_filter"]])
+    # print("duration before speed filtering: "+str((last_firing/512 - first_firing/512)*0.0256)+"s")
+    # print("duration after speed filtering: "+str(len_after_filtering/512*0.0256)+"s")
+
     # length of linearized path: 200 cm
     nr_intervals = int(200 / bin_interval)
 
     # matrix with population vectors
     act_mat = np.zeros([len(firing_times.keys()), nr_intervals])
-
 
     # occupation vector for normalization
     occ_vec = np.zeros(nr_intervals)
@@ -88,16 +96,27 @@ def get_activity_mat_spatial(firing_times,param_dic,location):
             # define spatial interval
             start_interval = i*bin_interval
             end_interval = (i+1)*bin_interval
+            cell_spikes_interval = 0
 
-            # write population vectors
-            cell_spikes_interval = [x for x in cell if start_interval <= loc[(x-first_firing-1)] < end_interval]
+            # with speed filtering
+            if param_dic["speed_filter"]:
+                # go through all spikes and check if they are in the interval and above the speed threshold
+                for cell_firing_time in cell:
+                    if (start_interval <= loc[(cell_firing_time-first_firing-1)] < end_interval) and \
+                            speed[(cell_firing_time-first_firing-1)] > param_dic["speed_filter"]:
+                        cell_spikes_interval += 1
 
-            act_mat[cell_iter, i] = len(cell_spikes_interval)
+                act_mat[cell_iter, i] = cell_spikes_interval
+            # without speed filter
+            else:
+                cell_spikes_interval_array = [x for x in cell if start_interval <= loc[(x-first_firing-1)] < end_interval]
+                # write population vectors
+                act_mat[cell_iter, i] = len(cell_spikes_interval_array)
 
-
-    act_mat = act_mat[:,bin_to_exc[0]:bin_to_exc[1]]
+    act_mat = act_mat[:, bin_to_exc[0]:bin_to_exc[1]]
     occ_vec = occ_vec[bin_to_exc[0]:bin_to_exc[1]]
 
+    # normalize by time
     act_mat = (act_mat * 20e3) / occ_vec
 
     # replace NANs with zeros
@@ -218,7 +237,7 @@ def multi_dim_scaling(act_mat,param_dic):
         # Jaccard similarity
         for i,pop_vec_ref in enumerate(act_mat.T):
             for j,pop_vec_comp in enumerate(act_mat.T):
-                D[i,j] = jaccard_similarity_score(pop_vec_ref,pop_vec_comp)
+                D[i,j] = jaccard_similarity_score(pop_vec_ref.astype(int),pop_vec_comp.astype(int))
 
         # want difference --> diff_jaccard = 1 - sim_jaccard
         D = 1 - D
@@ -254,9 +273,8 @@ def perform_PCA(act_mat,param_dic):
     # performs PCA
     pca = PCA(n_components=param_dic["dr_method_p2"])
     pca_result = pca.fit_transform(act_mat.T)
-    param_dic["dr_method_p1"] = str(pca.explained_variance_ratio_)
 
-    return pca_result
+    return pca_result, str(pca.explained_variance_ratio_)
 
 
 def perform_TSNE(act_mat,param_dic):
@@ -348,16 +366,15 @@ def angle_between_col_vectors(data_set):
     return angle_mat, rel_angle_mat
 
 
-
 def calc_loc_and_speed(whl):
     # computes speed from the whl and returns speed in cm/s
     # need to smooth position data --> accuracy of measurement: about +-1cm --> error for speed: +-40m/s
     # last element of velocity vector is zero --> velocity is calculated using 2 locations
 
     #savitzky golay
-    w_l = 15 # window length
-    p_o = 4 # order of polynomial
-    whl = signal.savgol_filter(whl, 15, 5)
+    w_l = 31 # window length
+    p_o = 5 # order of polynomial
+    whl = signal.savgol_filter(whl, w_l, p_o)
 
     # one time bin: whl is recorded at 20kHz/512
     t_b = 1/(20e3/512)

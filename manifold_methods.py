@@ -101,7 +101,7 @@ class Manifold():
         # array with separator indices for different trials
         self.data_sep = []
 
-    def reduce_dimension(self,dat_mat):
+    def reduce_dimension(self, dat_mat):
         # reduces the dimension using one of the defined methods
 
         # clear in case there was a previous result
@@ -111,13 +111,20 @@ class Manifold():
             self.result_dr = multi_dim_scaling(dat_mat, self.param_dic)
         # dimensionality reduction: principal component analysis
         elif self.dr_method == "PCA":
-            self.result_dr = perform_PCA(dat_mat, self.param_dic)
+            self.result_dr, self.dr_method_p1 = perform_PCA(dat_mat, self.param_dic)
         elif self.dr_method == "TSNE":
             self.result_dr = perform_TSNE(dat_mat, self.param_dic)
 
     def plot_in_one_fig(self,rule_sep = []):
         # plots results as scatter plot separating either trials (default) or rules
         fig = plot_compare(self.result_dr, self.param_dic, self.data_sep, rule_sep)
+        # add title
+
+        fig.suptitle(self.dr_method+" : "+self.dr_method_p1+" , binning: "+self.binning_method, fontweight='bold')
+        handles, labels = fig.gca().get_legend_handles_labels()
+        by_label = OrderedDict(zip(labels, handles))
+        fig.legend(by_label.values(), by_label.keys())
+        plt.show()
         # save plot if option is set to true
         if self.save_plot:
             fig.savefig("plots/" + self.plot_file_name + ".png")
@@ -550,16 +557,23 @@ class ManifoldCompare(Manifold):
         if self.dr_method_p2 == 2:
             # create figure instance
             fig, ax = plt.subplots()
-            data_sep = self.data_sep[self.rule_sep[0]+1]+1
-            plot_2D_scatter(ax, self.result_dr, self.param_dic,data_sep,self.loc_vec)
+
+            for data_ID in range(self.data_sep.shape[0]-1):
+                data_subset = self.result_dr[int(self.data_sep[data_ID]):int(self.data_sep[data_ID+1]), :]
+                loc_vec_subset = self.loc_vec[int(self.data_sep[data_ID]):int(self.data_sep[data_ID+1])]
+                plot_2D_scatter(ax, data_subset, self.param_dic,None,loc_vec_subset)
+
+            # data_sep = self.data_sep[self.rule_sep[0]+1]+1
+            # plot_2D_scatter(ax, self.result_dr, self.param_dic,data_sep,self.loc_vec)
 
         # 3D plot
         elif self.dr_method_p2 == 3:
             # create figure instance
             fig = plt.figure()
             ax = fig.add_subplot(111,projection='3d')
-            data_sep = self.data_sep[self.rule_sep[0]+1]+1
-            plot_3D_scatter(ax, self.result_dr, self.param_dic,data_sep,self.loc_vec)
+            for data_ID in range(self.data_sep.shape[0]-1):
+                data = self.result_dr[int(self.data_sep[data_ID]):int(self.data_sep[data_ID+1]), :]
+                plot_3D_scatter(ax, data, self.param_dic,None,self.loc_vec)
 
         fig.suptitle(self.dr_method+" : "+self.dr_method_p1, fontweight='bold')
         handles, labels = fig.gca().get_legend_handles_labels()
@@ -569,3 +583,4 @@ class ManifoldCompare(Manifold):
         # save plot if option is set to true
         if self.save_plot:
             fig.savefig("plots/"+self.plot_file_name+".png")
+

@@ -338,11 +338,6 @@ def plot_compare(data, param_dic, data_sep, rule_sep = []):
     ax.set_yticklabels([])
     ax.set_xticklabels([])
 
-    fig.suptitle(param_dic["dr_method"]+" : "+param_dic["dr_method_p1"], fontweight='bold')
-    handles, labels = fig.gca().get_legend_handles_labels()
-    by_label = OrderedDict(zip(labels, handles))
-    fig.legend(by_label.values(), by_label.keys())
-    plt.show()
     # return figure for saving
     return fig
 
@@ -418,7 +413,25 @@ def plot_remapping_summary(cross_diff, within_diff_1, within_diff_2, stats_array
     plt.show()
 
 
-def plot_cell_charact(cell_avg_rate_map, cohens_d, cell_to_diff_contribution, cell_to_p_value_contribution,xlabel):
+def plot_cell_charact(cell_avg_rate_map, cohens_d, cell_to_diff_contribution, cell_to_p_value_contribution, xlabel,
+                      sort_cells):
+
+    if sort_cells:
+        # sort according to appearance of peak
+        peak_array = np.zeros(cell_avg_rate_map.shape[0])
+        # find peak in for every cell
+        for i, cell in enumerate(cell_avg_rate_map):
+            # if no activity
+            if max(cell) == 0.0:
+                peak_array[i] = -1
+            else:
+                peak_array[i] = np.argmax(cell)
+
+        peak_array += 1
+        peak_order = peak_array.argsort()
+        cell_avg_rate_map = cell_avg_rate_map[np.flip(peak_order[::-1], axis=0), :]
+        cohens_d = cohens_d[np.flip(peak_order[::-1], axis=0), :]
+        cell_to_diff_contribution = cell_to_diff_contribution[np.flip(peak_order[::-1], axis=0), :]
 
     fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
     fig.subplots_adjust(wspace=0.1)
@@ -430,7 +443,7 @@ def plot_cell_charact(cell_avg_rate_map, cohens_d, cell_to_diff_contribution, ce
     cb1 = colorbar(im1, cax=cax1,orientation="horizontal")
     cax1.xaxis.set_ticks_position("top")
     ax1.set_xlabel("LINEARIZED POSITION / cm")
-    ax1.set_ylabel("CELL ID")
+    ax1.set_ylabel("CELLS SORTED")
     cax1.set_title("AVERAGE FIRING RATE")
 
     # hide y label

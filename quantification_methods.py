@@ -48,6 +48,8 @@ from plotting_functions import plot_cell_charact
 import matplotlib as mpl
 import os
 from statsmodels import robust
+from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
+from mpl_toolkits.axes_grid1.colorbar import colorbar
 
 # set saving directory to current directory
 mpl.rcParams["savefig.directory"] = os.chdir(os.path.dirname(__file__))
@@ -386,6 +388,53 @@ class Analysis:
             cohens_d[:,i] = calc_cohens_d(self.bin_dic_2[key], self.bin_dic_1[key])
         return cohens_d
 
+    def plot_spatial_information(self):
+        # calculates angles between subsequent transitions
+
+        bin_interval = self.param_dic["spatial_bin_size"]
+        # length of linearized path: 200 cm
+        nr_intervals = int(200 / bin_interval)
+
+        x_axis = np.arange(0,200,self.param_dic["spatial_bin_size"])
+        x_axis = x_axis[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
+
+        nr_cells = next(iter(self.bin_dic_1.values())).shape[0]
+        nr_bins = len(self.bin_dic_1.keys())
+        avg_rate_map = np.zeros((nr_cells, nr_bins))
+
+        # go through all spatial bins
+        for i, key in enumerate(self.bin_dic_1):
+            avg_rate_map[:, i] = np.average(np.hstack((self.bin_dic_1[key], self.bin_dic_2[key])), axis=1)
+
+        # sort according to appearance of peak
+        peak_array = np.zeros(avg_rate_map.shape[0])
+        # find peak in for every cell
+        for i, cell in enumerate(avg_rate_map):
+            # if no activity
+            if max(cell) == 0.0:
+                peak_array[i] = -1
+            else:
+                peak_array[i] = np.argmax(cell)
+
+        peak_array += 1
+        peak_order = peak_array.argsort()
+        ordered_avg_rate_map = avg_rate_map[np.flip(peak_order[::-1], axis=0), :]
+
+        fig, ax1 = plt.subplots()
+        fig.subplots_adjust(wspace=0.1)
+
+        im1 = ax1.imshow(ordered_avg_rate_map, interpolation='nearest', aspect='auto', cmap="jet",
+                         extent=[min(x_axis), max(x_axis), ordered_avg_rate_map.shape[0] - 0.5, 0.5])
+        ax1_divider = make_axes_locatable(ax1)
+        # add an axes to the right of the main axes.
+        cax1 = ax1_divider.append_axes("top", size="7%", pad="2%")
+        cb1 = colorbar(im1, cax=cax1, orientation="horizontal")
+        cax1.xaxis.set_ticks_position("top")
+        ax1.set_xlabel("LINEARIZED POSITION / cm")
+        ax1.set_ylabel("CELL ID")
+        cax1.set_title("AVERAGE FIRING RATE")
+        plt.show()
+
     def cell_avg_rate_map(self):
         # returns average rate map combining data from both dictionaries for each cell and spatial bin
 
@@ -487,7 +536,7 @@ class Analysis:
         rel_cell_to_diff_contribution = 1/rel_cell_to_diff_contribution
 
         plot_cell_charact(cell_avg_rate_map, cohens_d, rel_cell_to_diff_contribution,
-                          cell_to_p_value_contribution, x_axis)
+                          cell_to_p_value_contribution, x_axis, self.param_dic["sort_cells"])
 
     def remove_cells(self, cell_ID_list):
         # performs different analysis steps with a modified dictionary (with removed cells)
@@ -651,6 +700,30 @@ class StateTransitionAnalysis:
         self.loc_set = loc_set
         self.param_dic = param_dic
 
+    def filter_cells(self):
+
+        # how many cells are in the data set
+        nr_cells = len(next(iter(self.data_set.values())))
+
+        dat_mat = np.array([]).reshape(nr_cells,0)
+
+        # go through all trials
+        for i, key in enumerate(self.data_set):
+            # get binned activity matrix
+            act_mat, loc_mat = get_activity_mat_time(self.data_set[key], self.param_dic,self.loc_set[key])
+
+            # concatenate spike matrices
+            dat_mat = np.hstack((dat_mat, act_mat))
+
+        non_zero_indices = []
+
+        # go through all cells
+        for cell_ID, cell in enumerate(dat_mat):
+            if np.count_nonzero(cell):
+                non_zero_indices.append(cell_ID)
+
+        return non_zero_indices
+
     def euclidean(self):
         # calculates euclidean distance between subsequent population vectors
 
@@ -665,10 +738,14 @@ class StateTransitionAnalysis:
             distance_dic["INT"+str(i)] = np.empty((1, 0))
             rel_distance_dic["INT" + str(i)] = np.empty((1, 0))
 
+        non_zero_indices = self.filter_cells()
+
         # go through all trials
         for i, key in enumerate(self.data_set):
             # get binned activity matrix
             act_mat, loc_mat = get_activity_mat_time(self.data_set[key], self.param_dic,self.loc_set[key])
+            # filter non active cells
+            act_mat = act_mat[non_zero_indices,:]
             # get distances
             dist_array, rel_dist_array = pop_vec_euclidean_dist(act_mat)
             # drop last position --> distance returns n-1 long row vector
@@ -755,10 +832,14 @@ class StateTransitionAnalysis:
             angle_dic["INT"+str(i)] = np.empty((1, 0))
             rel_angle_dic["INT" + str(i)] = np.empty((1, 0))
 
+        non_zero_indices = self.filter_cells()
+
         # go through all trials
         for i, key in enumerate(self.data_set):
             # get binned activity matrix
             act_mat, loc_mat = get_activity_mat_time(self.data_set[key], self.param_dic,self.loc_set[key])
+            # filter non active cells
+            act_mat = act_mat[non_zero_indices,:]
             # get difference matrix: transitions between pop-vectors
             diff_matrix = pop_vec_diff(act_mat)
             # calculate angles
@@ -820,7 +901,7 @@ class StateTransitionAnalysis:
 
         ax3 = ax[1, 0]
         ax3.hist(all_values[~np.isnan(all_values)],bins=50)
-        ax3.set_title("HIST OF ANGLE SUBSEQUENT TRANSITIONS")
+        ax3.set_title("HIST OF ANGLE BETWEEN SUBSEQUENT TRANSITIONS")
         ax3.set_xlabel("ANGLE / DEG")
         ax3.set_ylabel("COUNTS")
         ax4 = ax[1, 1]
@@ -844,12 +925,17 @@ class StateTransitionAnalysis:
         for i in range(nr_intervals):
             operation_dic["INT"+str(i)] = np.empty((3, 0))
 
+        non_zero_indices = self.filter_cells()
+        nr_of_cells = len(non_zero_indices)
+
         # go through all trials
         for i, key in enumerate(self.data_set):
 
             # get binned activity matrix
             act_mat, loc_mat = get_activity_mat_time(self.data_set[key], self.param_dic,self.loc_set[key])
-            # get difference matrix: transitions between pop-vectors and make the signed binary
+            # filter non active cells
+            act_mat = act_mat[non_zero_indices,:]
+            # get difference matrix: transitions between pop-vectors and make them signed binary
             diff_matrix = np.sign(pop_vec_diff(act_mat))
             count_operations = np.zeros((3,diff_matrix.shape[1]))
 
@@ -874,7 +960,6 @@ class StateTransitionAnalysis:
         # plot
 
         fig, ax = plt.subplots(2, 2)
-
         ax1 = ax[0, 0]
         x_axis = np.linspace(bin_interval, bin_interval * nr_intervals, nr_intervals)
         med = np.full(x_axis.shape[0], np.nan)
@@ -882,13 +967,13 @@ class StateTransitionAnalysis:
         for i, key in enumerate(operation_dic):
             if operation_dic[key].size == 0:
                 continue
-            med[i] = np.median(operation_dic[key][0])
+            med[i] = np.median(operation_dic[key][0]/nr_of_cells*100)
             #all_values = np.hstack((all_values, operation_dic[key][0]))
-            err = robust.mad(operation_dic[key][0], c=1)
+            err = robust.mad(operation_dic[key][0]/nr_of_cells*100, c=1)
             ax1.errorbar(x_axis[i], med[i], yerr=err, ecolor="gray")
         ax1.plot(x_axis, med, marker="o", color="black")
-        ax1.set_title("NUMBER OF SILENCED CELLS")
-        ax1.set_ylabel("NR. CELLS")
+        ax1.set_title("SILENCED CELLS")
+        ax1.set_ylabel("% OF CELLS")
         ax1.set_xlabel("MAZE POSITION / CM")
 
         ax2 = ax[0, 1]
@@ -898,13 +983,13 @@ class StateTransitionAnalysis:
         for i, key in enumerate(operation_dic):
             if operation_dic[key].size == 0:
                 continue
-            med[i] = np.median(operation_dic[key][1])
+            med[i] = np.median(operation_dic[key][1]/nr_of_cells*100)
             #all_values = np.hstack((all_values, operation_dic[key][0]))
-            err = robust.mad(operation_dic[key][1], c=1)
+            err = robust.mad(operation_dic[key][1]/nr_of_cells*100, c=1)
             ax2.errorbar(x_axis[i], med[i], yerr=err, ecolor="gray")
         ax2.plot(x_axis, med, marker="o", color="black")
-        ax2.set_title("NUMBER OF UNCHANGED CELLS")
-        ax2.set_ylabel("NR. CELLS")
+        ax2.set_title("UNCHANGED CELLS")
+        ax2.set_ylabel("% OF CELLS")
         ax2.set_xlabel("MAZE POSITION / CM")
 
         ax3 = ax[1, 0]
@@ -914,15 +999,13 @@ class StateTransitionAnalysis:
         for i, key in enumerate(operation_dic):
             if operation_dic[key].size == 0:
                 continue
-            med[i] = np.median(operation_dic[key][2])
+            med[i] = np.median(operation_dic[key][2]/nr_of_cells*100)
             #all_values = np.hstack((all_values, operation_dic[key][0]))
-            err = robust.mad(operation_dic[key][2], c=1)
+            err = robust.mad(operation_dic[key][2]/nr_of_cells*100, c=1)
             ax3.errorbar(x_axis[i], med[i], yerr=err, ecolor="gray")
         ax3.plot(x_axis, med, marker="o", color="black")
-        ax3.set_title("NUMBER OF ACTIVATED CELLS")
-        ax3.set_ylabel("NR. CELLS")
+        ax3.set_title("ACTIVATED CELLS")
+        ax3.set_ylabel("% OF CELLS")
         ax3.set_xlabel("MAZE POSITION / CM")
-
-
 
         plt.show()

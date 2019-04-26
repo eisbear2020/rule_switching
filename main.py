@@ -60,7 +60,7 @@ if __name__ == '__main__':
         # select cell type:
         # p1: pyramidal cells of the HPC, p2 - p3: pyramidal cells of the PFC ,b1: inter-neurons of HPC
         # b2 - b3: inter-neurons of HPC
-        "cell_type_array": ["p2", "p3"],
+        "cell_type_array": ["p1"],
         "start_arm": [1],
         "goal_arm": [3],
         # select rule type:
@@ -69,6 +69,7 @@ if __name__ == '__main__':
         "error_trial": [1]
     }
 
+    # derive file and session name
     file_name = data_selection_dictionary["session_name"]+"_ct_"+str(data_selection_dictionary["cell_type_array"])\
                 + "_sa_" + str(data_selection_dictionary["start_arm"]) + "_ga_" + \
                 str(data_selection_dictionary["goal_arm"]) + "_et_" + str(data_selection_dictionary["error_trial"])
@@ -123,11 +124,11 @@ if __name__ == '__main__':
     # ANALYSIS PARAMETERS
     # ------------------------------------------------------------------------------------------------------------------
 
-    # binning with "temporal","spatial"
+    # binning with "temporal","spatial" --> only for manifold analysis
     param_dic["binning_method"] = "spatial"
 
     # interval for temporal binning in s
-    param_dic["time_bin_size"] = 0.1
+    param_dic["time_bin_size"] = 0.4
 
     # interval for spatial binning in cm
     param_dic["spatial_bin_size"] = 10
@@ -139,7 +140,7 @@ if __name__ == '__main__':
     # without filter --> set to []
     param_dic["speed_filter"] = 5
     # exclude population vectors with all zero values
-    param_dic["zero_filter"] = True
+    param_dic["zero_filter"] = False
 
     # define method for dimensionality reduction
     # "MDS" multi dimensional scaling
@@ -177,6 +178,8 @@ if __name__ == '__main__':
     param_dic["save_plot"] = False
     # lines in scatter plot
     param_dic["lines"] = True
+    # sort cells according to peak for visualization
+    param_dic["sort_cells"] = True
 
     # saving directory for bin dictionaries
     param_dic["saving_dir_bin_dic"] = "temp_data/binned_dictionaries/"
@@ -218,10 +221,10 @@ if __name__ == '__main__':
     # compare two rules using dimensionality reduction for the combined data (reduce to 2 or 3 dimensions)
     # ------------------------------------------------------------------------------------------------------------------
 
-    new_comparison = ManifoldCompare([res_data_set_2, res_data_set_6], [whl_lin_data_set_2, whl_lin_data_set_6],
-                                      param_dic)
-    new_comparison.state_analysis()
-    new_comparison.plot_in_one_fig_color_position()
+    # new_comparison = ManifoldCompare([res_data_set_2, res_data_set_6], [whl_lin_data_set_2, whl_lin_data_set_6],
+    #                                   param_dic)
+    # new_comparison.state_analysis()
+    # new_comparison.plot_in_one_fig_color_position()
 
     # QUANTITATIVE ANALYSIS
     ####################################################################################################################
@@ -236,6 +239,7 @@ if __name__ == '__main__':
     # compare RULE A and RULE B
     # ------------------------------------------------------------------------------------------------------------------
     # new_compare = Analysis("RULE LIGHT", "RULE WEST", param_dic)
+    # new_compare.plot_spatial_information()
     # new_compare.cross_cos_diff()
     # new_compare.characterize_cells()
     # new_compare.cell_contribution()
@@ -262,14 +266,15 @@ if __name__ == '__main__':
     # dic = BinDictionary(param_dic)
     # dic.create_spatial_bin_dictionaries_transition(res_data_set_4, whl_lin_data_set_4, new_rule_trial,
     #                                                param_dic["data_descr"][0], param_dic["data_descr"][1])
-    #
+
     # new_transition = Analysis("SWITCH_RULE LIGHT", "SWITCH_RULE WEST", param_dic)
     # new_transition.cross_cos_diff()
     # new_transition.cross_cos_diff_spat_trials()
     # new_transition.characterize_cells()
+    # new_transition.cell_contribution()
     # new_transition.remove_cells([46,69])
     # new_transition.remove_cells(np.arange(0, 60))
-    # new_transition.cell_contribution()
+
 
 #######################################################################################################################
 #   STATE TRANSITION ANALYSIS
@@ -291,10 +296,10 @@ if __name__ == '__main__':
     # QUANTITATIVE ANALYSIS
     ####################################################################################################################
 
-    # new_state_transition = StateTransitionAnalysis(res_rule_switch, whl_lin_rule_switch, param_dic)
+    new_state_transition = StateTransitionAnalysis(res_data_set_2, whl_lin_data_set_2, param_dic)
 
     # euclidean distance between subsequent steps
     # ------------------------------------------------------------------------------------------------------------------
     # new_state_transition.euclidean()
     # new_state_transition.angle()
-    # new_state_transition.operations()
+    new_state_transition.operations()
