@@ -128,7 +128,7 @@ if __name__ == '__main__':
     param_dic["binning_method"] = "spatial"
 
     # interval for temporal binning in s
-    param_dic["time_bin_size"] = 0.4
+    param_dic["time_bin_size"] = 0.1
 
     # interval for spatial binning in cm
     param_dic["spatial_bin_size"] = 10
@@ -296,10 +296,11 @@ if __name__ == '__main__':
     # QUANTITATIVE ANALYSIS
     ####################################################################################################################
 
-    new_state_transition = StateTransitionAnalysis(res_data_set_2, whl_lin_data_set_2, param_dic)
+    new_state_transition = StateTransitionAnalysis([res_data_set_2, res_data_set_6], [whl_lin_data_set_2,
+                                                                                      whl_lin_data_set_6], param_dic)
 
     # euclidean distance between subsequent steps
     # ------------------------------------------------------------------------------------------------------------------
     # new_state_transition.euclidean()
-    # new_state_transition.angle()
-    new_state_transition.operations()
+    # new_state_transition.compare_angle()
+    new_state_transition.compare_operations()

@@ -694,23 +694,23 @@ class Analysis:
 class StateTransitionAnalysis:
     """ Class state transition analysis"""
 
-    def __init__(self, data_set, loc_set, param_dic):
+    def __init__(self, data_sets, loc_sets, param_dic):
 
-        self.data_set = data_set
-        self.loc_set = loc_set
+        self.data_sets = data_sets
+        self.loc_sets = loc_sets
         self.param_dic = param_dic
 
-    def filter_cells(self):
+    def filter_cells(self, data_set, loc_set):
 
         # how many cells are in the data set
-        nr_cells = len(next(iter(self.data_set.values())))
+        nr_cells = len(next(iter(data_set.values())))
 
         dat_mat = np.array([]).reshape(nr_cells,0)
 
         # go through all trials
-        for i, key in enumerate(self.data_set):
+        for i, key in enumerate(data_set):
             # get binned activity matrix
-            act_mat, loc_mat = get_activity_mat_time(self.data_set[key], self.param_dic,self.loc_set[key])
+            act_mat, loc_mat = get_activity_mat_time(data_set[key], self.param_dic,loc_set[key])
 
             # concatenate spike matrices
             dat_mat = np.hstack((dat_mat, act_mat))
@@ -818,7 +818,23 @@ class StateTransitionAnalysis:
 
         plt.show()
 
-    def angle(self):
+
+
+    def compare_operations(self):
+        x_axis, op_dic_1, nr_of_cells_1  = self.operations(self.data_sets[0], self.loc_sets[0])
+        _, op_dic_2, nr_of_cells_2  = self.operations(self.data_sets[1], self.loc_sets[1])
+
+        self.plot_operations_comparison(x_axis,[op_dic_1,op_dic_2],[nr_of_cells_1,nr_of_cells_2], self.param_dic)
+
+
+    def compare_angle(self):
+        x_axis, angle_dic_1, rel_angle_dic_1 = self.angle(self.data_sets[0], self.loc_sets[0])
+        _, angle_dic_2, rel_angle_dic_2 = self.angle(self.data_sets[1], self.loc_sets[1])
+
+        self.plot_transition_angles_comparison(x_axis, [angle_dic_1,angle_dic_2], [rel_angle_dic_1,rel_angle_dic_2],
+                                               self.param_dic)
+
+    def angle(self, data_set, loc_set):
         # calculates angles between subsequent transitions
 
         bin_interval = self.param_dic["spatial_bin_size"]
@@ -832,12 +848,12 @@ class StateTransitionAnalysis:
             angle_dic["INT"+str(i)] = np.empty((1, 0))
             rel_angle_dic["INT" + str(i)] = np.empty((1, 0))
 
-        non_zero_indices = self.filter_cells()
+        non_zero_indices = self.filter_cells(data_set, loc_set)
 
         # go through all trials
-        for i, key in enumerate(self.data_set):
+        for i, key in enumerate(data_set):
             # get binned activity matrix
-            act_mat, loc_mat = get_activity_mat_time(self.data_set[key], self.param_dic,self.loc_set[key])
+            act_mat, loc_mat = get_activity_mat_time(data_set[key], self.param_dic,loc_set[key])
             # filter non active cells
             act_mat = act_mat[non_zero_indices,:]
             # get difference matrix: transitions between pop-vectors
@@ -860,14 +876,73 @@ class StateTransitionAnalysis:
                 rel_angle_dic["INT"+str(int_counter)] = np.hstack((rel_angle_dic["INT"+str(int_counter)],
                     np.expand_dims(rel_angle_array[(start_interval <= rel_loc_mat) & (rel_loc_mat < end_interval)],axis=0)))
 
+            x_axis = np.linspace(bin_interval, bin_interval * nr_intervals, nr_intervals)
+
+        return x_axis, angle_dic, rel_angle_dic
 
 
-        # plot
+    def plot_transition_angles_comparison(self, x_axis, angle_dics, rel_angle_dics, param_dic):
+
+        fig, ax = plt.subplots(2,2)
+
+        ax1 = ax[0, 0]
+        ax2 = ax[0, 1]
+        ax3 = ax[1, 0]
+        ax4 = ax[1, 1]
+
+        for data_set_ID, angle_dic in enumerate(angle_dics):
+            med = np.full(x_axis.shape[0], np.nan)
+            all_values = np.empty((1, 0))
+            for i, key in enumerate(angle_dic):
+                if angle_dic[key].size == 0:
+                    continue
+                med[i] = np.median(angle_dic[key],axis=1)
+                all_values = np.hstack((all_values, angle_dic[key]))
+                err = robust.mad(angle_dic[key], c=1, axis=1)
+                ax1.errorbar(x_axis[i]+data_set_ID*2, med[i], yerr=err,ecolor="gray")
+            ax1.plot(x_axis+data_set_ID*2,med, marker="o", label=param_dic["data_descr"][data_set_ID])
+            ax1.set_title("ANGLE BETWEEN SUBSEQUENT TRANSITIONS")
+            ax1.set_ylabel("ANGLE / DEG - MED & MAD")
+            ax1.set_xlabel("MAZE POSITION / CM")
+            ax1.legend()
+
+            ax3.hist(all_values[~np.isnan(all_values)],bins=50, alpha=0.5, label=param_dic["data_descr"][data_set_ID])
+            ax3.set_title("HIST OF ANGLE BETWEEN SUBSEQUENT TRANSITIONS")
+            ax3.set_xlabel("ANGLE / DEG")
+            ax3.set_ylabel("COUNTS")
+            ax3.legend()
+
+        for data_set_ID, rel_angle_dic in enumerate(rel_angle_dics):
+
+            # calculate relative step length
+            rel_med = np.full(x_axis.shape[0], np.nan)
+            all_rel_values = np.empty((1, 0))
+            for i, key in enumerate(rel_angle_dic):
+                if rel_angle_dic[key].size == 0:
+                    continue
+                rel_med[i] = np.median(rel_angle_dic[key],axis=1)
+                all_rel_values = np.hstack((all_rel_values, rel_angle_dic[key]))
+                err = robust.mad(rel_angle_dic[key], c=1, axis=1)
+                ax2.errorbar(x_axis[i]+data_set_ID*2, rel_med[i], yerr=err,ecolor="gray")
+            ax2.plot(x_axis+data_set_ID*2, rel_med, marker="o", label=param_dic["data_descr"][data_set_ID])
+            ax2.set_title("RELATIVE CHANGE OF ANGLE BETWEEN SUBSEQUENT TRANSITIONS")
+            ax2.set_ylabel("RELATIVE CHANGE")
+            ax2.set_xlabel("MAZE POSITION / CM")
+
+            ax4.hist(all_rel_values[~np.isnan(all_rel_values) & ~np.isinf(all_rel_values)],
+                     bins=50, alpha=0.5, label=param_dic["data_descr"][data_set_ID])
+            ax4.set_title("HIST OF RELATIVE CHANGE OF ANGLE BETWEEN SUBSEQUENT TRANSITIONS")
+            ax4.set_xlabel("RELATIVE CHANGE")
+            ax4.set_ylabel("COUNTS")
+            ax4.legend()
+
+        plt.show()
+
+    def plot_transition_angles(self, x_axis, angle_dic, rel_angle_dic):
 
         fig, ax = plt.subplots(2,2)
 
         ax1 = ax[0,0]
-        x_axis = np.linspace(bin_interval,bin_interval*nr_intervals,nr_intervals)
         med = np.full(x_axis.shape[0],np.nan)
         all_values = np.empty((1, 0))
         for i, key in enumerate(angle_dic):
@@ -912,7 +987,7 @@ class StateTransitionAnalysis:
 
         plt.show()
 
-    def operations(self):
+    def operations(self, data_set, loc_set):
         # calculates number of zeros (no change), +1 (activation) and -1 (inhibition) in population difference
         # vectors
 
@@ -925,14 +1000,14 @@ class StateTransitionAnalysis:
         for i in range(nr_intervals):
             operation_dic["INT"+str(i)] = np.empty((3, 0))
 
-        non_zero_indices = self.filter_cells()
+        non_zero_indices = self.filter_cells(data_set, loc_set)
         nr_of_cells = len(non_zero_indices)
 
         # go through all trials
-        for i, key in enumerate(self.data_set):
+        for i, key in enumerate(data_set):
 
             # get binned activity matrix
-            act_mat, loc_mat = get_activity_mat_time(self.data_set[key], self.param_dic,self.loc_set[key])
+            act_mat, loc_mat = get_activity_mat_time(data_set[key], self.param_dic,loc_set[key])
             # filter non active cells
             act_mat = act_mat[non_zero_indices,:]
             # get difference matrix: transitions between pop-vectors and make them signed binary
@@ -957,55 +1032,64 @@ class StateTransitionAnalysis:
                 operation_dic["INT"+str(int_counter)] = np.hstack((operation_dic["INT"+str(int_counter)],
                     count_operations[:,np.squeeze((start_interval <= loc_mat) & (loc_mat < end_interval))]))
 
+        x_axis = np.linspace(bin_interval, bin_interval * nr_intervals, nr_intervals)
+
+        return x_axis, operation_dic, nr_of_cells
+
+
         # plot
+
+    def plot_operations_comparison(self, x_axis, operation_dics, nr_of_cells_arr, param_dic):
 
         fig, ax = plt.subplots(2, 2)
         ax1 = ax[0, 0]
-        x_axis = np.linspace(bin_interval, bin_interval * nr_intervals, nr_intervals)
-        med = np.full(x_axis.shape[0], np.nan)
-        all_values = np.empty((1, 0))
-        for i, key in enumerate(operation_dic):
-            if operation_dic[key].size == 0:
-                continue
-            med[i] = np.median(operation_dic[key][0]/nr_of_cells*100)
-            #all_values = np.hstack((all_values, operation_dic[key][0]))
-            err = robust.mad(operation_dic[key][0]/nr_of_cells*100, c=1)
-            ax1.errorbar(x_axis[i], med[i], yerr=err, ecolor="gray")
-        ax1.plot(x_axis, med, marker="o", color="black")
-        ax1.set_title("SILENCED CELLS")
-        ax1.set_ylabel("% OF CELLS")
-        ax1.set_xlabel("MAZE POSITION / CM")
-
         ax2 = ax[0, 1]
-        x_axis = np.linspace(bin_interval, bin_interval * nr_intervals, nr_intervals)
-        med = np.full(x_axis.shape[0], np.nan)
-        all_values = np.empty((1, 0))
-        for i, key in enumerate(operation_dic):
-            if operation_dic[key].size == 0:
-                continue
-            med[i] = np.median(operation_dic[key][1]/nr_of_cells*100)
-            #all_values = np.hstack((all_values, operation_dic[key][0]))
-            err = robust.mad(operation_dic[key][1]/nr_of_cells*100, c=1)
-            ax2.errorbar(x_axis[i], med[i], yerr=err, ecolor="gray")
-        ax2.plot(x_axis, med, marker="o", color="black")
-        ax2.set_title("UNCHANGED CELLS")
-        ax2.set_ylabel("% OF CELLS")
-        ax2.set_xlabel("MAZE POSITION / CM")
-
         ax3 = ax[1, 0]
-        x_axis = np.linspace(bin_interval, bin_interval * nr_intervals, nr_intervals)
-        med = np.full(x_axis.shape[0], np.nan)
-        all_values = np.empty((1, 0))
-        for i, key in enumerate(operation_dic):
-            if operation_dic[key].size == 0:
-                continue
-            med[i] = np.median(operation_dic[key][2]/nr_of_cells*100)
-            #all_values = np.hstack((all_values, operation_dic[key][0]))
-            err = robust.mad(operation_dic[key][2]/nr_of_cells*100, c=1)
-            ax3.errorbar(x_axis[i], med[i], yerr=err, ecolor="gray")
-        ax3.plot(x_axis, med, marker="o", color="black")
-        ax3.set_title("ACTIVATED CELLS")
-        ax3.set_ylabel("% OF CELLS")
-        ax3.set_xlabel("MAZE POSITION / CM")
+
+        for data_set_ID, (operation_dic, nr_of_cells) in enumerate(zip(operation_dics, nr_of_cells_arr)):
+            med = np.full(x_axis.shape[0], np.nan)
+            all_values = np.empty((1, 0))
+            for i, key in enumerate(operation_dic):
+                if operation_dic[key].size == 0:
+                    continue
+                med[i] = np.median(operation_dic[key][0]/nr_of_cells*100)
+                #all_values = np.hstack((all_values, operation_dic[key][0]))
+                err = robust.mad(operation_dic[key][0]/nr_of_cells*100, c=1)
+                ax1.errorbar(x_axis[i]+data_set_ID*2, med[i], yerr=err, ecolor="gray")
+            ax1.plot(x_axis+data_set_ID*2, med, marker="o", label=param_dic["data_descr"][data_set_ID])
+            ax1.set_title("SILENCED CELLS")
+            ax1.set_ylabel("% OF CELLS")
+            ax1.set_xlabel("MAZE POSITION / CM")
+            ax1.legend()
+
+            med = np.full(x_axis.shape[0], np.nan)
+            all_values = np.empty((1, 0))
+            for i, key in enumerate(operation_dic):
+                if operation_dic[key].size == 0:
+                    continue
+                med[i] = np.median(operation_dic[key][1]/nr_of_cells*100)
+                #all_values = np.hstack((all_values, operation_dic[key][0]))
+                err = robust.mad(operation_dic[key][1]/nr_of_cells*100, c=1)
+                ax2.errorbar(x_axis[i]+data_set_ID*2, med[i], yerr=err, ecolor="gray")
+            ax2.plot(x_axis+data_set_ID*2, med, marker="o", label=param_dic["data_descr"][data_set_ID])
+            ax2.set_title("UNCHANGED CELLS")
+            ax2.set_ylabel("% OF CELLS")
+            ax2.set_xlabel("MAZE POSITION / CM")
+            ax2.legend()
+
+            med = np.full(x_axis.shape[0], np.nan)
+            all_values = np.empty((1, 0))
+            for i, key in enumerate(operation_dic):
+                if operation_dic[key].size == 0:
+                    continue
+                med[i] = np.median(operation_dic[key][2]/nr_of_cells*100)
+                #all_values = np.hstack((all_values, operation_dic[key][0]))
+                err = robust.mad(operation_dic[key][2]/nr_of_cells*100, c=1)
+                ax3.errorbar(x_axis[i]+data_set_ID*2, med[i], yerr=err, ecolor="gray")
+            ax3.plot(x_axis+data_set_ID*2, med, marker="o", label=param_dic["data_descr"][data_set_ID])
+            ax3.set_title("ACTIVATED CELLS")
+            ax3.set_ylabel("% OF CELLS")
+            ax3.set_xlabel("MAZE POSITION / CM")
+            ax3.legend()
 
         plt.show()
