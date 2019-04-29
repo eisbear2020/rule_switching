@@ -298,7 +298,7 @@ if __name__ == '__main__':
 
     new_state_transition = StateTransitionAnalysis([res_data_set_2, res_data_set_6], [whl_lin_data_set_2,
                                                                                       whl_lin_data_set_6], param_dic)
-
+ 
     # euclidean distance between subsequent steps
     # ------------------------------------------------------------------------------------------------------------------
     new_state_transition.compare_distance()
