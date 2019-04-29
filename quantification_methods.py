@@ -724,7 +724,7 @@ class StateTransitionAnalysis:
 
         return non_zero_indices
 
-    def euclidean(self):
+    def euclidean(self, data_set, loc_set):
         # calculates euclidean distance between subsequent population vectors
 
         bin_interval = self.param_dic["spatial_bin_size"]
@@ -738,12 +738,12 @@ class StateTransitionAnalysis:
             distance_dic["INT"+str(i)] = np.empty((1, 0))
             rel_distance_dic["INT" + str(i)] = np.empty((1, 0))
 
-        non_zero_indices = self.filter_cells()
+        non_zero_indices = self.filter_cells(data_set, loc_set)
 
         # go through all trials
-        for i, key in enumerate(self.data_set):
+        for i, key in enumerate(data_set):
             # get binned activity matrix
-            act_mat, loc_mat = get_activity_mat_time(self.data_set[key], self.param_dic,self.loc_set[key])
+            act_mat, loc_mat = get_activity_mat_time(data_set[key], self.param_dic,loc_set[key])
             # filter non active cells
             act_mat = act_mat[non_zero_indices,:]
             # get distances
@@ -765,67 +765,80 @@ class StateTransitionAnalysis:
                 rel_distance_dic["INT"+str(int_counter)] = np.hstack((rel_distance_dic["INT"+str(int_counter)],
                     np.expand_dims(rel_dist_array[(start_interval <= rel_loc_mat) & (rel_loc_mat < end_interval)],axis=0)))
 
+            x_axis = np.linspace(bin_interval, bin_interval * nr_intervals, nr_intervals)
 
+        return x_axis, distance_dic, rel_distance_dic
+
+    def plot_transition_euclidean_comparison(self, x_axis, distance_dics, rel_distance_dics, param_dic):
         # plot
 
         fig, ax = plt.subplots(2,2)
 
-        ax1 = ax[0,0]
-        x_axis = np.linspace(bin_interval,bin_interval*nr_intervals,nr_intervals)
-        med = np.full(x_axis.shape[0],np.nan)
-        all_med_values = np.empty((1, 0))
-        for i, key in enumerate(distance_dic):
-            if distance_dic[key].size == 0:
-                continue
-            med[i] = np.median(distance_dic[key],axis=1)
-            all_med_values = np.hstack((all_med_values,distance_dic[key]))
-            err = robust.mad(distance_dic[key], c=1, axis=1)
-            ax1.errorbar(x_axis[i], med[i], yerr=err,ecolor="gray")
-        ax1.plot(x_axis,med, marker="o",color="black")
-        ax1.set_title("EUCL. DISTANCE BETWEEN SUBSEQUENT POP. VECTORS")
-        ax1.set_ylabel("EUCLIDEAN DISTANCE - MED & MAD")
-        ax1.set_xlabel("MAZE POSITION / CM")
-
+        ax1 = ax[0, 0]
         ax2 = ax[0, 1]
-
-        # calculate relative step length
-        rel_med = np.full(x_axis.shape[0],np.nan)
-        all_rel_med_values = np.empty((1, 0))
-        for i, key in enumerate(rel_distance_dic):
-            if rel_distance_dic[key].size == 0:
-                continue
-            rel_med[i] = np.median(rel_distance_dic[key],axis=1)
-            all_rel_med_values = np.hstack((all_rel_med_values, rel_distance_dic[key]))
-            err = robust.mad(rel_distance_dic[key], c=1, axis=1)
-            ax2.errorbar(x_axis[i], rel_med[i], yerr=err,ecolor="gray")
-        ax2.plot(x_axis,rel_med, marker="o",color="black")
-        ax2.set_title("RELATIVE CHANGE OF EUCL. DISTANCE BETWEEN SUBSEQUENT TRANSITIONS")
-        ax2.set_ylabel("RELATIVE CHANGE")
-        ax2.set_xlabel("MAZE POSITION / CM")
-
-        # TODO: hist of all values not only the medians
-
         ax3 = ax[1, 0]
-        ax3.hist(all_med_values[~np.isnan(all_med_values)],bins=50)
-        ax3.set_title("HIST OF EUCL. DISTANCE BETWEEN SUBSEQUENT POP. VECTORS")
-        ax3.set_xlabel("EUCLIDEAN DISTANCE")
-        ax3.set_ylabel("COUNTS")
         ax4 = ax[1, 1]
-        ax4.hist(all_rel_med_values[~np.isnan(all_rel_med_values)],bins=50)
-        ax4.set_title("HIST OF RELATIVE CHANGE OF EUCL. DISTANCE BETWEEN SUBSEQUENT TRANSITIONS")
-        ax4.set_xlabel("RELATIVE CHANGE")
-        ax4.set_ylabel("COUNTS")
+
+        for data_set_ID, distance_dic in enumerate(distance_dics):
+            med = np.full(x_axis.shape[0], np.nan)
+            all_values = np.empty((1, 0))
+            for i, key in enumerate(distance_dic):
+                if distance_dic[key].size == 0:
+                    continue
+                med[i] = np.median(distance_dic[key],axis=1)
+                all_values = np.hstack((all_values, distance_dic[key]))
+                err = robust.mad(distance_dic[key], c=1, axis=1)
+                ax1.errorbar(x_axis[i]+data_set_ID*2, med[i], yerr=err,ecolor="gray")
+            ax1.plot(x_axis+data_set_ID*2,med, marker="o", label=param_dic["data_descr"][data_set_ID])
+            ax1.set_title("EUCL. DISTANCE BETWEEN SUBSEQUENT TRANSITIONS")
+            ax1.set_ylabel("EUCL. DISTANCE - MED & MAD")
+            ax1.set_xlabel("MAZE POSITION / CM")
+            ax1.legend()
+
+            ax3.hist(all_values[~np.isnan(all_values)],bins=50, alpha=0.5, label=param_dic["data_descr"][data_set_ID])
+            ax3.set_title("HIST OF EUCL. DISTANCES BETWEEN SUBSEQUENT TRANSITIONS")
+            ax3.set_xlabel("EUCL. DISTANCE")
+            ax3.set_ylabel("COUNTS")
+            ax3.legend()
+
+        for data_set_ID, rel_distance_dic in enumerate(rel_distance_dics):
+
+            # calculate relative step length
+            rel_med = np.full(x_axis.shape[0], np.nan)
+            all_rel_values = np.empty((1, 0))
+            for i, key in enumerate(rel_distance_dic):
+                if rel_distance_dic[key].size == 0:
+                    continue
+                rel_med[i] = np.median(rel_distance_dic[key],axis=1)
+                all_rel_values = np.hstack((all_rel_values, rel_distance_dic[key]))
+                err = robust.mad(rel_distance_dic[key], c=1, axis=1)
+                ax2.errorbar(x_axis[i]+data_set_ID*2, rel_med[i], yerr=err,ecolor="gray")
+            ax2.plot(x_axis+data_set_ID*2, rel_med, marker="o", label=param_dic["data_descr"][data_set_ID])
+            ax2.set_title("RELATIVE CHANGE OF EUCL. DISTANCE BETWEEN SUBSEQUENT TRANSITIONS")
+            ax2.set_ylabel("RELATIVE CHANGE")
+            ax2.set_xlabel("MAZE POSITION / CM")
+
+            ax4.hist(all_rel_values[~np.isnan(all_rel_values) & ~np.isinf(all_rel_values)],
+                     bins=50, alpha=0.5, label=param_dic["data_descr"][data_set_ID])
+            ax4.set_title("HIST OF RELATIVE CHANGE OF EUCL. DISTANCE BETWEEN SUBSEQUENT TRANSITIONS")
+            ax4.set_xlabel("RELATIVE CHANGE")
+            ax4.set_ylabel("COUNTS")
+            ax4.legend()
 
         plt.show()
 
+    def compare_distance(self):
+        x_axis, dist_dic_1, rel_dist_dic_1 = self.euclidean(self.data_sets[0], self.loc_sets[0])
+        _, dist_dic_2, rel_dist_dic_2 = self.euclidean(self.data_sets[1], self.loc_sets[1])
 
+        self.plot_transition_euclidean_comparison(x_axis, [dist_dic_1,dist_dic_2], [rel_dist_dic_1,rel_dist_dic_2],
+                                               self.param_dic)
 
     def compare_operations(self):
         x_axis, op_dic_1, nr_of_cells_1  = self.operations(self.data_sets[0], self.loc_sets[0])
         _, op_dic_2, nr_of_cells_2  = self.operations(self.data_sets[1], self.loc_sets[1])
 
         self.plot_operations_comparison(x_axis,[op_dic_1,op_dic_2],[nr_of_cells_1,nr_of_cells_2], self.param_dic)
-
 
     def compare_angle(self):
         x_axis, angle_dic_1, rel_angle_dic_1 = self.angle(self.data_sets[0], self.loc_sets[0])
@@ -1035,7 +1048,6 @@ class StateTransitionAnalysis:
         x_axis = np.linspace(bin_interval, bin_interval * nr_intervals, nr_intervals)
 
         return x_axis, operation_dic, nr_of_cells
-
 
         # plot
 

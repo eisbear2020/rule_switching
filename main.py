@@ -301,6 +301,6 @@ if __name__ == '__main__':
 
     # euclidean distance between subsequent steps
     # ------------------------------------------------------------------------------------------------------------------
-    # new_state_transition.euclidean()
+    new_state_transition.compare_distance()
     # new_state_transition.compare_angle()
-    new_state_transition.compare_operations()
+    # new_state_transition.compare_operations()
