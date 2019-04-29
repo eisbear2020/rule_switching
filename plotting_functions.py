@@ -487,3 +487,125 @@ def plot_cell_charact(cell_avg_rate_map, cohens_d, cell_to_diff_contribution, ce
     # cax4.set_title("CHANGE OF P-VALUE KW(RULE A vs. RULE B)")
 
     plt.show()
+
+def plot_transition_comparison(x_axis, dics, rel_dics, param_dic, stats_array, measure):
+
+    fig, ax = plt.subplots(2,2)
+
+    ax1 = ax[0, 0]
+    ax2 = ax[0, 1]
+    ax3 = ax[1, 0]
+    ax4 = ax[1, 1]
+
+    for data_set_ID, dic in enumerate(dics):
+        med = np.full(x_axis.shape[0], np.nan)
+        all_values = np.empty((1, 0))
+        for i, key in enumerate(dic):
+            if dic[key].size == 0:
+                continue
+            med[i] = np.median(dic[key],axis=1)
+            all_values = np.hstack((all_values, dic[key]))
+            err = robust.mad(dic[key], c=1, axis=1)
+            ax1.errorbar(x_axis[i]+data_set_ID*2, med[i], yerr=err,ecolor="gray")
+        ax1.plot(x_axis+data_set_ID*2,med, marker="o", label=param_dic["data_descr"][data_set_ID])
+        ax1.set_title(measure + " BETWEEN SUBSEQUENT TRANSITIONS")
+        ax1.set_ylabel(measure + " - MED & MAD")
+        ax1.set_xlabel("MAZE POSITION / CM")
+        ax1.legend()
+
+        ax3.hist(all_values[~np.isnan(all_values)],bins=50, alpha=0.5, label=param_dic["data_descr"][data_set_ID])
+        ax3.set_title("HIST OF " +measure+" BETWEEN SUBSEQUENT TRANSITIONS")
+        ax3.set_xlabel(measure)
+        ax3.set_ylabel("COUNTS")
+        ax3.legend()
+
+    # add significance marker
+    for i, p_v in enumerate(stats_array):
+        if p_v < param_dic["stats_alpha"]:
+            ax1.scatter(x_axis[i] + 2, np.max(all_values) - 3, marker="*", edgecolors="Red",
+                        label=param_dic["stats_method"] + ", " + str(param_dic["stats_alpha"]))
+    handles, labels = ax1.get_legend_handles_labels()
+    by_label = OrderedDict(zip(labels, handles))
+    ax1.legend(by_label.values(), by_label.keys())
+
+
+    for data_set_ID, rel_dic in enumerate(rel_dics):
+
+        # calculate relative step length
+        rel_med = np.full(x_axis.shape[0], np.nan)
+        all_rel_values = np.empty((1, 0))
+        for i, key in enumerate(rel_dic):
+            if rel_dic[key].size == 0:
+                continue
+            rel_med[i] = np.median(rel_dic[key],axis=1)
+            all_rel_values = np.hstack((all_rel_values, rel_dic[key]))
+            err = robust.mad(rel_dic[key], c=1, axis=1)
+            ax2.errorbar(x_axis[i]+data_set_ID*2, rel_med[i], yerr=err,ecolor="gray")
+        ax2.plot(x_axis+data_set_ID*2, rel_med, marker="o", label=param_dic["data_descr"][data_set_ID])
+        ax2.set_title("RELATIVE CHANGE OF "+measure+" BETWEEN SUBSEQUENT TRANSITIONS")
+        ax2.set_ylabel("RELATIVE CHANGE")
+        ax2.set_xlabel("MAZE POSITION / CM")
+
+        ax4.hist(all_rel_values[~np.isnan(all_rel_values) & ~np.isinf(all_rel_values)],
+                 bins=50, alpha=0.5, label=param_dic["data_descr"][data_set_ID])
+        ax4.set_title("HIST OF RELATIVE CHANGE OF "+measure+" BETWEEN SUBSEQUENT TRANSITIONS")
+        ax4.set_xlabel("RELATIVE CHANGE")
+        ax4.set_ylabel("COUNTS")
+        ax4.legend()
+
+    plt.show()
+
+def plot_operations_comparison(x_axis, operation_dics, nr_of_cells_arr, param_dic):
+
+    fig, ax = plt.subplots(2, 2)
+    ax1 = ax[0, 0]
+    ax2 = ax[0, 1]
+    ax3 = ax[1, 0]
+
+    for data_set_ID, (operation_dic, nr_of_cells) in enumerate(zip(operation_dics, nr_of_cells_arr)):
+        med = np.full(x_axis.shape[0], np.nan)
+        all_values = np.empty((1, 0))
+        for i, key in enumerate(operation_dic):
+            if operation_dic[key].size == 0:
+                continue
+            med[i] = np.median(operation_dic[key][0]/nr_of_cells*100)
+            #all_values = np.hstack((all_values, operation_dic[key][0]))
+            err = robust.mad(operation_dic[key][0]/nr_of_cells*100, c=1)
+            ax1.errorbar(x_axis[i]+data_set_ID*2, med[i], yerr=err, ecolor="gray")
+        ax1.plot(x_axis+data_set_ID*2, med, marker="o", label=param_dic["data_descr"][data_set_ID])
+        ax1.set_title("SILENCED CELLS")
+        ax1.set_ylabel("% OF CELLS")
+        ax1.set_xlabel("MAZE POSITION / CM")
+        ax1.legend()
+
+        med = np.full(x_axis.shape[0], np.nan)
+        all_values = np.empty((1, 0))
+        for i, key in enumerate(operation_dic):
+            if operation_dic[key].size == 0:
+                continue
+            med[i] = np.median(operation_dic[key][1]/nr_of_cells*100)
+            #all_values = np.hstack((all_values, operation_dic[key][0]))
+            err = robust.mad(operation_dic[key][1]/nr_of_cells*100, c=1)
+            ax2.errorbar(x_axis[i]+data_set_ID*2, med[i], yerr=err, ecolor="gray")
+        ax2.plot(x_axis+data_set_ID*2, med, marker="o", label=param_dic["data_descr"][data_set_ID])
+        ax2.set_title("UNCHANGED CELLS")
+        ax2.set_ylabel("% OF CELLS")
+        ax2.set_xlabel("MAZE POSITION / CM")
+        ax2.legend()
+
+        med = np.full(x_axis.shape[0], np.nan)
+        all_values = np.empty((1, 0))
+        for i, key in enumerate(operation_dic):
+            if operation_dic[key].size == 0:
+                continue
+            med[i] = np.median(operation_dic[key][2]/nr_of_cells*100)
+            #all_values = np.hstack((all_values, operation_dic[key][0]))
+            err = robust.mad(operation_dic[key][2]/nr_of_cells*100, c=1)
+            ax3.errorbar(x_axis[i]+data_set_ID*2, med[i], yerr=err, ecolor="gray")
+        ax3.plot(x_axis+data_set_ID*2, med, marker="o", label=param_dic["data_descr"][data_set_ID])
+        ax3.set_title("ACTIVATED CELLS")
+        ax3.set_ylabel("% OF CELLS")
+        ax3.set_xlabel("MAZE POSITION / CM")
+        ax3.legend()
+
+    plt.show()

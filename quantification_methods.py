@@ -34,6 +34,7 @@
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
+from collections import OrderedDict
 from scipy import stats
 from comp_functions import get_activity_mat_spatial
 from comp_functions import get_activity_mat_time
@@ -45,6 +46,8 @@ from comp_functions import angle_between_col_vectors
 import matplotlib.cm as cm
 from plotting_functions import plot_remapping_summary
 from plotting_functions import plot_cell_charact
+from plotting_functions import plot_transition_comparison
+from plotting_functions import plot_operations_comparison
 import matplotlib as mpl
 import os
 from statsmodels import robust
@@ -690,6 +693,10 @@ class Analysis:
 
         plt.show()
 
+########################################################################################################################
+#   STATE TRANSITION ANALYSIS CLASS
+########################################################################################################################
+
 
 class StateTransitionAnalysis:
     """ Class state transition analysis"""
@@ -699,8 +706,65 @@ class StateTransitionAnalysis:
         self.data_sets = data_sets
         self.loc_sets = loc_sets
         self.param_dic = param_dic
+        self.stats_method = param_dic["stats_method"]
+
+    def compare_distance(self):
+        # compares euclidean distance between subsequent population vectors of two data sets
+        x_axis, dist_dic_1, rel_dist_dic_1 = self.euclidean(self.data_sets[0], self.loc_sets[0])
+        _, dist_dic_2, rel_dist_dic_2 = self.euclidean(self.data_sets[1], self.loc_sets[1])
+
+        stats_array = np.zeros(len(dist_dic_1.keys()))
+
+        for i, key in enumerate(dist_dic_1):
+            # check if difference is statistically significant
+
+            set_1 = np.squeeze(dist_dic_1[key])
+            set_2 = np.squeeze(dist_dic_2[key])
+
+            if len(set_1) == 0 or len(set_2) == 0:
+                stats_array[i] = np.nan
+            else:
+                if self.stats_method == "KW":
+                    _, stats_array[i] = stats.kruskal(set_1, set_2)
+                elif self.stats_method == "MWU":
+                    _, stats_array[i] = stats.mannwhitneyu(set_1, set_2)
+
+        plot_transition_comparison(x_axis, [dist_dic_1,dist_dic_2], [rel_dist_dic_1,rel_dist_dic_2],
+                                   self.param_dic, stats_array,"EUCL. DISTANCE")
+
+    def compare_operations(self):
+        # compares operations (silencing, activation, unchanged) between states for two data sets
+        x_axis, op_dic_1, nr_of_cells_1  = self.operations(self.data_sets[0], self.loc_sets[0])
+        _, op_dic_2, nr_of_cells_2  = self.operations(self.data_sets[1], self.loc_sets[1])
+
+        plot_operations_comparison(x_axis,[op_dic_1,op_dic_2],[nr_of_cells_1,nr_of_cells_2], self.param_dic)
+
+    def compare_angle(self):
+        # compares angles between subsequent population vectors for two data sets
+        x_axis, angle_dic_1, rel_angle_dic_1 = self.angle(self.data_sets[0], self.loc_sets[0])
+        _, angle_dic_2, rel_angle_dic_2 = self.angle(self.data_sets[1], self.loc_sets[1])
+
+        stats_array = np.zeros(len(angle_dic_1.keys()))
+
+        for i, key in enumerate(angle_dic_1):
+            # check if difference is statistically significant
+
+            set_1 = np.squeeze(angle_dic_1[key])
+            set_2 = np.squeeze(angle_dic_2[key])
+
+            if len(set_1) == 0 or len(set_2) == 0:
+                stats_array[i] = np.nan
+            else:
+                if self.stats_method == "KW":
+                    _, stats_array[i] = stats.kruskal(set_1, set_2)
+                elif self.stats_method == "MWU":
+                    _, stats_array[i] = stats.mannwhitneyu(set_1, set_2)
+
+        plot_transition_comparison(x_axis, [angle_dic_1,angle_dic_2], [rel_angle_dic_1,rel_angle_dic_2],
+                                   self.param_dic, stats_array,"ANGLE")
 
     def filter_cells(self, data_set, loc_set):
+        # filter cells that are not active at all
 
         # how many cells are in the data set
         nr_cells = len(next(iter(data_set.values())))
@@ -769,84 +833,6 @@ class StateTransitionAnalysis:
 
         return x_axis, distance_dic, rel_distance_dic
 
-    def plot_transition_euclidean_comparison(self, x_axis, distance_dics, rel_distance_dics, param_dic):
-        # plot
-
-        fig, ax = plt.subplots(2,2)
-
-        ax1 = ax[0, 0]
-        ax2 = ax[0, 1]
-        ax3 = ax[1, 0]
-        ax4 = ax[1, 1]
-
-        for data_set_ID, distance_dic in enumerate(distance_dics):
-            med = np.full(x_axis.shape[0], np.nan)
-            all_values = np.empty((1, 0))
-            for i, key in enumerate(distance_dic):
-                if distance_dic[key].size == 0:
-                    continue
-                med[i] = np.median(distance_dic[key],axis=1)
-                all_values = np.hstack((all_values, distance_dic[key]))
-                err = robust.mad(distance_dic[key], c=1, axis=1)
-                ax1.errorbar(x_axis[i]+data_set_ID*2, med[i], yerr=err,ecolor="gray")
-            ax1.plot(x_axis+data_set_ID*2,med, marker="o", label=param_dic["data_descr"][data_set_ID])
-            ax1.set_title("EUCL. DISTANCE BETWEEN SUBSEQUENT TRANSITIONS")
-            ax1.set_ylabel("EUCL. DISTANCE - MED & MAD")
-            ax1.set_xlabel("MAZE POSITION / CM")
-            ax1.legend()
-
-            ax3.hist(all_values[~np.isnan(all_values)],bins=50, alpha=0.5, label=param_dic["data_descr"][data_set_ID])
-            ax3.set_title("HIST OF EUCL. DISTANCES BETWEEN SUBSEQUENT TRANSITIONS")
-            ax3.set_xlabel("EUCL. DISTANCE")
-            ax3.set_ylabel("COUNTS")
-            ax3.legend()
-
-        for data_set_ID, rel_distance_dic in enumerate(rel_distance_dics):
-
-            # calculate relative step length
-            rel_med = np.full(x_axis.shape[0], np.nan)
-            all_rel_values = np.empty((1, 0))
-            for i, key in enumerate(rel_distance_dic):
-                if rel_distance_dic[key].size == 0:
-                    continue
-                rel_med[i] = np.median(rel_distance_dic[key],axis=1)
-                all_rel_values = np.hstack((all_rel_values, rel_distance_dic[key]))
-                err = robust.mad(rel_distance_dic[key], c=1, axis=1)
-                ax2.errorbar(x_axis[i]+data_set_ID*2, rel_med[i], yerr=err,ecolor="gray")
-            ax2.plot(x_axis+data_set_ID*2, rel_med, marker="o", label=param_dic["data_descr"][data_set_ID])
-            ax2.set_title("RELATIVE CHANGE OF EUCL. DISTANCE BETWEEN SUBSEQUENT TRANSITIONS")
-            ax2.set_ylabel("RELATIVE CHANGE")
-            ax2.set_xlabel("MAZE POSITION / CM")
-
-            ax4.hist(all_rel_values[~np.isnan(all_rel_values) & ~np.isinf(all_rel_values)],
-                     bins=50, alpha=0.5, label=param_dic["data_descr"][data_set_ID])
-            ax4.set_title("HIST OF RELATIVE CHANGE OF EUCL. DISTANCE BETWEEN SUBSEQUENT TRANSITIONS")
-            ax4.set_xlabel("RELATIVE CHANGE")
-            ax4.set_ylabel("COUNTS")
-            ax4.legend()
-
-        plt.show()
-
-    def compare_distance(self):
-        x_axis, dist_dic_1, rel_dist_dic_1 = self.euclidean(self.data_sets[0], self.loc_sets[0])
-        _, dist_dic_2, rel_dist_dic_2 = self.euclidean(self.data_sets[1], self.loc_sets[1])
-
-        self.plot_transition_euclidean_comparison(x_axis, [dist_dic_1,dist_dic_2], [rel_dist_dic_1,rel_dist_dic_2],
-                                               self.param_dic)
-
-    def compare_operations(self):
-        x_axis, op_dic_1, nr_of_cells_1  = self.operations(self.data_sets[0], self.loc_sets[0])
-        _, op_dic_2, nr_of_cells_2  = self.operations(self.data_sets[1], self.loc_sets[1])
-
-        self.plot_operations_comparison(x_axis,[op_dic_1,op_dic_2],[nr_of_cells_1,nr_of_cells_2], self.param_dic)
-
-    def compare_angle(self):
-        x_axis, angle_dic_1, rel_angle_dic_1 = self.angle(self.data_sets[0], self.loc_sets[0])
-        _, angle_dic_2, rel_angle_dic_2 = self.angle(self.data_sets[1], self.loc_sets[1])
-
-        self.plot_transition_angles_comparison(x_axis, [angle_dic_1,angle_dic_2], [rel_angle_dic_1,rel_angle_dic_2],
-                                               self.param_dic)
-
     def angle(self, data_set, loc_set):
         # calculates angles between subsequent transitions
 
@@ -892,113 +878,6 @@ class StateTransitionAnalysis:
             x_axis = np.linspace(bin_interval, bin_interval * nr_intervals, nr_intervals)
 
         return x_axis, angle_dic, rel_angle_dic
-
-
-    def plot_transition_angles_comparison(self, x_axis, angle_dics, rel_angle_dics, param_dic):
-
-        fig, ax = plt.subplots(2,2)
-
-        ax1 = ax[0, 0]
-        ax2 = ax[0, 1]
-        ax3 = ax[1, 0]
-        ax4 = ax[1, 1]
-
-        for data_set_ID, angle_dic in enumerate(angle_dics):
-            med = np.full(x_axis.shape[0], np.nan)
-            all_values = np.empty((1, 0))
-            for i, key in enumerate(angle_dic):
-                if angle_dic[key].size == 0:
-                    continue
-                med[i] = np.median(angle_dic[key],axis=1)
-                all_values = np.hstack((all_values, angle_dic[key]))
-                err = robust.mad(angle_dic[key], c=1, axis=1)
-                ax1.errorbar(x_axis[i]+data_set_ID*2, med[i], yerr=err,ecolor="gray")
-            ax1.plot(x_axis+data_set_ID*2,med, marker="o", label=param_dic["data_descr"][data_set_ID])
-            ax1.set_title("ANGLE BETWEEN SUBSEQUENT TRANSITIONS")
-            ax1.set_ylabel("ANGLE / DEG - MED & MAD")
-            ax1.set_xlabel("MAZE POSITION / CM")
-            ax1.legend()
-
-            ax3.hist(all_values[~np.isnan(all_values)],bins=50, alpha=0.5, label=param_dic["data_descr"][data_set_ID])
-            ax3.set_title("HIST OF ANGLE BETWEEN SUBSEQUENT TRANSITIONS")
-            ax3.set_xlabel("ANGLE / DEG")
-            ax3.set_ylabel("COUNTS")
-            ax3.legend()
-
-        for data_set_ID, rel_angle_dic in enumerate(rel_angle_dics):
-
-            # calculate relative step length
-            rel_med = np.full(x_axis.shape[0], np.nan)
-            all_rel_values = np.empty((1, 0))
-            for i, key in enumerate(rel_angle_dic):
-                if rel_angle_dic[key].size == 0:
-                    continue
-                rel_med[i] = np.median(rel_angle_dic[key],axis=1)
-                all_rel_values = np.hstack((all_rel_values, rel_angle_dic[key]))
-                err = robust.mad(rel_angle_dic[key], c=1, axis=1)
-                ax2.errorbar(x_axis[i]+data_set_ID*2, rel_med[i], yerr=err,ecolor="gray")
-            ax2.plot(x_axis+data_set_ID*2, rel_med, marker="o", label=param_dic["data_descr"][data_set_ID])
-            ax2.set_title("RELATIVE CHANGE OF ANGLE BETWEEN SUBSEQUENT TRANSITIONS")
-            ax2.set_ylabel("RELATIVE CHANGE")
-            ax2.set_xlabel("MAZE POSITION / CM")
-
-            ax4.hist(all_rel_values[~np.isnan(all_rel_values) & ~np.isinf(all_rel_values)],
-                     bins=50, alpha=0.5, label=param_dic["data_descr"][data_set_ID])
-            ax4.set_title("HIST OF RELATIVE CHANGE OF ANGLE BETWEEN SUBSEQUENT TRANSITIONS")
-            ax4.set_xlabel("RELATIVE CHANGE")
-            ax4.set_ylabel("COUNTS")
-            ax4.legend()
-
-        plt.show()
-
-    def plot_transition_angles(self, x_axis, angle_dic, rel_angle_dic):
-
-        fig, ax = plt.subplots(2,2)
-
-        ax1 = ax[0,0]
-        med = np.full(x_axis.shape[0],np.nan)
-        all_values = np.empty((1, 0))
-        for i, key in enumerate(angle_dic):
-            if angle_dic[key].size == 0:
-                continue
-            med[i] = np.median(angle_dic[key],axis=1)
-            all_values = np.hstack((all_values, angle_dic[key]))
-            err = robust.mad(angle_dic[key], c=1, axis=1)
-            ax1.errorbar(x_axis[i], med[i], yerr=err,ecolor="gray")
-        ax1.plot(x_axis,med, marker="o",color="black")
-        ax1.set_title("ANGLE BETWEEN SUBSEQUENT TRANSITIONS")
-        ax1.set_ylabel("ANGLE / DEG - MED & MAD")
-        ax1.set_xlabel("MAZE POSITION / CM")
-
-        ax2 = ax[0, 1]
-
-        # calculate relative step length
-        rel_med = np.full(x_axis.shape[0],np.nan)
-        all_rel_values = np.empty((1, 0))
-        for i, key in enumerate(angle_dic):
-            if angle_dic[key].size == 0:
-                continue
-            rel_med[i] = np.median(rel_angle_dic[key],axis=1)
-            all_rel_values = np.hstack((all_rel_values, rel_angle_dic[key]))
-            err = robust.mad(rel_angle_dic[key], c=1, axis=1)
-            ax2.errorbar(x_axis[i], rel_med[i], yerr=err,ecolor="gray")
-        ax2.plot(x_axis, rel_med, marker="o",color="black")
-        ax2.set_title("RELATIVE CHANGE OF ANGLE BETWEEN SUBSEQUENT TRANSITIONS")
-        ax2.set_ylabel("RELATIVE CHANGE")
-        ax2.set_xlabel("MAZE POSITION / CM")
-
-        ax3 = ax[1, 0]
-        ax3.hist(all_values[~np.isnan(all_values)],bins=50)
-        ax3.set_title("HIST OF ANGLE BETWEEN SUBSEQUENT TRANSITIONS")
-        ax3.set_xlabel("ANGLE / DEG")
-        ax3.set_ylabel("COUNTS")
-        ax4 = ax[1, 1]
-        ax4.hist(all_rel_values[~np.isnan(all_rel_values) & ~np.isinf(all_rel_values)],bins=50)
-        ax4.set_title("HIST OF RELATIVE CHANGE OF ANGLE BETWEEN SUBSEQUENT TRANSITIONS")
-        ax4.set_xlabel("RELATIVE CHANGE")
-        ax4.set_ylabel("COUNTS")
-
-        plt.show()
 
     def operations(self, data_set, loc_set):
         # calculates number of zeros (no change), +1 (activation) and -1 (inhibition) in population difference
@@ -1049,59 +928,5 @@ class StateTransitionAnalysis:
 
         return x_axis, operation_dic, nr_of_cells
 
-        # plot
 
-    def plot_operations_comparison(self, x_axis, operation_dics, nr_of_cells_arr, param_dic):
 
-        fig, ax = plt.subplots(2, 2)
-        ax1 = ax[0, 0]
-        ax2 = ax[0, 1]
-        ax3 = ax[1, 0]
-
-        for data_set_ID, (operation_dic, nr_of_cells) in enumerate(zip(operation_dics, nr_of_cells_arr)):
-            med = np.full(x_axis.shape[0], np.nan)
-            all_values = np.empty((1, 0))
-            for i, key in enumerate(operation_dic):
-                if operation_dic[key].size == 0:
-                    continue
-                med[i] = np.median(operation_dic[key][0]/nr_of_cells*100)
-                #all_values = np.hstack((all_values, operation_dic[key][0]))
-                err = robust.mad(operation_dic[key][0]/nr_of_cells*100, c=1)
-                ax1.errorbar(x_axis[i]+data_set_ID*2, med[i], yerr=err, ecolor="gray")
-            ax1.plot(x_axis+data_set_ID*2, med, marker="o", label=param_dic["data_descr"][data_set_ID])
-            ax1.set_title("SILENCED CELLS")
-            ax1.set_ylabel("% OF CELLS")
-            ax1.set_xlabel("MAZE POSITION / CM")
-            ax1.legend()
-
-            med = np.full(x_axis.shape[0], np.nan)
-            all_values = np.empty((1, 0))
-            for i, key in enumerate(operation_dic):
-                if operation_dic[key].size == 0:
-                    continue
-                med[i] = np.median(operation_dic[key][1]/nr_of_cells*100)
-                #all_values = np.hstack((all_values, operation_dic[key][0]))
-                err = robust.mad(operation_dic[key][1]/nr_of_cells*100, c=1)
-                ax2.errorbar(x_axis[i]+data_set_ID*2, med[i], yerr=err, ecolor="gray")
-            ax2.plot(x_axis+data_set_ID*2, med, marker="o", label=param_dic["data_descr"][data_set_ID])
-            ax2.set_title("UNCHANGED CELLS")
-            ax2.set_ylabel("% OF CELLS")
-            ax2.set_xlabel("MAZE POSITION / CM")
-            ax2.legend()
-
-            med = np.full(x_axis.shape[0], np.nan)
-            all_values = np.empty((1, 0))
-            for i, key in enumerate(operation_dic):
-                if operation_dic[key].size == 0:
-                    continue
-                med[i] = np.median(operation_dic[key][2]/nr_of_cells*100)
-                #all_values = np.hstack((all_values, operation_dic[key][0]))
-                err = robust.mad(operation_dic[key][2]/nr_of_cells*100, c=1)
-                ax3.errorbar(x_axis[i]+data_set_ID*2, med[i], yerr=err, ecolor="gray")
-            ax3.plot(x_axis+data_set_ID*2, med, marker="o", label=param_dic["data_descr"][data_set_ID])
-            ax3.set_title("ACTIVATED CELLS")
-            ax3.set_ylabel("% OF CELLS")
-            ax3.set_xlabel("MAZE POSITION / CM")
-            ax3.legend()
-
-        plt.show()

@@ -118,6 +118,8 @@ distribution of within and across rule distance:
 ![alt text](../plots/mjc189-1905-0517/quant_cell_contrib_2_4_6.png)
 
 * 3 cases:
+  
+  * ATTENTION: COSINE NOT ADDITIVE
 
   * cum. rel. contribution low: cannot account for majority difference by single
   cells using leave-one-out --> global remapping
@@ -145,23 +147,11 @@ in different spatial locations
 
 ## Euclidean distance between subsequent population vectors
 
-### rule light (_2)
-
-![alt text](../plots/mjc189-1905-0517/quant_state_transition_euc_light.png)
-
-### rule west (_6)
-
-![alt text](../plots/mjc189-1905-0517/quant_state_transition_euc_west.png)
+![alt text](../plots/mjc189-1905-0517/quant_state_transition_euc.png)
 
 ## Angle between subsequent state transitions
 
-### rule light (_2)
-
-![alt text](../plots/mjc189-1905-0517/quant_state_transition_angle_light.png)
-
-### rule west (_6)
-
-![alt text](../plots/mjc189-1905-0517/quant_state_transition_angle_west.png)
+![alt text](../plots/mjc189-1905-0517/quant_state_transition_angle.png)
 
 * what is the explanation for 120 deg?
 
@@ -171,14 +161,4 @@ in different spatial locations
 * making difference vectors signed binary
 * counting -1 (silencing), 0 (unchanged), +1 (activated)
 
-### rule light (_2)
-
-![alt text](../plots/mjc189-1905-0517/quant_state_transition_operations_light.png)
-
-### rule west (_6)
-
-![alt text](../plots/mjc189-1905-0517/quant_state_transition_operations_west.png)
-
-### rule switch (_4)
-
-![alt text](../plots/mjc189-1905-0517/quant_state_transition_operations_switch.png)
+![alt text](../plots/mjc189-1905-0517/quant_state_transition_operations.png)

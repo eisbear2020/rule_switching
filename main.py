@@ -238,11 +238,11 @@ if __name__ == '__main__':
 
     # compare RULE A and RULE B
     # ------------------------------------------------------------------------------------------------------------------
-    # new_compare = Analysis("RULE LIGHT", "RULE WEST", param_dic)
+    new_compare = Analysis("RULE LIGHT", "RULE WEST", param_dic)
     # new_compare.plot_spatial_information()
     # new_compare.cross_cos_diff()
     # new_compare.characterize_cells()
-    # new_compare.cell_contribution()
+    new_compare.cell_contribution()
     # new_compare.cross_cos_diff_spat_trials()
     # new_compare.remove_cells([46,69])
 
@@ -296,11 +296,11 @@ if __name__ == '__main__':
     # QUANTITATIVE ANALYSIS
     ####################################################################################################################
 
-    new_state_transition = StateTransitionAnalysis([res_data_set_2, res_data_set_6], [whl_lin_data_set_2,
-                                                                                      whl_lin_data_set_6], param_dic)
- 
+    # new_state_transition = StateTransitionAnalysis([res_data_set_2, res_data_set_6], [whl_lin_data_set_2,
+    #                                                                                   whl_lin_data_set_6], param_dic)
+
     # euclidean distance between subsequent steps
     # ------------------------------------------------------------------------------------------------------------------
-    new_state_transition.compare_distance()
+    # new_state_transition.compare_distance()
     # new_state_transition.compare_angle()
     # new_state_transition.compare_operations()
