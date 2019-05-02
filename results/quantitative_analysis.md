@@ -129,6 +129,12 @@ distribution of within and across rule distance:
 
   * monotonically increasing curve: several cells contribute majorly to
   difference --> between global and local remapping
+  
+* using shuffling:
+
+  * select subset of n cells randomly and calculate cosine difference
+
+![alt text](../plots/mjc189-1905-0517/quant_cell_contrib_2_4_6_shuffling.png)
 
 # COMPARISON OF POPULATION VECTORS FOR SAME RULE BEFORE/AFTER SLEEP
 

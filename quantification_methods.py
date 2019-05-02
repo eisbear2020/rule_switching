@@ -394,7 +394,7 @@ class Analysis:
 
         return cell_to_diff_contribution, rel_cell_to_diff_contribution, init_cos_distance
 
-    def leave_n_out_average_over_trials(self, distance_measure):
+    def leave_n_out_average_over_trials(self, distance_measure, nr_shuffles):
 
         nr_cells = next(iter(self.bin_dic_1.values())).shape[0]
         nr_bins = len(self.bin_dic_1.keys())
@@ -417,7 +417,7 @@ class Analysis:
         for nr_cells_subset in range(nr_cells):
 
             # do random selection n times
-            n_r_s = 200
+            n_r_s = nr_shuffles
 
             cos_distance = np.zeros((n_r_s,nr_bins))
 
@@ -801,13 +801,13 @@ class Analysis:
 
         plt.show()
 
-    def cell_contribution_average_over_trials_random(self, distance_measure):
+    def cell_contribution_average_over_trials_random(self, distance_measure, nr_shuffles):
         # check how many cells contribute how much to the difference between two conditions (e.g. RULES)
         spat_pos = np.arange(0, 200, self.param_dic["spatial_bin_size"])
         spat_pos = spat_pos[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
 
         cell_to_diff_contribution, rel_cell_to_diff_contribution, init_cos_dist = \
-            self.leave_n_out_average_over_trials(distance_measure)
+            self.leave_n_out_average_over_trials(distance_measure,nr_shuffles)
 
         x_axis = np.arange(1,cell_to_diff_contribution.shape[0]+1)
         print(x_axis.shape)
@@ -818,6 +818,9 @@ class Analysis:
             plt.plot(x_axis,cont, color=col_map[i, :], label=str(spat_pos[i])+" cm",
                      marker="o")
         plt.legend()
+        plt.title("REMAPPING CHARACTERISTICS")
+        plt.ylabel("COS DIFFERENCE")
+        plt.xlabel("NR. CELLS IN SUBSET")
         plt.show()
         exit()
         print(init_cos_dist)
