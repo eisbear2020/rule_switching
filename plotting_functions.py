@@ -413,7 +413,7 @@ def plot_remapping_summary(cross_diff, within_diff_1, within_diff_2, stats_array
     plt.show()
 
 
-def plot_cell_charact(cell_avg_rate_map, cohens_d, cell_to_diff_contribution, cell_to_p_value_contribution, xlabel,
+def plot_cell_charact(cell_avg_rate_map, cohens_d, cell_to_diff_contribution, xlabel,
                       sort_cells):
 
     if sort_cells:
@@ -508,21 +508,21 @@ def plot_transition_comparison(x_axis, dics, rel_dics, param_dic, stats_array, m
             err = robust.mad(dic[key], c=1, axis=1)
             ax1.errorbar(x_axis[i]+data_set_ID*2, med[i], yerr=err,ecolor="gray")
         ax1.plot(x_axis+data_set_ID*2,med, marker="o", label=param_dic["data_descr"][data_set_ID])
-        ax1.set_title(measure + " BETWEEN SUBSEQUENT TRANSITIONS")
-        ax1.set_ylabel(measure + " - MED & MAD")
+        ax1.set_title(measure.upper() + " BETWEEN SUBSEQUENT TRANSITIONS")
+        ax1.set_ylabel(measure.upper() + " - MED & MAD")
         ax1.set_xlabel("MAZE POSITION / CM")
         ax1.legend()
 
         ax3.hist(all_values[~np.isnan(all_values)],bins=50, alpha=0.5, label=param_dic["data_descr"][data_set_ID])
-        ax3.set_title("HIST OF " +measure+" BETWEEN SUBSEQUENT TRANSITIONS")
-        ax3.set_xlabel(measure)
+        ax3.set_title("HIST OF " +measure.upper()+" BETWEEN SUBSEQUENT TRANSITIONS")
+        ax3.set_xlabel(measure.upper())
         ax3.set_ylabel("COUNTS")
         ax3.legend()
 
     # add significance marker
     for i, p_v in enumerate(stats_array):
         if p_v < param_dic["stats_alpha"]:
-            ax1.scatter(x_axis[i] + 2, np.max(all_values) - 3, marker="*", edgecolors="Red",
+            ax1.scatter(x_axis[i] + 2, ax1.get_ylim()[1]-0.1*ax1.get_ylim()[1], marker="*", edgecolors="Red",
                         label=param_dic["stats_method"] + ", " + str(param_dic["stats_alpha"]))
     handles, labels = ax1.get_legend_handles_labels()
     by_label = OrderedDict(zip(labels, handles))
@@ -542,13 +542,13 @@ def plot_transition_comparison(x_axis, dics, rel_dics, param_dic, stats_array, m
             err = robust.mad(rel_dic[key], c=1, axis=1)
             ax2.errorbar(x_axis[i]+data_set_ID*2, rel_med[i], yerr=err,ecolor="gray")
         ax2.plot(x_axis+data_set_ID*2, rel_med, marker="o", label=param_dic["data_descr"][data_set_ID])
-        ax2.set_title("RELATIVE CHANGE OF "+measure+" BETWEEN SUBSEQUENT TRANSITIONS")
+        ax2.set_title("RELATIVE CHANGE OF "+measure.upper()+" BETWEEN SUBSEQUENT TRANSITIONS")
         ax2.set_ylabel("RELATIVE CHANGE")
         ax2.set_xlabel("MAZE POSITION / CM")
 
         ax4.hist(all_rel_values[~np.isnan(all_rel_values) & ~np.isinf(all_rel_values)],
                  bins=50, alpha=0.5, label=param_dic["data_descr"][data_set_ID])
-        ax4.set_title("HIST OF RELATIVE CHANGE OF "+measure+" BETWEEN SUBSEQUENT TRANSITIONS")
+        ax4.set_title("HIST OF RELATIVE CHANGE OF "+measure.upper()+" BETWEEN SUBSEQUENT TRANSITIONS")
         ax4.set_xlabel("RELATIVE CHANGE")
         ax4.set_ylabel("COUNTS")
         ax4.legend()

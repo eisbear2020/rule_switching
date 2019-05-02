@@ -140,7 +140,7 @@ if __name__ == '__main__':
     # without filter --> set to []
     param_dic["speed_filter"] = 5
     # exclude population vectors with all zero values
-    param_dic["zero_filter"] = False
+    param_dic["zero_filter"] = True
 
     # define method for dimensionality reduction
     # "MDS" multi dimensional scaling
@@ -234,6 +234,8 @@ if __name__ == '__main__':
     # dic = BinDictionary(param_dic)
     # dic.create_spatial_bin_dictionary(res_data_set_2, whl_lin_data_set_2, param_dic["data_descr"][0])
     # dic.create_spatial_bin_dictionary(res_data_set_6, whl_lin_data_set_6, param_dic["data_descr"][1])
+    # dic.create_spatial_bin_dictionaries_transition(res_data_set_4, whl_lin_data_set_4, new_rule_trial,
+    #                                                param_dic["data_descr"][0], param_dic["data_descr"][1])
     # dic.combine_bin_dictionaries("RULE LIGHT", "SWITCH_RULE LIGHT", "RULE LIGHT_2_4")
 
     # compare RULE A and RULE B
@@ -241,10 +243,14 @@ if __name__ == '__main__':
     new_compare = Analysis("RULE LIGHT", "RULE WEST", param_dic)
     # new_compare.plot_spatial_information()
     # new_compare.cross_cos_diff()
-    # new_compare.characterize_cells()
-    new_compare.cell_contribution()
     # new_compare.cross_cos_diff_spat_trials()
+    # new_compare.characterize_cells()
+    # new_compare.cell_contribution_average_over_trials("cos")
+    # new_compare.cell_contribution()
     # new_compare.remove_cells([46,69])
+    # new_compare.cell_contribution()
+    # new_compare.cell_contribution_average_over_trials("cos")
+    new_compare.cell_contribution_average_over_trials_random("cos")
 
 ########################################################################################################################
 #   TRANSITION ANALYSIS (RULE A --> RULE B)
@@ -260,12 +266,6 @@ if __name__ == '__main__':
 
     # QUANTITATIVE ANALYSIS
     ####################################################################################################################
-
-    # create binned dictionaries
-    # ------------------------------------------------------------------------------------------------------------------
-    # dic = BinDictionary(param_dic)
-    # dic.create_spatial_bin_dictionaries_transition(res_data_set_4, whl_lin_data_set_4, new_rule_trial,
-    #                                                param_dic["data_descr"][0], param_dic["data_descr"][1])
 
     # new_transition = Analysis("SWITCH_RULE LIGHT", "SWITCH_RULE WEST", param_dic)
     # new_transition.cross_cos_diff()
@@ -301,6 +301,5 @@ if __name__ == '__main__':
 
     # euclidean distance between subsequent steps
     # ------------------------------------------------------------------------------------------------------------------
-    # new_state_transition.compare_distance()
-    # new_state_transition.compare_angle()
+    # new_state_transition.compare_distance("cos")
     # new_state_transition.compare_operations()

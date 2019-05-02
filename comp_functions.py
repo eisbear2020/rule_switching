@@ -24,6 +24,7 @@
 import numpy as np
 import math
 import scipy.stats as sp
+from numpy.linalg import norm
 import matplotlib.pyplot as plt
 from sklearn.metrics import jaccard_similarity_score
 from sklearn.manifold import MDS
@@ -308,9 +309,8 @@ def calc_diff(a, b, diff_meas):
             for j, pop_vec_comp in enumerate(b.T):
                 D[i, j] = distance.cosine(pop_vec_ref, pop_vec_comp)
                 # if one of the vectors contains only zeros --> division by zero for cosine
-                if math.isnan(D[i,j]):
-                    D[i, j] = 1
-
+                # if math.isnan(D[i,j]):
+                #     D[i, j] = 1
 
     elif diff_meas == "euclidean":
         # calculate difference matrix: euclidean distance
@@ -319,6 +319,14 @@ def calc_diff(a, b, diff_meas):
         for i, pop_vec_ref in enumerate(a.T):
             for j, pop_vec_comp in enumerate(b.T):
                     D[i, j] = distance.euclidean(pop_vec_ref, pop_vec_comp)
+
+    elif diff_meas == "L1":
+        # calculate difference matrix: euclidean distance
+
+        # euclidean distance
+        for i, pop_vec_ref in enumerate(a.T):
+            for j, pop_vec_comp in enumerate(b.T):
+                    D[i, j] = norm(pop_vec_ref-pop_vec_comp,1)
 
     return D
 
@@ -332,13 +340,18 @@ def pop_vec_diff(data_set):
     return diffMat
 
 
-def pop_vec_euclidean_dist(data_set):
+def pop_vec_dist(data_set, measure):
     # computes euclidean distance between column vectors of data set
     # returns row vector with euclidean distances
     dist_mat = np.zeros(data_set.shape[1]-1)
 
     for i, _ in enumerate(data_set.T[:-1,:]):
-        dist_mat[i] = distance.euclidean(data_set.T[i+1,:],data_set.T[i,:])
+        if measure == "euclidean":
+            dist_mat[i] = distance.euclidean(data_set.T[i+1,:],data_set.T[i,:])
+        elif measure == "cos":
+            dist_mat[i] = distance.cosine(data_set.T[i + 1, :], data_set.T[i, :])
+        elif measure == "L1":
+            dist_mat[i] = norm(data_set.T[i + 1, :] - data_set.T[i, :],1)
 
     # calculate relative change between subsequent vectors
     rel_dist_mat = np.zeros(dist_mat.shape[0] - 1)

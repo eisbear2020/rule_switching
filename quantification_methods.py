@@ -36,11 +36,12 @@ import pickle
 import matplotlib.pyplot as plt
 from collections import OrderedDict
 from scipy import stats
+from scipy.spatial import distance
 from comp_functions import get_activity_mat_spatial
 from comp_functions import get_activity_mat_time
 from comp_functions import pop_vec_diff
 from comp_functions import calc_diff
-from comp_functions import pop_vec_euclidean_dist
+from comp_functions import pop_vec_dist
 from comp_functions import calc_cohens_d
 from comp_functions import angle_between_col_vectors
 import matplotlib.cm as cm
@@ -343,6 +344,115 @@ class Analysis:
         else:
             return cross_diff, within_diff_1, within_diff_2, stats_array
 
+    def leave_one_out_average_over_trials(self, distance_measure):
+
+        nr_cells = next(iter(self.bin_dic_1.values())).shape[0]
+        nr_bins = len(self.bin_dic_1.keys())
+        cell_to_diff_contribution = np.zeros((nr_cells, nr_bins))
+        # relative contribution
+        rel_cell_to_diff_contribution = np.zeros((nr_cells, nr_bins))
+        init_cos_distance = np.zeros(nr_bins)
+
+        # first cos distance using all cells
+
+        # go through all intervals
+        for i, key in enumerate(self.bin_dic_1):
+
+            avg_1 = np.expand_dims(np.average(self.bin_dic_1[key], axis=1),axis=1)
+            avg_2 = np.expand_dims(np.average(self.bin_dic_2[key], axis=1), axis = 1)
+
+            init_cos_distance[i] = calc_diff(avg_1,avg_2,distance_measure)
+
+
+        # go through all cells
+        for cell_ID in range(nr_cells):
+            # make copies of both dictionaries
+            dic_1_c = self.bin_dic_1.copy()
+            dic_2_c = self.bin_dic_2.copy()
+
+            for key in dic_1_c:
+                # delete cell from copies of both dictionaries
+                dic_1_c[key] = np.delete(dic_1_c[key], cell_ID, axis=0)
+                dic_2_c[key] = np.delete(dic_2_c[key], cell_ID, axis=0)
+
+            cos_distance = np.zeros(nr_bins)
+
+            # go through all intervals
+            for i, key in enumerate(dic_1_c):
+                avg_1 = np.expand_dims(np.average(dic_1_c[key], axis=1), axis=1)
+                avg_2 = np.expand_dims(np.average(dic_2_c[key], axis=1), axis=1)
+
+                cos_distance[i] = calc_diff(avg_1, avg_2, distance_measure)
+
+            cell_to_diff_contribution[cell_ID, :] = init_cos_distance - cos_distance #init_cos_distance - cos_distance
+            rel_cell_to_diff_contribution[cell_ID, :] = cos_distance / init_cos_distance
+
+        # for i,bin in enumerate(cell_to_diff_contribution.T):
+        #     print(np.sum(bin,axis=0),init_cos_distance[i])
+            #print(abs(np.sum([x for x in bin if x < 0], axis=0)), init_cos_distance[i])
+
+
+        return cell_to_diff_contribution, rel_cell_to_diff_contribution, init_cos_distance
+
+    def leave_n_out_average_over_trials(self, distance_measure):
+
+        nr_cells = next(iter(self.bin_dic_1.values())).shape[0]
+        nr_bins = len(self.bin_dic_1.keys())
+        cell_to_diff_contribution = np.zeros((nr_cells, nr_bins))
+        # relative contribution
+        rel_cell_to_diff_contribution = np.zeros((nr_cells, nr_bins))
+        init_cos_distance = np.zeros(nr_bins)
+
+        # first cos distance using all cells
+
+        # go through all intervals
+        for i, key in enumerate(self.bin_dic_1):
+
+            avg_1 = np.expand_dims(np.average(self.bin_dic_1[key], axis=1),axis=1)
+            avg_2 = np.expand_dims(np.average(self.bin_dic_2[key], axis=1), axis = 1)
+
+            init_cos_distance[i] = calc_diff(avg_1,avg_2,distance_measure)
+
+        # different subsets of cells
+        for nr_cells_subset in range(nr_cells):
+
+            # do random selection n times
+            n_r_s = 200
+
+            cos_distance = np.zeros((n_r_s,nr_bins))
+
+            for random_selection in range(n_r_s):
+
+                # make copies of both dictionaries
+                dic_1_c = self.bin_dic_1.copy()
+                dic_2_c = self.bin_dic_2.copy()
+
+                # permuted index
+                per_ind = np.random.permutation(np.arange(nr_cells))
+                subset_ind = per_ind[:nr_cells_subset+1]
+
+                for key in dic_1_c:
+                    # select random cells
+                    dic_1_c[key] = dic_1_c[key][subset_ind,:]
+                    dic_2_c[key] = dic_2_c[key][subset_ind,:]
+
+                # go through all intervals
+                for i, key in enumerate(dic_1_c):
+                    avg_1 = np.expand_dims(np.average(dic_1_c[key], axis=1), axis=1)
+                    avg_2 = np.expand_dims(np.average(dic_2_c[key], axis=1), axis=1)
+
+                    cos_distance[random_selection, i] = calc_diff(avg_1, avg_2, distance_measure)
+
+            cell_to_diff_contribution[nr_cells_subset, :] = np.nanmean(cos_distance,axis=0)  #init_cos_distance - cos_distance
+            rel_cell_to_diff_contribution[nr_cells_subset, :] = np.nanmean(cos_distance,axis=0) / init_cos_distance
+
+        # for i,bin in enumerate(cell_to_diff_contribution.T):
+        #     print(np.sum(bin,axis=0),init_cos_distance[i])
+            #print(abs(np.sum([x for x in bin if x < 0], axis=0)), init_cos_distance[i])
+
+        return cell_to_diff_contribution, rel_cell_to_diff_contribution, init_cos_distance
+
+
     def leave_one_out(self):
         # calculate cross difference with all cells and drop cells that do not contribute to difference
 
@@ -376,7 +486,7 @@ class Analysis:
             rel_cell_to_diff_contribution[cell_ID, :] = np.median(cross_diff_mod, axis=1) / \
                                                         np.median(self.cross_diff, axis=1)
 
-        return cell_to_diff_contribution, rel_cell_to_diff_contribution, cell_to_p_value_contribution
+        return cell_to_diff_contribution, rel_cell_to_diff_contribution
 
     def cell_rule_diff(self):
         # calculate change in average firing rate and standard error of the mean for each cell and bin between rules
@@ -533,13 +643,13 @@ class Analysis:
 
         cell_avg_rate_map = self.cell_avg_rate_map()
         cohens_d = self.cell_rule_diff()
-        _, rel_cell_to_diff_contribution, cell_to_p_value_contribution = self.leave_one_out()
+        _, rel_cell_to_diff_contribution = self.leave_one_out()
 
         # invert relative contribution for log --> if cell increases diff --> positive value
         rel_cell_to_diff_contribution = 1/rel_cell_to_diff_contribution
 
         plot_cell_charact(cell_avg_rate_map, cohens_d, rel_cell_to_diff_contribution,
-                          cell_to_p_value_contribution, x_axis, self.param_dic["sort_cells"])
+                          x_axis, self.param_dic["sort_cells"])
 
     def remove_cells(self, cell_ID_list):
         # performs different analysis steps with a modified dictionary (with removed cells)
@@ -570,12 +680,271 @@ class Analysis:
         # self.cross_cos_diff(dic_1_c, dic_2_c)
         # self.plot_remap_results()
 
+    def cell_contribution_average_over_trials(self, distance_measure):
+        # check how many cells contribute how much to the difference between two conditions (e.g. RULES)
+        x_axis = np.arange(0, 200, self.param_dic["spatial_bin_size"])
+        x_axis = x_axis[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
+
+        cell_to_diff_contribution, rel_cell_to_diff_contribution, init_cos_dist = \
+            self.leave_one_out_average_over_trials(distance_measure)
+
+        # are interested in contributions that make difference larger --> 1 - rel.cell.contr.
+        rel_cell_to_diff_contribution = 1-rel_cell_to_diff_contribution
+
+        # cells to consider
+        nr_cells = 30
+
+        # cells for remapping characteristics
+        n_first_cells = 5
+
+        # check contribution of first n cells after sorting
+        rel_contribution_array = np.full((nr_cells+1, rel_cell_to_diff_contribution.shape[1]), np.nan)
+        contribution_array = np.full((nr_cells + 1, cell_to_diff_contribution.shape[1]), np.nan)
+
+        # make first column all zero
+        rel_contribution_array[0, :] = 0
+        contribution_array[0, :] = 0
+
+        # go through spatial bins
+        for i, spat_bin in enumerate(rel_cell_to_diff_contribution.T):
+            # select all cells that contribute to diff
+            temp = spat_bin[spat_bin > 0]
+            # sort cells with positive contribution according to magnitude of contribution
+            temp = np.cumsum(np.flip(np.sort(temp), axis=0))
+            # copy to contribution array
+            rel_contribution_array[1:min(nr_cells, temp.shape[0])+1, i] = temp[:min(nr_cells, temp.shape[0])]
+
+        fig, axes = plt.subplots(2, 2)
+
+        col_map = cm.rainbow(np.linspace(0, 1, x_axis.shape[0]))
+
+        ax1 = axes[0,0]
+
+        for i, contribution in enumerate(rel_contribution_array.T):
+            ax1.plot(np.arange(0, nr_cells+1), contribution, color=col_map[i, :], label=str(x_axis[i])+" cm",
+                     marker="o")
+
+        ax1.set_title("RELATIVE CELL CONTRIBUTION TO DIFFERENCE")
+        ax1.set_ylabel("CUM. REL. CONTRIBUTION TO DIFFERENCE")
+        ax1.set_xlabel("NR. CELLS")
+        ax1.legend()
+
+        # go through spatial bins
+        for i, spat_bin in enumerate(cell_to_diff_contribution.T):
+            # select all cells that contribute to diff
+            temp = spat_bin[spat_bin > 0]
+            # sort cells with positive contribution according to magnitude of contribution
+            temp = np.cumsum(np.flip(np.sort(temp), axis=0))
+            # copy to contribution array
+            contribution_array[1:min(nr_cells, temp.shape[0])+1, i] = temp[:min(nr_cells, temp.shape[0])]
+
+        col_map = cm.rainbow(np.linspace(0, 1, x_axis.shape[0]))
+
+        ax2 = axes[0, 1]
+
+        for i, contribution in enumerate(contribution_array.T):
+            ax2.plot(np.arange(0, nr_cells+1), contribution, color=col_map[i, :], label=str(x_axis[i])+" cm",
+                     marker="o")
+
+        ax2.set_title("ABS. CELL CONTRIBUTION TO DIFFERENCE")
+        ax2.set_ylabel("CUM. CONTRIBUTION TO DIFFERENCE")
+        ax2.set_xlabel("NR. CELLS")
+        ax2.legend()
+
+        norm_contribution = np.zeros(contribution_array.shape[1])
+        norm_rel_contribution = np.zeros(contribution_array.shape[1])
+        first_n_cells_contribution = np.zeros(contribution_array.shape[1])
+
+        # go through contribution vector and get relative contribution / nr. of cells
+        for i, (contribution, rel_contribution) in enumerate(zip(contribution_array.T,rel_contribution_array.T)):
+            # go trough cell contribution
+            for cell_ID in range(1, contribution.shape[0]):
+                if abs(rel_contribution[cell_ID] - rel_contribution[cell_ID -1]) > 0.005:
+                    norm_contribution[i] = contribution[cell_ID]/cell_ID
+                    norm_rel_contribution[i] = rel_contribution[cell_ID] / cell_ID
+                else:
+                    break
+
+        # check if first n cells exist for all spatial positions
+        n_cells_exist = True
+
+        while n_cells_exist:
+            n_cells_exist = False
+            # go through contribution vector and get contribution of first n cells
+            for i, contribution in enumerate(contribution_array.T):
+                if np.isnan(contribution[n_first_cells]):
+                    first_n_cells_contribution = np.zeros(contribution_array.shape[1])
+                    n_first_cells -= 1
+                    n_cells_exist = True
+                    break
+                else:
+                    # go trough cell contribution
+                    first_n_cells_contribution[i] = contribution[n_first_cells]
+
+        # plot for each spatial bin: magnitude of difference & contribution normalized by nr. of cells
+        width = 8
+
+        ax3 = axes[1, 0]
+        ax3.bar(x_axis, norm_rel_contribution, width,color="orange")
+        ax3.set_title("REMAPPING CHARACTERISTICS (RELATIVE)")
+        ax3.set_ylabel("REL. CONTRIBUTION / NR. CELLS")
+        ax3.set_xlabel("MAZE POSITION")
+
+        ax4 = axes[1, 1]
+        ax4.bar(x_axis, init_cos_dist,width, label="DIFF")
+        ax4.bar(x_axis, first_n_cells_contribution, width, label="CONTR. OF "+str(n_first_cells)+" CELLS", color="orange")
+        ax4.set_title("CONTRIBUTION TO DIFF BY "+str(n_first_cells)+" MOST INFLUENTIAL CELLS")
+        ax4.set_ylabel("DIFF (AVG & MAD) \n CUM CONTRIBUTION OF "+str(n_first_cells)+" CELLS")
+        ax4.set_xlabel("MAZE POSITION")
+        ax4.legend()
+        fig.suptitle("LEAVE ONE OUT ANALYSIS")
+
+        plt.show()
+
+    def cell_contribution_average_over_trials_random(self, distance_measure):
+        # check how many cells contribute how much to the difference between two conditions (e.g. RULES)
+        spat_pos = np.arange(0, 200, self.param_dic["spatial_bin_size"])
+        spat_pos = spat_pos[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
+
+        cell_to_diff_contribution, rel_cell_to_diff_contribution, init_cos_dist = \
+            self.leave_n_out_average_over_trials(distance_measure)
+
+        x_axis = np.arange(1,cell_to_diff_contribution.shape[0]+1)
+        print(x_axis.shape)
+        print(init_cos_dist)
+        col_map = cm.rainbow(np.linspace(0, 1, cell_to_diff_contribution.shape[1]))
+        # go through all spatial bins
+        for i, cont in enumerate(cell_to_diff_contribution.T):
+            plt.plot(x_axis,cont, color=col_map[i, :], label=str(spat_pos[i])+" cm",
+                     marker="o")
+        plt.legend()
+        plt.show()
+        exit()
+        print(init_cos_dist)
+        plt.plot(cell_to_diff_contribution[:,0])
+        plt.legend()
+        plt.show()
+
+        exit()
+        # are interested in contributions that make difference larger --> 1 - rel.cell.contr.
+        rel_cell_to_diff_contribution = 1-rel_cell_to_diff_contribution
+
+        # cells to consider
+        nr_cells = 30
+
+        # cells for remapping characteristics
+        n_first_cells = 5
+
+        # check contribution of first n cells after sorting
+        rel_contribution_array = np.full((nr_cells+1, rel_cell_to_diff_contribution.shape[1]), np.nan)
+        contribution_array = np.full((nr_cells + 1, cell_to_diff_contribution.shape[1]), np.nan)
+
+        # make first column all zero
+        rel_contribution_array[0, :] = 0
+        contribution_array[0, :] = 0
+
+        # go through spatial bins
+        for i, spat_bin in enumerate(rel_cell_to_diff_contribution.T):
+            # select all cells that contribute to diff
+            temp = spat_bin[spat_bin > 0]
+            # sort cells with positive contribution according to magnitude of contribution
+            temp = np.cumsum(np.flip(np.sort(temp), axis=0))
+            # copy to contribution array
+            rel_contribution_array[1:min(nr_cells, temp.shape[0])+1, i] = temp[:min(nr_cells, temp.shape[0])]
+
+        fig, axes = plt.subplots(2, 2)
+
+        col_map = cm.rainbow(np.linspace(0, 1, x_axis.shape[0]))
+
+        ax1 = axes[0,0]
+
+        for i, contribution in enumerate(rel_contribution_array.T):
+            ax1.plot(np.arange(0, nr_cells+1), contribution, color=col_map[i, :], label=str(x_axis[i])+" cm",
+                     marker="o")
+
+        ax1.set_title("RELATIVE CELL CONTRIBUTION TO DIFFERENCE")
+        ax1.set_ylabel("CUM. REL. CONTRIBUTION TO DIFFERENCE")
+        ax1.set_xlabel("NR. CELLS")
+        ax1.legend()
+
+        # go through spatial bins
+        for i, spat_bin in enumerate(cell_to_diff_contribution.T):
+            # select all cells that contribute to diff
+            temp = spat_bin[spat_bin > 0]
+            # sort cells with positive contribution according to magnitude of contribution
+            temp = np.cumsum(np.flip(np.sort(temp), axis=0))
+            # copy to contribution array
+            contribution_array[1:min(nr_cells, temp.shape[0])+1, i] = temp[:min(nr_cells, temp.shape[0])]
+
+        col_map = cm.rainbow(np.linspace(0, 1, x_axis.shape[0]))
+
+        ax2 = axes[0, 1]
+
+        for i, contribution in enumerate(contribution_array.T):
+            ax2.plot(np.arange(0, nr_cells+1), contribution, color=col_map[i, :], label=str(x_axis[i])+" cm",
+                     marker="o")
+
+        ax2.set_title("ABS. CELL CONTRIBUTION TO DIFFERENCE")
+        ax2.set_ylabel("CUM. CONTRIBUTION TO DIFFERENCE")
+        ax2.set_xlabel("NR. CELLS")
+        ax2.legend()
+
+        norm_contribution = np.zeros(contribution_array.shape[1])
+        norm_rel_contribution = np.zeros(contribution_array.shape[1])
+        first_n_cells_contribution = np.zeros(contribution_array.shape[1])
+
+        # go through contribution vector and get relative contribution / nr. of cells
+        for i, (contribution, rel_contribution) in enumerate(zip(contribution_array.T,rel_contribution_array.T)):
+            # go trough cell contribution
+            for cell_ID in range(1, contribution.shape[0]):
+                if abs(rel_contribution[cell_ID] - rel_contribution[cell_ID -1]) > 0.005:
+                    norm_contribution[i] = contribution[cell_ID]/cell_ID
+                    norm_rel_contribution[i] = rel_contribution[cell_ID] / cell_ID
+                else:
+                    break
+
+        # check if first n cells exist for all spatial positions
+        n_cells_exist = True
+
+        while n_cells_exist:
+            n_cells_exist = False
+            # go through contribution vector and get contribution of first n cells
+            for i, contribution in enumerate(contribution_array.T):
+                if np.isnan(contribution[n_first_cells]):
+                    first_n_cells_contribution = np.zeros(contribution_array.shape[1])
+                    n_first_cells -= 1
+                    n_cells_exist = True
+                    break
+                else:
+                    # go trough cell contribution
+                    first_n_cells_contribution[i] = contribution[n_first_cells]
+
+        # plot for each spatial bin: magnitude of difference & contribution normalized by nr. of cells
+        width = 8
+
+        ax3 = axes[1, 0]
+        ax3.bar(x_axis, norm_rel_contribution, width,color="orange")
+        ax3.set_title("REMAPPING CHARACTERISTICS (RELATIVE)")
+        ax3.set_ylabel("REL. CONTRIBUTION / NR. CELLS")
+        ax3.set_xlabel("MAZE POSITION")
+
+        ax4 = axes[1, 1]
+        ax4.bar(x_axis, init_cos_dist,width, label="DIFF")
+        ax4.bar(x_axis, first_n_cells_contribution, width, label="CONTR. OF "+str(n_first_cells)+" CELLS", color="orange")
+        ax4.set_title("CONTRIBUTION TO DIFF BY "+str(n_first_cells)+" MOST INFLUENTIAL CELLS")
+        ax4.set_ylabel("DIFF (AVG & MAD) \n CUM CONTRIBUTION OF "+str(n_first_cells)+" CELLS")
+        ax4.set_xlabel("MAZE POSITION")
+        ax4.legend()
+        fig.suptitle("LEAVE ONE OUT ANALYSIS")
+
+        plt.show()
+
     def cell_contribution(self):
         # check how many cells contribute how much to the difference between two conditions (e.g. RULES)
         x_axis = np.arange(0, 200, self.param_dic["spatial_bin_size"])
         x_axis = x_axis[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
 
-        cell_to_diff_contribution, rel_cell_to_diff_contribution, _ = self.leave_one_out()
+        cell_to_diff_contribution, rel_cell_to_diff_contribution = self.leave_one_out()
 
         # are interested in contributions that make difference larger --> 1 - rel.cell.contr.
         rel_cell_to_diff_contribution = 1-rel_cell_to_diff_contribution
@@ -708,10 +1077,10 @@ class StateTransitionAnalysis:
         self.param_dic = param_dic
         self.stats_method = param_dic["stats_method"]
 
-    def compare_distance(self):
+    def compare_distance(self, measure):
         # compares euclidean distance between subsequent population vectors of two data sets
-        x_axis, dist_dic_1, rel_dist_dic_1 = self.euclidean(self.data_sets[0], self.loc_sets[0])
-        _, dist_dic_2, rel_dist_dic_2 = self.euclidean(self.data_sets[1], self.loc_sets[1])
+        x_axis, dist_dic_1, rel_dist_dic_1 = self.distance(self.data_sets[0], self.loc_sets[0], measure)
+        _, dist_dic_2, rel_dist_dic_2 = self.distance(self.data_sets[1], self.loc_sets[1], measure)
 
         stats_array = np.zeros(len(dist_dic_1.keys()))
 
@@ -730,7 +1099,7 @@ class StateTransitionAnalysis:
                     _, stats_array[i] = stats.mannwhitneyu(set_1, set_2)
 
         plot_transition_comparison(x_axis, [dist_dic_1,dist_dic_2], [rel_dist_dic_1,rel_dist_dic_2],
-                                   self.param_dic, stats_array,"EUCL. DISTANCE")
+                                   self.param_dic, stats_array,measure)
 
     def compare_operations(self):
         # compares operations (silencing, activation, unchanged) between states for two data sets
@@ -764,7 +1133,7 @@ class StateTransitionAnalysis:
                                    self.param_dic, stats_array,"ANGLE")
 
     def filter_cells(self, data_set, loc_set):
-        # filter cells that are not active at all
+        # filter cells that do not show any activity at all
 
         # how many cells are in the data set
         nr_cells = len(next(iter(data_set.values())))
@@ -788,7 +1157,7 @@ class StateTransitionAnalysis:
 
         return non_zero_indices
 
-    def euclidean(self, data_set, loc_set):
+    def distance(self, data_set, loc_set, measure):
         # calculates euclidean distance between subsequent population vectors
 
         bin_interval = self.param_dic["spatial_bin_size"]
@@ -811,12 +1180,12 @@ class StateTransitionAnalysis:
             # filter non active cells
             act_mat = act_mat[non_zero_indices,:]
             # get distances
-            dist_array, rel_dist_array = pop_vec_euclidean_dist(act_mat)
+            dist_array, rel_dist_array = pop_vec_dist(act_mat, measure)
             # drop last position --> distance returns n-1 long row vector
             loc_mat = loc_mat[:-1]
             # drop last position --> relative distance has length n-2
             rel_loc_mat = loc_mat[:-1]
-            # assign values to dictionary accccording to spatial position
+            # assign values to dictionary according to spatial position
             for int_counter in range(nr_intervals):
                 # define spatial interval
                 start_interval = int_counter * bin_interval
