@@ -60,7 +60,7 @@ across-trial variability without rule switch needs to be taken into account.
 
 ![alt text](../plots/mjc189-1905-0517/quant_transition_cos_cells_char.png)
 
-* removing cells 46 and 69 significantly reduces the cosine difference for the rule switch
+* removing two most influential cells significantly reduces the cosine difference for the rule switch
 for the last couple of spatial bins
 
 ![alt text](../plots/mjc189-1905-0517/quant_transition_cos_trials_2_removed_cells.png)
@@ -138,7 +138,7 @@ distribution of within and across rule distance:
 
 ![alt text](../plots/mjc189-1905-0517/quant_compare_cos_cells.png)
 
-* removing cells 46 and 69:
+* removing two most influential cells:
 
 ![alt text](../plots/mjc189-1905-0517/quant_compare_cos_trials_2_removed_cells.png)
 
@@ -158,8 +158,6 @@ in different spatial locations
 ![alt text](../plots/mjc189-1905-0517/quant_compare_cos_trials_RULE1.png)
 
 # GLOBAL VS. LOCAL REMAPPING
-
-## rule light vs. rule west during rule switch
 
 * using alternative to leaving-one-out analysis
   
@@ -181,8 +179,6 @@ in different spatial locations
 ## Cosine distance between subsequent population vectors
 
 ![alt text](../plots/mjc189-1905-0517/quant_state_transition_cos.png)
-
-* what is the explanation for 120 deg?
 
 ## Operations 
 
