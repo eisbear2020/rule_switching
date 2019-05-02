@@ -71,7 +71,7 @@ for the last couple of spatial bins
 
 
 
-# RULE LIGHT VS. RULE WEST
+# RULE LIGHT (_2) VS. RULE WEST (_4)
 
 Do we see significant differences in the dynamics of the system for two different rules?
 
@@ -187,3 +187,14 @@ in different spatial locations
 * counting -1 (silencing), 0 (unchanged), +1 (activated)
 
 ![alt text](../plots/mjc189-1905-0517/quant_state_transition_operations.png)
+
+# Conclusion
+
+* if rather local remapping for rule A vs. rule B --> results highly depend on cells that
+we record from
+
+* is re-consolidation rather global? 
+
+* do we have a local --> global remapping?
+
+* FPC data looks very different --> use other distance measures/methods?
