@@ -172,6 +172,10 @@ in different spatial locations
 
 ![alt text](../plots/remapping_synthetic_data_set.png)
 
+* using cohens' d:
+
+![alt text](../plots/mjc189-1905-0517/quant_cell_contrib_cohens.png)
+
 # STATE TRANSITION ANALYSIS
 
 ## L1 norm between subsequent population vectors
