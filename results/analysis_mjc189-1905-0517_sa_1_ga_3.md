@@ -168,7 +168,9 @@ in different spatial locations
 
 ![alt text](../plots/mjc189-1905-0517/quant_cell_contrib_2_4_6_shuffling.png)
 
-* TODO: incl. synthetic data plot 
+* Synthetic data:
+
+![alt text](../plots/remapping_synthetic_data_set.png)
 
 # STATE TRANSITION ANALYSIS
 
