@@ -51,6 +51,7 @@ import matplotlib.cm as cm
 from plotting_functions import plot_2D_scatter
 from plotting_functions import plot_3D_scatter
 from plotting_functions import plot_compare
+from plotting_functions import plot_act_mat
 
 ########################################################################################################################
 #   MANIFOLD BASE CLASS

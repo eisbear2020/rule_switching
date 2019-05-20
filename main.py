@@ -57,6 +57,10 @@ if __name__ == '__main__':
         "data_dir": "../02 Data",
         # define session name
         "session_name": "mjc189-1905-0517",
+        # "session_name": "mjc190-1307-0517",
+        # "session_name": "mjc190-1407-0617",
+        # "session_name": "mjc189-1705-0622",
+        # "session_name": "mjc189-2005-0517",
         # select cell type:
         # p1: pyramidal cells of the HPC, p2 - p3: pyramidal cells of the PFC ,b1: inter-neurons of HPC
         # b2 - b3: inter-neurons of HPC
@@ -156,7 +160,7 @@ if __name__ == '__main__':
     # second parameter of method:
     # MDS --> p2: number of components
     # PCA --> p2: number of components
-    param_dic["dr_method_p2"] = 2
+    param_dic["dr_method_p2"] = 3
 
     # number of trials to compare
     param_dic["nr_of_trials"] = 21
@@ -240,18 +244,19 @@ if __name__ == '__main__':
 
     # compare RULE A and RULE B
     # ------------------------------------------------------------------------------------------------------------------
-    # new_compare = Analysis("RULE LIGHT_2_4", "RULE WEST", param_dic)
+    new_compare = Analysis("RULE LIGHT_2_4", "RULE WEST", param_dic)
     # new_compare.plot_spatial_information()
     # new_compare.cross_cos_diff()
     # new_compare.cross_cos_diff_spat_trials()
     # new_compare.characterize_cells()
     # new_compare.cell_contribution_average_over_trials("cos")
     # new_compare.cell_contribution()
-    # new_compare.remove_cells([46,69])
+    new_compare.remove_cells([69])
     # new_compare.cell_contribution()
     # new_compare.cell_contribution_average_over_trials("cos")
-    # new_compare.cell_contribution_average_over_trials_random("cos",200)
-
+    # new_compare.cell_contribution_average_over_trials_random("cos",400)
+    # new_compare.cell_contribution_cohen()
+    # new_compare.n_cell_contribution_average_over_trials("cos")
 ########################################################################################################################
 #   TRANSITION ANALYSIS (RULE A --> RULE B)
 ########################################################################################################################
@@ -261,18 +266,18 @@ if __name__ == '__main__':
 
     # new_analysis = ManifoldTransition(res_data_set_4, whl_lin_data_set_4, param_dic)
     # new_analysis.state_analysis()
-    # new_analysis.plot_in_one_fig(new_rule_trial)
     # new_analysis.plot_in_one_fig_color_position()
+    # new_analysis.plot_in_one_fig(new_rule_trial)
 
     # QUANTITATIVE ANALYSIS
     ####################################################################################################################
 
     # new_transition = Analysis("RULE LIGHT_2_4", "SWITCH_RULE WEST", param_dic)
-    # new_transition.cross_cos_diff()
+    #new_transition.cross_cos_diff()
     # new_transition.cross_cos_diff_spat_trials()
     # new_transition.characterize_cells()
     # new_transition.cell_contribution()
-    # new_transition.remove_cells([46,69])
+    # new_transition.remove_cells([69])
     # new_transition.remove_cells(np.arange(0, 60))
 
 

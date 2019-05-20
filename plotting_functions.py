@@ -31,16 +31,18 @@ from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 from mpl_toolkits.axes_grid1.colorbar import colorbar
 from matplotlib.colors import LogNorm
 from statsmodels import robust
-
+plt.style.use('dark_background')
 
 def plot_act_mat(act_mat,bin_interval):
     # plot activation matrix (matrix of population vectors)
     plt.imshow(act_mat, vmin=0, vmax=act_mat.max(), cmap='jet', aspect='auto')
+    plt.imshow(act_mat, interpolation='nearest', aspect='auto', cmap="jet",
+               extent=[15, 185, act_mat.shape[0] - 0.5, 0.5])
     plt.ylabel("CELL ID")
-    plt.xlabel("TIME BINS / " + str(bin_interval) + " s")
-    plt.title("CELL ACTIVATION / SPIKES PER TIME BIN")
+    plt.xlabel("SPATIAL BINS / CM")
+    plt.title("RATE MAP")
     a = plt.colorbar()
-    a.set_label("SPIKES")
+    a.set_label("FIRING RATE / Hz")
 
 
 def plot_2D_scatter(ax,mds,param_dic,data_sep = None, loc_vec = []):
@@ -115,8 +117,8 @@ def plot_2D_scatter(ax,mds,param_dic,data_sep = None, loc_vec = []):
                     ax.plot(mds[i:i + 2, 0], mds[i:i + 2, 1], color=c)
             # plt.title(title)
             ax.scatter(mds[:, 0], mds[:, 1], color="grey")
-            ax.scatter(mds[0, 0], mds[0, 1], color="black", marker="x", label="start", zorder=200)
-            ax.scatter(mds[-1, 0], mds[-1, 1], color="black", label="end", zorder=200)
+            ax.scatter(mds[0, 0], mds[0, 1], color="white", marker="x", label="start", zorder=200)
+            ax.scatter(mds[-1, 0], mds[-1, 1], color="white", label="end", zorder=200)
 
         else:
             # use locations for point coloring if location vector is provided
@@ -210,9 +212,9 @@ def plot_3D_scatter(ax, mds, param_dic, data_sep=None, loc_vec=[]):
                 for i, c in zip(range(0, mds.shape[0] - 1), colors):
                     ax.plot(mds[i:i + 2, 0], mds[i:i + 2, 1], mds[i:i + 2, 2], color=c)
 
-            ax.scatter(mds[:, 0], mds[:, 1], mds[:, 2], color="grey")
-            ax.scatter(mds[0, 0], mds[0, 1], mds[0, 2], color="black", marker="x", label="start", zorder=200)
-            ax.scatter(mds[-1, 0], mds[-1, 1], mds[-1, 2], color="black", label="end", zorder=200)
+            ax.scatter(mds[:, 0], mds[:, 1], mds[:, 2], color="white")
+            # ax.scatter(mds[0, 0], mds[0, 1], mds[0, 2], color="white", marker="x", label="start", zorder=200)
+            # ax.scatter(mds[-1, 0], mds[-1, 1], mds[-1, 2], color="white", label="end", zorder=200)
         else:
             # use locations for point coloring if location vector is provided
             if len(loc_vec):
@@ -241,6 +243,10 @@ def plot_3D_scatter(ax, mds, param_dic, data_sep=None, loc_vec=[]):
     ax.set_yticklabels([])
     ax.set_xticklabels([])
     ax.set_zticklabels([])
+    # set pane alpha value to zero --> transparent
+    ax.w_xaxis.set_pane_color((0.8, 0.8, 0.8, 0.0))
+    ax.w_yaxis.set_pane_color((0.8, 0.8, 0.8, 0.0))
+    ax.w_zaxis.set_pane_color((0.8, 0.8, 0.8, 0.0))
 
 
 def plot_compare(data, param_dic, data_sep, rule_sep = []):
@@ -284,8 +290,8 @@ def plot_compare(data, param_dic, data_sep, rule_sep = []):
                         ax.plot(data_subset[i:i + 2, 0], data_subset[i:i + 2, 1], color=col_map[data_ID, :],
                                 label="TRIAL " + str(data_ID))
                     ax.scatter(data_subset[:, 0], data_subset[:, 1], color="grey")
-                    ax.scatter(data_subset[0, 0], data_subset[0, 1], color="black", marker="x", label="start", zorder=200)
-                    ax.scatter(data_subset[-1, 0], data_subset[-1, 1], color="black", label="end", zorder=200)
+                    # ax.scatter(data_subset[0, 0], data_subset[0, 1], color="black", marker="x", label="start", zorder=200)
+                    # ax.scatter(data_subset[-1, 0], data_subset[-1, 1], color="black", label="end", zorder=200)
                 # plot without lines
                 else:
                     # color rules
@@ -319,9 +325,9 @@ def plot_compare(data, param_dic, data_sep, rule_sep = []):
                                 color=col_map[data_ID, :],
                                 label="TRIAL " + str(data_ID))
                     ax.scatter(data_subset[:, 0], data_subset[:, 1], data_subset[:, 2], color="grey")
-                    ax.scatter(data_subset[0, 0], data_subset[0, 1], data_subset[0, 2], color="black", marker="x", label="start",
-                               zorder=200)
-                    ax.scatter(data_subset[-1, 0], data_subset[-1, 1], data_subset[-1, 2], color="black", label="end", zorder=200)
+                    # ax.scatter(data_subset[0, 0], data_subset[0, 1], data_subset[0, 2], color="white", marker="x", label="start",
+                    #            zorder=200)
+                    # ax.scatter(data_subset[-1, 0], data_subset[-1, 1], data_subset[-1, 2], color="white", label="end", zorder=200)
                 else:
                     if rule_sep:
                         ax.scatter(data_subset[i, 0], data_subset[i, 1], data_subset[i, 2],
@@ -333,10 +339,15 @@ def plot_compare(data, param_dic, data_sep, rule_sep = []):
                                 label="TRIAL " + str(data_ID))
             # hide z label
             ax.set_zticklabels([])
+            # set pane alpha value to zero --> transparent
+            ax.w_xaxis.set_pane_color((0.8, 0.8, 0.8, 0.0))
+            ax.w_yaxis.set_pane_color((0.8, 0.8, 0.8, 0.0))
+            ax.w_zaxis.set_pane_color((0.8, 0.8, 0.8, 0.0))
 
     # hide labels
     ax.set_yticklabels([])
     ax.set_xticklabels([])
+
 
     # return figure for saving
     return fig
@@ -442,9 +453,9 @@ def plot_cell_charact(cell_avg_rate_map, cohens_d, cell_to_diff_contribution, xl
     cax1 = ax1_divider.append_axes("top", size="7%", pad="2%")
     cb1 = colorbar(im1, cax=cax1,orientation="horizontal")
     cax1.xaxis.set_ticks_position("top")
-    ax1.set_xlabel("LINEARIZED POSITION / cm")
+    #ax1.set_xlabel("LINEARIZED POSITION / cm")
     ax1.set_ylabel("CELLS SORTED")
-    cax1.set_title("AVERAGE FIRING RATE")
+    cax1.set_title("AVERAGE \n FIRING RATE")
 
     # hide y label
     ax2.set_yticklabels([])
@@ -457,7 +468,7 @@ def plot_cell_charact(cell_avg_rate_map, cohens_d, cell_to_diff_contribution, xl
     # the image.
     cax2.xaxis.set_ticks_position("top")
     ax2.set_xlabel("LINEARIZED POSITION / cm")
-    cax2.set_title("EFFECT SIZE: RULE A vs. RULE B")
+    cax2.set_title("EFFECT SIZE: \n RULE A vs. RULE B")
 
     # hide y label
     ax3.set_yticklabels([])
@@ -470,8 +481,8 @@ def plot_cell_charact(cell_avg_rate_map, cohens_d, cell_to_diff_contribution, xl
     # change tick position to top. Tick position defaults to bottom and overlaps
     # the image.
     cax3.xaxis.set_ticks_position("top")
-    ax3.set_xlabel("LINEARIZED POSITION / cm")
-    cax3.set_title("REL. CONTRIBUTION TO DIFF (RULE A vs. RULE B) / LOG")
+    #ax3.set_xlabel("LINEARIZED POSITION / cm")
+    cax3.set_title("REL. CONTRIBUTION TO DIFF \n (RULE A vs. RULE B) / LOG")
 
     # # hide y label
     # ax4.set_yticklabels([])

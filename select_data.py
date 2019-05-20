@@ -205,7 +205,8 @@ def save_selected_data(data_selection_dictionary):
 
         # if no matching trials were found throw error
         if not trial_IDs:
-            raise Exception("No matching trials found")
+            print("Environment "+env+": no matching trials found")
+            continue
 
         # get location data
         # --------------------------------------------------------------------------------------------------------------
