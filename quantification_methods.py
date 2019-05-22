@@ -506,7 +506,6 @@ class Analysis:
 
         return cell_to_diff_contribution, rel_cell_to_diff_contribution, init_cos_distance
 
-
     def leave_one_out(self):
         # calculate cross difference with all cells and drop cells that do not contribute to difference
 
@@ -775,7 +774,7 @@ class Analysis:
         nr_cells = 30
 
         # cells for remapping characteristics
-        n_first_cells = 5
+        n_first_cells = 1
 
         # check contribution of first n cells after sorting
         rel_contribution_array = np.full((nr_cells+1, rel_cell_to_diff_contribution.shape[1]), np.nan)
@@ -794,20 +793,18 @@ class Analysis:
             # copy to contribution array
             rel_contribution_array[1:min(nr_cells, temp.shape[0])+1, i] = temp[:min(nr_cells, temp.shape[0])]
 
-        fig, axes = plt.subplots(2, 2)
 
         col_map = cm.rainbow(np.linspace(0, 1, x_axis.shape[0]))
 
-        ax1 = axes[0,0]
-
         for i, contribution in enumerate(rel_contribution_array.T):
-            ax1.plot(np.arange(0, nr_cells+1), contribution, color=col_map[i, :], label=str(x_axis[i])+" cm",
+            plt.plot(np.arange(0, nr_cells+1), contribution, color=col_map[i, :], label=str(x_axis[i])+" cm",
                      marker="o")
 
-        ax1.set_title("RELATIVE CELL CONTRIBUTION TO DIFFERENCE")
-        ax1.set_ylabel("CUM. REL. CONTRIBUTION TO DIFFERENCE")
-        ax1.set_xlabel("NR. CELLS")
-        ax1.legend()
+        plt.title("RELATIVE CELL CONTRIBUTION TO DIFFERENCE")
+        plt.ylabel("CUM. REL. CONTRIBUTION TO DIFFERENCE")
+        plt.xlabel("NR. CELLS")
+        plt.legend()
+        plt.show()
 
         # go through spatial bins
         for i, spat_bin in enumerate(cell_to_diff_contribution.T):
@@ -820,16 +817,15 @@ class Analysis:
 
         col_map = cm.rainbow(np.linspace(0, 1, x_axis.shape[0]))
 
-        ax2 = axes[0, 1]
-
         for i, contribution in enumerate(contribution_array.T):
-            ax2.plot(np.arange(0, nr_cells+1), contribution, color=col_map[i, :], label=str(x_axis[i])+" cm",
+            plt.plot(np.arange(0, nr_cells+1), contribution, color=col_map[i, :], label=str(x_axis[i])+" cm",
                      marker="o")
 
-        ax2.set_title("ABS. CELL CONTRIBUTION TO DIFFERENCE")
-        ax2.set_ylabel("CUM. CONTRIBUTION TO DIFFERENCE")
-        ax2.set_xlabel("NR. CELLS")
-        ax2.legend()
+        plt.title("ABS. CELL CONTRIBUTION TO DIFFERENCE")
+        plt.ylabel("CUM. CONTRIBUTION TO DIFFERENCE")
+        plt.xlabel("NR. CELLS")
+        plt.legend()
+        plt.show()
 
         norm_contribution = np.zeros(contribution_array.shape[1])
         norm_rel_contribution = np.zeros(contribution_array.shape[1])
@@ -864,21 +860,62 @@ class Analysis:
         # plot for each spatial bin: magnitude of difference & contribution normalized by nr. of cells
         width = 8
 
-        ax3 = axes[1, 0]
-        ax3.bar(x_axis, norm_rel_contribution, width,color="orange")
-        ax3.set_title("REMAPPING CHARACTERISTICS (RELATIVE)")
-        ax3.set_ylabel("REL. CONTRIBUTION / NR. CELLS")
-        ax3.set_xlabel("MAZE POSITION")
+        plt.bar(x_axis, norm_rel_contribution, width,color="orange")
+        plt.title("REMAPPING CHARACTERISTICS (RELATIVE)")
+        plt.ylabel("REL. CONTRIBUTION / NR. CELLS")
+        plt.xlabel("MAZE POSITION")
+        plt.show()
 
-        ax4 = axes[1, 1]
-        ax4.bar(x_axis, init_cos_dist,width, label="DIFF")
-        ax4.bar(x_axis, first_n_cells_contribution, width, label="CONTR. OF "+str(n_first_cells)+" CELLS", color="orange")
-        ax4.set_title("CONTRIBUTION TO DIFF BY "+str(n_first_cells)+" MOST INFLUENTIAL CELLS")
-        ax4.set_ylabel("DIFF (AVG & MAD) \n CUM CONTRIBUTION OF "+str(n_first_cells)+" CELLS")
-        ax4.set_xlabel("MAZE POSITION")
-        ax4.legend()
-        fig.suptitle("LEAVE ONE OUT ANALYSIS")
+        plt.bar(x_axis, init_cos_dist,width, label="DIFF")
+        plt.bar(x_axis, first_n_cells_contribution, width, label="CONTR. OF "+str(n_first_cells)+" CELLS", color="orange")
+        plt.title("CONTRIBUTION TO DIFF BY "+str(n_first_cells)+" MOST INFLUENTIAL CELLS")
+        plt.ylabel("DIFF (AVG & MAD) \n CUM CONTRIBUTION OF "+str(n_first_cells)+" CELLS")
+        plt.xlabel("MAZE POSITION")
+        plt.legend()
+        plt.show()
 
+    def fit_remapped_cell_number(self, distance_measure, nr_shuffles):
+        # check how many cells contribute how much to the difference between two conditions (e.g. RULES)
+        spat_pos = np.arange(0, 200, self.param_dic["spatial_bin_size"])
+        spat_pos = spat_pos[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
+
+        avg_1 = np.expand_dims(np.average(self.bin_dic_1["INT0"], axis=1), axis=1)
+        avg_2 = np.expand_dims(np.average(self.bin_dic_2["INT0"], axis=1), axis=1)
+        print((avg_1-avg_2))
+        exit()
+        cell_to_diff_contribution, rel_cell_to_diff_contribution, init_cos_dist = \
+            self.leave_n_out_random_average_over_trials(distance_measure,nr_shuffles)
+
+        x_axis = np.arange(1,cell_to_diff_contribution.shape[0]+1)
+
+        exit()
+        # go through all intervals
+        for i, key in enumerate(self.bin_dic_1):
+
+            avg_1 = np.expand_dims(np.average(self.bin_dic_1[key], axis=1),axis=1)
+            avg_2 = np.expand_dims(np.average(self.bin_dic_2[key], axis=1), axis = 1)
+
+        exit()
+
+        plt.plot(x_axis,cell_to_diff_contribution.T[0], color="white", label="data curve",
+                     marker="o")
+        plt.legend()
+        plt.title("REMAPPING CHARACTERISTICS")
+        plt.ylabel("COS DIFFERENCE")
+        plt.xlabel("NR. CELLS IN SUBSET")
+        plt.show()
+
+        exit()
+
+        col_map = cm.rainbow(np.linspace(0, 1, cell_to_diff_contribution.shape[1]))
+        # go through all spatial bins
+        for i, cont in enumerate(cell_to_diff_contribution.T):
+            plt.plot(x_axis,cont, color=col_map[i, :], label=str(spat_pos[i])+" cm",
+                     marker="o")
+        plt.legend()
+        plt.title("REMAPPING CHARACTERISTICS")
+        plt.ylabel("COS DIFFERENCE")
+        plt.xlabel("NR. CELLS IN SUBSET")
         plt.show()
 
     def cell_contribution_average_over_trials_random(self, distance_measure, nr_shuffles):
@@ -902,152 +939,10 @@ class Analysis:
         plt.xlabel("NR. CELLS IN SUBSET")
         plt.show()
 
-    def n_cell_contribution_average_over_trials(self, distance_measure):
-        # check how many cells contribute how much to the difference between two conditions (e.g. RULES)
-        spat_pos = np.arange(0, 200, self.param_dic["spatial_bin_size"])
-        spat_pos = spat_pos[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
-
-        cell_to_diff_contribution, rel_cell_to_diff_contribution, init_cos_dist = \
-            self.leave_n_out_average_over_trials(distance_measure)
-
-        x_axis = np.arange(1,cell_to_diff_contribution.shape[0]+1)
-
-        col_map = cm.rainbow(np.linspace(0, 1, cell_to_diff_contribution.shape[1]))
-        # go through all spatial bins
-        for i, cont in enumerate(cell_to_diff_contribution.T):
-            plt.plot(x_axis,cont, color=col_map[i, :], label=str(spat_pos[i])+" cm",
-                     marker="o")
-        plt.legend()
-        plt.title("REMAPPING CHARACTERISTICS")
-        plt.ylabel("COS DIFFERENCE")
-        plt.xlabel("NR. CELLS IN SUBSET")
-        plt.show()
-
-    def cell_contribution(self):
-        # check how many cells contribute how much to the difference between two conditions (e.g. RULES)
-        x_axis = np.arange(0, 200, self.param_dic["spatial_bin_size"])
-        x_axis = x_axis[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
-
-        cell_to_diff_contribution, rel_cell_to_diff_contribution = self.leave_one_out()
-
-        # are interested in contributions that make difference larger --> 1 - rel.cell.contr.
-        rel_cell_to_diff_contribution = 1-rel_cell_to_diff_contribution
-
-        # cells to consider
-        nr_cells = 30
-
-        # cells for remapping characteristics
-        n_first_cells = 5
-
-        # check contribution of first n cells after sorting
-        rel_contribution_array = np.full((nr_cells+1, rel_cell_to_diff_contribution.shape[1]), np.nan)
-        contribution_array = np.full((nr_cells + 1, cell_to_diff_contribution.shape[1]), np.nan)
-
-        # make first column all zero
-        rel_contribution_array[0, :] = 0
-        contribution_array[0, :] = 0
-
-        # go through spatial bins
-        for i, spat_bin in enumerate(rel_cell_to_diff_contribution.T):
-            # select all cells that contribute to diff
-            temp = spat_bin[spat_bin > 0]
-            # sort cells with positive contribution according to magnitude of contribution
-            temp = np.cumsum(np.flip(np.sort(temp), axis=0))
-            # copy to contribution array
-            rel_contribution_array[1:min(nr_cells, temp.shape[0])+1, i] = temp[:min(nr_cells, temp.shape[0])]
-
-        fig, axes = plt.subplots(2, 2)
-
-        col_map = cm.rainbow(np.linspace(0, 1, x_axis.shape[0]))
-
-        ax1 = axes[0,0]
-
-        for i, contribution in enumerate(rel_contribution_array.T):
-            ax1.plot(np.arange(0, nr_cells+1), contribution, color=col_map[i, :], label=str(x_axis[i])+" cm",
-                     marker="o")
-
-        ax1.set_title("RELATIVE CELL CONTRIBUTION TO DIFFERENCE")
-        ax1.set_ylabel("CUM. REL. CONTRIBUTION TO DIFFERENCE")
-        ax1.set_xlabel("NR. CELLS")
-        ax1.legend()
-
-        # go through spatial bins
-        for i, spat_bin in enumerate(cell_to_diff_contribution.T):
-            # select all cells that contribute to diff
-            temp = spat_bin[spat_bin > 0]
-            # sort cells with positive contribution according to magnitude of contribution
-            temp = np.cumsum(np.flip(np.sort(temp), axis=0))
-            # copy to contribution array
-            contribution_array[1:min(nr_cells, temp.shape[0])+1, i] = temp[:min(nr_cells, temp.shape[0])]
-
-        col_map = cm.rainbow(np.linspace(0, 1, x_axis.shape[0]))
-
-        ax2 = axes[0, 1]
-
-        for i, contribution in enumerate(contribution_array.T):
-            ax2.plot(np.arange(0, nr_cells+1), contribution, color=col_map[i, :], label=str(x_axis[i])+" cm",
-                     marker="o")
-
-        ax2.set_title("ABS. CELL CONTRIBUTION TO DIFFERENCE")
-        ax2.set_ylabel("CUM. CONTRIBUTION TO DIFFERENCE")
-        ax2.set_xlabel("NR. CELLS")
-        ax2.legend()
-
-        norm_contribution = np.zeros(contribution_array.shape[1])
-        norm_rel_contribution = np.zeros(contribution_array.shape[1])
-        first_n_cells_contribution = np.zeros(contribution_array.shape[1])
-
-        # go through contribution vector and get relative contribution / nr. of cells
-        for i, (contribution, rel_contribution) in enumerate(zip(contribution_array.T,rel_contribution_array.T)):
-            # go trough cell contribution
-            for cell_ID in range(1, contribution.shape[0]):
-                if abs(rel_contribution[cell_ID] - rel_contribution[cell_ID -1]) > 0.005:
-                    norm_contribution[i] = contribution[cell_ID]/cell_ID
-                    norm_rel_contribution[i] = rel_contribution[cell_ID] / cell_ID
-                else:
-                    break
-
-        # check if first n cells exist for all spatial positions
-        n_cells_exist = True
-
-        while n_cells_exist:
-            n_cells_exist = False
-            # go through contribution vector and get contribution of first n cells
-            for i, contribution in enumerate(contribution_array.T):
-                if np.isnan(contribution[n_first_cells]):
-                    first_n_cells_contribution = np.zeros(contribution_array.shape[1])
-                    n_first_cells -= 1
-                    n_cells_exist = True
-                    break
-                else:
-                    # go trough cell contribution
-                    first_n_cells_contribution[i] = contribution[n_first_cells]
-
-        # plot for each spatial bin: magnitude of difference & contribution normalized by nr. of cells
-        width = 8
-
-        ax3 = axes[1, 0]
-        ax3.bar(x_axis, norm_rel_contribution, width,color="orange")
-        ax3.set_title("REMAPPING CHARACTERISTICS (RELATIVE)")
-        ax3.set_ylabel("REL. CONTRIBUTION / NR. CELLS")
-        ax3.set_xlabel("MAZE POSITION")
-
-        overal_diff = np.median(self.cross_diff, axis=1)
-        mad = robust.mad(self.cross_diff, c = 1, axis=1)
-
-        ax4 = axes[1, 1]
-        ax4.bar(x_axis, overal_diff,width,yerr=mad, label="CROSS DIFF")
-        ax4.bar(x_axis, first_n_cells_contribution, width, label="CONTR. OF "+str(n_first_cells)+" CELLS", color="orange")
-        ax4.set_title("CONTRIBUTION TO CROSS DIFF BY "+str(n_first_cells)+" MOST INFLUENTIAL CELLS")
-        ax4.set_ylabel("CROSS DIFF (AVG & MAD) \n CUM CONTRIBUTION OF "+str(n_first_cells)+" CELLS")
-        ax4.set_xlabel("MAZE POSITION")
-        ax4.legend()
-        fig.suptitle("LEAVE ONE OUT ANALYSIS")
-
-        plt.show()
-
     def cell_contribution_cohen(self):
         diff = self.cell_rule_diff()
+        plt.hist(np.abs(diff))
+        plt.show()
         # significance according to cohen: effect size > 0.8
         remap_char = np.zeros(diff.shape[1])
         for i, spat_bin in enumerate(diff.T):

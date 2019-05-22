@@ -420,7 +420,7 @@ def plot_remapping_summary(cross_diff, within_diff_1, within_diff_2, stats_array
     plt.title(param_dic["stats_method"]+": WITHIN-RULE vs. ACROSS-RULES")
     plt.legend()
     plt.grid()
-
+    plt.tight_layout()
     plt.show()
 
 
