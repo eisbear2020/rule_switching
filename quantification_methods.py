@@ -33,6 +33,7 @@
 
 import numpy as np
 import pickle
+import itertools
 import matplotlib.pyplot as plt
 from collections import OrderedDict
 from scipy import stats
@@ -879,8 +880,64 @@ class Analysis:
         spat_pos = np.arange(0, 200, self.param_dic["spatial_bin_size"])
         spat_pos = spat_pos[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
 
-        avg_1 = np.expand_dims(np.average(self.bin_dic_1["INT0"], axis=1), axis=1)
-        avg_2 = np.expand_dims(np.average(self.bin_dic_2["INT0"], axis=1), axis=1)
+        cohens_d = self.cell_rule_diff()
+
+        result_list = []
+
+        for i, key in enumerate(self.bin_dic_1):
+
+            avg_1 = np.expand_dims(np.average(self.bin_dic_1[key], axis=1),axis=1)
+            avg_2 = np.expand_dims(np.average(self.bin_dic_2[key], axis=1), axis = 1)
+
+            # sort according to cohens d in decreasing order
+            #ind = np.argsort(abs(cohens_d[:, i]))[::-1]
+
+            # shuffle n times
+            #for ind in itertools.permutations(range(avg_1.shape[0])):
+
+            count_res = np.zeros(nr_shuffles)
+
+            for i in range(nr_shuffles):
+                results = np.zeros(avg_1.shape[0]+1)
+                results_shifted = np.zeros(avg_1.shape[0] + 1)
+                ind = np.random.permutation(range(avg_1.shape[0]))
+
+                avg_1_n = avg_1[ind]
+                avg_2_n = avg_2[ind]
+                avg_1_mod = avg_2_n.copy()
+
+                for e in range(avg_1.shape[0]):
+                    avg_1_mod[e] = avg_1_n[e]
+                    results[e+1] = distance.cosine(avg_1_n,avg_1_mod)
+                results[0] = distance.cosine(avg_1_n,avg_2_n)
+                results_shifted[:-1] = results[1:]
+                diff = results-results_shifted
+                #ind = np.argsort(diff)[::-1]
+                diff = np.sort(diff)[::-1]
+                thres = 0.9 * results[0]
+                sum = 0
+                count = 0
+                while sum < thres:
+                    sum += diff[count]
+                    count += 1
+
+                count_res[i] = count
+
+                #results = results[np.argsort(diff)]
+                #plt.plot(results)
+            #plt.show()
+            result_list.append(count_res)
+            #exit()
+        #plt.show()
+
+
+        for i,bin in enumerate(result_list):
+            plt.errorbar(spat_pos[i],np.average(bin), yerr=np.std(bin), fmt='--o', ecolor="white")
+
+        plt.show()
+
+        exit()
+
         print((avg_1-avg_2))
         exit()
         cell_to_diff_contribution, rel_cell_to_diff_contribution, init_cos_dist = \

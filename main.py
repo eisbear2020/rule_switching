@@ -65,7 +65,7 @@ if __name__ == '__main__':
         # p1: pyramidal cells of the HPC, p2 - p3: pyramidal cells of the PFC ,b1: inter-neurons of HPC
         # b2 - b3: inter-neurons of HPC
         "cell_type_array": ["p1"],
-        "start_arm": [1],
+        "start_arm": [0],
         "goal_arm": [3],
         # select rule type:
         # 1: east, 2: west, 3: light
@@ -251,9 +251,9 @@ if __name__ == '__main__':
     # new_compare.characterize_cells()
     # new_compare.cell_contribution_average_over_trials("cos")
     # new_compare.remove_cells([69])
-    new_compare.cell_contribution_average_over_trials_random("cos",500)
+    # new_compare.cell_contribution_average_over_trials_random("cos",500)
     # new_compare.cell_contribution_cohen()
-    # new_compare.fit_remapped_cell_number("cos",100)
+    new_compare.fit_remapped_cell_number("cos",500)
 
 ########################################################################################################################
 #   TRANSITION ANALYSIS (RULE A --> RULE B)
