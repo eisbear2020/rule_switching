@@ -38,6 +38,7 @@ from manifold_methods import ManifoldCompare
 from quantification_methods import BinDictionary
 from quantification_methods import Analysis
 from quantification_methods import StateTransitionAnalysis
+from quantification_methods import ResultsDictionary
 
 # data description dictionary
 data_description_dictionary = {
@@ -65,7 +66,7 @@ if __name__ == '__main__':
         # p1: pyramidal cells of the HPC, p2 - p3: pyramidal cells of the PFC ,b1: inter-neurons of HPC
         # b2 - b3: inter-neurons of HPC
         "cell_type_array": ["p1"],
-        "start_arm": [0],
+        "start_arm": [1],
         "goal_arm": [3],
         # select rule type:
         # 1: east, 2: west, 3: light
@@ -175,6 +176,12 @@ if __name__ == '__main__':
     # alpha value
     param_dic["stats_alpha"] = 0.01
 
+    # remapping characteristic: percent of total distance that is used to compute the number of needed cells
+    # (default: 0.8 --> 80%)
+    param_dic["percent_of_total_distance"] = 0.8
+    # how many times is the order permuted to compute cell contribution
+    param_dic["nr_order_permutations"] = 500
+
     # PLOTTING PARAMETERS
     # ------------------------------------------------------------------------------------------------------------------
 
@@ -187,6 +194,10 @@ if __name__ == '__main__':
 
     # saving directory for bin dictionaries
     param_dic["saving_dir_bin_dic"] = "temp_data/binned_dictionaries/"
+
+    # saving directory & name for results dictionary
+    param_dic["result_dictionary_name"] = "RESULT_DIC"
+    param_dic["saving_dir_result_dictionary"] = "temp_data/"
 
     # length of spatial segment for plotting (track [200cm] will be divided into equal length segments)
     # set to 20: TODO --> adapt for different lengths
@@ -244,7 +255,7 @@ if __name__ == '__main__':
 
     # compare RULE A and RULE B
     # ------------------------------------------------------------------------------------------------------------------
-    new_compare = Analysis("RULE LIGHT_2_4", "SWITCH_RULE WEST", param_dic)
+    # new_compare = Analysis("RULE LIGHT_2_4", "SWITCH_RULE WEST", param_dic)
     # new_compare.plot_spatial_information()
     # new_compare.cross_cos_diff()
     # new_compare.cross_cos_diff_spat_trials()
@@ -253,7 +264,7 @@ if __name__ == '__main__':
     # new_compare.remove_cells([69])
     # new_compare.cell_contribution_average_over_trials_random("cos",500)
     # new_compare.cell_contribution_cohen()
-    new_compare.fit_remapped_cell_number("cos",500)
+    # new_compare.estimate_remapped_cell_number_cosine(True)
 
 ########################################################################################################################
 #   TRANSITION ANALYSIS (RULE A --> RULE B)
@@ -271,7 +282,7 @@ if __name__ == '__main__':
     ####################################################################################################################
 
     # new_transition = Analysis("RULE LIGHT_2_4", "SWITCH_RULE WEST", param_dic)
-    #new_transition.cross_cos_diff()
+    # new_transition.cross_cos_diff()
     # new_transition.cross_cos_diff_spat_trials()
     # new_transition.characterize_cells()
     # new_transition.cell_contribution()
@@ -307,3 +318,11 @@ if __name__ == '__main__':
     # new_state_transition.compare_distance("cos")
     # new_state_transition.compare_distance("L1")
     # new_state_transition.compare_operations()
+
+#######################################################################################################################
+#   COLLECT RESULTS FOR MULTIPLE SESSIONS
+#######################################################################################################################
+
+    new_results = ResultsDictionary(param_dic)
+    new_results.collect_and_save_data()
+    new_results.read_results()

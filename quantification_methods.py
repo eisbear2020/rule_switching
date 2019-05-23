@@ -246,6 +246,12 @@ class Analysis:
         # stats method for comparison
         self.stats_method = param_dic["stats_method"]
 
+        # for remapping characteristic: #cells that achieve [X]% of the total distance
+        self.percent_of_total_distance = param_dic["percent_of_total_distance"]
+
+        # how many permutations of the order of cells for remapping characteristics
+        self.nr_order_permutations = param_dic["nr_order_permutations"]
+
         # vector with concatenated location data
         self.loc_vec = np.empty((0, 1))
 
@@ -262,10 +268,13 @@ class Analysis:
         self.within_diff_1 = []
 
         # storing within diff for dic 2
-
         self.within_diff_2 = []
+
         # results of test statistic
         self.stats_array = []
+
+        # result of remapping characterization --> #cell needed to achieve [X] % of remapping
+        self.remapping_list = []
 
     def cross_cos_diff(self, plot_results=True,  bin_dic_1_ext=None, bin_dic_2_ext=None):
         # calculates the pair-wise cos difference within each set and across both sets
@@ -875,29 +884,23 @@ class Analysis:
         plt.legend()
         plt.show()
 
-    def fit_remapped_cell_number(self, distance_measure, nr_shuffles):
+    def estimate_remapped_cell_number_cosine(self, plotting = False):
         # check how many cells contribute how much to the difference between two conditions (e.g. RULES)
         spat_pos = np.arange(0, 200, self.param_dic["spatial_bin_size"])
         spat_pos = spat_pos[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
 
-        cohens_d = self.cell_rule_diff()
-
         result_list = []
 
+        # go through all bins
         for i, key in enumerate(self.bin_dic_1):
 
             avg_1 = np.expand_dims(np.average(self.bin_dic_1[key], axis=1),axis=1)
             avg_2 = np.expand_dims(np.average(self.bin_dic_2[key], axis=1), axis = 1)
 
-            # sort according to cohens d in decreasing order
-            #ind = np.argsort(abs(cohens_d[:, i]))[::-1]
+            count_res = np.zeros(self.nr_order_permutations)
 
-            # shuffle n times
-            #for ind in itertools.permutations(range(avg_1.shape[0])):
-
-            count_res = np.zeros(nr_shuffles)
-
-            for i in range(nr_shuffles):
+            # permute order [nr_shuffles] times
+            for i in range(self.nr_order_permutations):
                 results = np.zeros(avg_1.shape[0]+1)
                 results_shifted = np.zeros(avg_1.shape[0] + 1)
                 ind = np.random.permutation(range(avg_1.shape[0]))
@@ -906,74 +909,36 @@ class Analysis:
                 avg_2_n = avg_2[ind]
                 avg_1_mod = avg_2_n.copy()
 
+                # "un-remap" one cell after the other
                 for e in range(avg_1.shape[0]):
                     avg_1_mod[e] = avg_1_n[e]
                     results[e+1] = distance.cosine(avg_1_n,avg_1_mod)
+                # result with all cells remapped
                 results[0] = distance.cosine(avg_1_n,avg_2_n)
                 results_shifted[:-1] = results[1:]
+                # calculate contribution of each cell by computing the difference to the previous distance
                 diff = results-results_shifted
-                #ind = np.argsort(diff)[::-1]
                 diff = np.sort(diff)[::-1]
-                thres = 0.9 * results[0]
+                thres = self.percent_of_total_distance * results[0]
                 sum = 0
                 count = 0
+                # check how many cells are needed to contribute to [thres] percent of the cosine distance
                 while sum < thres:
                     sum += diff[count]
                     count += 1
-
                 count_res[i] = count
-
-                #results = results[np.argsort(diff)]
-                #plt.plot(results)
-            #plt.show()
             result_list.append(count_res)
-            #exit()
-        #plt.show()
+            self.remapping_list = result_list
 
+        if plotting:
+            for i,bin in enumerate(result_list):
+                plt.errorbar(spat_pos[i],np.average(bin), yerr=np.std(bin), fmt='--o', ecolor="white")
 
-        for i,bin in enumerate(result_list):
-            plt.errorbar(spat_pos[i],np.average(bin), yerr=np.std(bin), fmt='--o', ecolor="white")
-
-        plt.show()
-
-        exit()
-
-        print((avg_1-avg_2))
-        exit()
-        cell_to_diff_contribution, rel_cell_to_diff_contribution, init_cos_dist = \
-            self.leave_n_out_random_average_over_trials(distance_measure,nr_shuffles)
-
-        x_axis = np.arange(1,cell_to_diff_contribution.shape[0]+1)
-
-        exit()
-        # go through all intervals
-        for i, key in enumerate(self.bin_dic_1):
-
-            avg_1 = np.expand_dims(np.average(self.bin_dic_1[key], axis=1),axis=1)
-            avg_2 = np.expand_dims(np.average(self.bin_dic_2[key], axis=1), axis = 1)
-
-        exit()
-
-        plt.plot(x_axis,cell_to_diff_contribution.T[0], color="white", label="data curve",
-                     marker="o")
-        plt.legend()
-        plt.title("REMAPPING CHARACTERISTICS")
-        plt.ylabel("COS DIFFERENCE")
-        plt.xlabel("NR. CELLS IN SUBSET")
-        plt.show()
-
-        exit()
-
-        col_map = cm.rainbow(np.linspace(0, 1, cell_to_diff_contribution.shape[1]))
-        # go through all spatial bins
-        for i, cont in enumerate(cell_to_diff_contribution.T):
-            plt.plot(x_axis,cont, color=col_map[i, :], label=str(spat_pos[i])+" cm",
-                     marker="o")
-        plt.legend()
-        plt.title("REMAPPING CHARACTERISTICS")
-        plt.ylabel("COS DIFFERENCE")
-        plt.xlabel("NR. CELLS IN SUBSET")
-        plt.show()
+            plt.title("#CELLS TO ACHIEVE "+str(self.percent_of_total_distance*100)+"% OF THE TOTAL COS DISTANCE\n"
+                      + "(PERMUTING THE ORDER "+str(self.nr_order_permutations)+" TIMES)")
+            plt.ylabel("#CELLS - MEAN/STD")
+            plt.xlabel("SPATIAL BINS")
+            plt.show()
 
     def cell_contribution_average_over_trials_random(self, distance_measure, nr_shuffles):
         # check how many cells contribute how much to the difference between two conditions (e.g. RULES)
@@ -1253,3 +1218,65 @@ class StateTransitionAnalysis:
 
 
 
+########################################################################################################################
+#   CLASS THAT CREATES DICTIONARY AND SAVES ALL SPECIFIED RESULTS
+########################################################################################################################
+
+class ResultsDictionary:
+    """ Class for results dictionary"""
+
+    def __init__(self, param_dic):
+
+        self.param_dic = param_dic
+
+        self.experiment_identifier = param_dic["file_name"] + str(param_dic["data_descr"])
+
+        # set default saving directory
+        self.saving_dir = param_dic["saving_dir_result_dictionary"]
+
+        # file name for saving
+        self.file_name = param_dic["result_dictionary_name"]
+
+    def check_and_create_dic(self):
+        # if dictionary does not exist yet --> create a new one
+        if not os.path.isfile(self.saving_dir + self.file_name):
+            dic = {}
+
+        # if dictionary exists --> return
+        else:
+            dic = pickle.load(open(self.saving_dir + self.file_name, "rb"))
+        return dic
+
+    def collect_and_save_data(self):
+        dic = self.check_and_create_dic()
+        dic[self.experiment_identifier]={}
+        dic[self.experiment_identifier]["TRANS"]={}
+        dic[self.experiment_identifier]["COMP"] = {}
+
+        new_transition = Analysis("RULE LIGHT_2_4", "SWITCH_RULE WEST", self.param_dic)
+        new_transition.cross_cos_diff(False)
+        new_transition.estimate_remapped_cell_number_cosine()
+        dic[self.experiment_identifier]["TRANS"]["CROSS_DIFF"] = new_transition.cross_diff
+        dic[self.experiment_identifier]["TRANS"]["WITHIN_DIFF_1"] = new_transition.within_diff_1
+        dic[self.experiment_identifier]["TRANS"]["WITHIN_DIFF_2"] = new_transition.within_diff_2
+        dic[self.experiment_identifier]["TRANS"]["STATS_ARRAY"] = new_transition.stats_array
+        dic[self.experiment_identifier]["TRANS"]["REMAPPING_LIST"] = new_transition.remapping_list
+
+        new_comp = Analysis("RULE LIGHT_2_4", "RULE WEST", self.param_dic)
+        new_comp.cross_cos_diff(False)
+        new_comp.estimate_remapped_cell_number_cosine()
+        dic[self.experiment_identifier]["COMP"]["CROSS_DIFF"] = new_comp.cross_diff
+        dic[self.experiment_identifier]["COMP"]["WITHIN_DIFF_1"] = new_comp.within_diff_1
+        dic[self.experiment_identifier]["COMP"]["WITHIN_DIFF_2"] = new_comp.within_diff_2
+        dic[self.experiment_identifier]["COMP"]["STATS_ARRAY"] = new_comp.stats_array
+        dic[self.experiment_identifier]["COMP"]["REMAPPING_LIST"] = new_comp.remapping_list
+
+        # save first dictionary as pickle
+        filename = self.saving_dir+self.file_name
+        outfile = open(filename, 'wb')
+        pickle.dump(dic, outfile)
+        outfile.close()
+
+    def read_results(self):
+        dic = self.check_and_create_dic()
+        print(dic)
