@@ -1216,11 +1216,10 @@ class StateTransitionAnalysis:
 
         return x_axis, operation_dic, nr_of_cells
 
-
-
 ########################################################################################################################
 #   CLASS THAT CREATES DICTIONARY AND SAVES ALL SPECIFIED RESULTS
 ########################################################################################################################
+
 
 class ResultsDictionary:
     """ Class for results dictionary"""
@@ -1252,8 +1251,13 @@ class ResultsDictionary:
         dic[self.experiment_identifier]={}
         dic[self.experiment_identifier]["TRANS"]={}
         dic[self.experiment_identifier]["COMP"] = {}
+        dic[self.experiment_identifier]["PARAMETERS"] = self.param_dic
 
-        new_transition = Analysis("RULE LIGHT_2_4", "SWITCH_RULE WEST", self.param_dic)
+        RULE_A_2_4 = self.param_dic["data_descr"][0] + "_2_4"
+        RULE_B_2 = "SWITCH_" + self.param_dic["data_descr"][1]
+        RULE_B_4 = self.param_dic["data_descr"][1]
+
+        new_transition = Analysis(RULE_A_2_4, RULE_B_2, self.param_dic)
         new_transition.cross_cos_diff(False)
         new_transition.estimate_remapped_cell_number_cosine()
         dic[self.experiment_identifier]["TRANS"]["CROSS_DIFF"] = new_transition.cross_diff
@@ -1262,7 +1266,7 @@ class ResultsDictionary:
         dic[self.experiment_identifier]["TRANS"]["STATS_ARRAY"] = new_transition.stats_array
         dic[self.experiment_identifier]["TRANS"]["REMAPPING_LIST"] = new_transition.remapping_list
 
-        new_comp = Analysis("RULE LIGHT_2_4", "RULE WEST", self.param_dic)
+        new_comp = Analysis(RULE_A_2_4, RULE_B_4, self.param_dic)
         new_comp.cross_cos_diff(False)
         new_comp.estimate_remapped_cell_number_cosine()
         dic[self.experiment_identifier]["COMP"]["CROSS_DIFF"] = new_comp.cross_diff
@@ -1279,4 +1283,152 @@ class ResultsDictionary:
 
     def read_results(self):
         dic = self.check_and_create_dic()
-        print(dic)
+        for session in dic:
+            print(session)
+
+    def plot_results(self):
+        dic = self.check_and_create_dic()
+
+        # check how many cells contribute how much to the difference between two conditions (e.g. RULES)
+        spat_pos = np.arange(0, 200, self.param_dic["spatial_bin_size"])
+        spat_pos = spat_pos[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
+
+        for key in dic:
+            param_dic = dic[key]["PARAMETERS"]
+
+            # plot comparison
+
+            remap_result = dic[key]["COMP"]["REMAPPING_LIST"]
+            for i,bin in enumerate(remap_result):
+                plt.errorbar(spat_pos[i],np.average(bin), yerr=np.std(bin), fmt='--o', ecolor="white")
+
+            plt.title("COMPARISON"+" #CELLS TO ACHIEVE "+str(param_dic["percent_of_total_distance"]*100)+"% OF THE TOTAL COS DISTANCE\n"
+                      + "(PERMUTING THE ORDER "+str(param_dic["nr_order_permutations"])+" TIMES)")
+            plt.ylabel("#CELLS - MEAN/STD")
+            plt.xlabel("SPATIAL BINS")
+            plt.show()
+
+
+            # plot rule switch
+
+            remap_result = dic[key]["TRANS"]["REMAPPING_LIST"]
+            for i,bin in enumerate(remap_result):
+                plt.errorbar(spat_pos[i],np.average(bin), yerr=np.std(bin), fmt='--o', ecolor="white")
+
+            plt.title("SWITCH"+" #CELLS TO ACHIEVE "+str(param_dic["percent_of_total_distance"]*100)+"% OF THE TOTAL COS DISTANCE\n"
+                      + "(PERMUTING THE ORDER "+str(param_dic["nr_order_permutations"])+" TIMES)")
+            plt.ylabel("#CELLS - MEAN/STD")
+            plt.xlabel("SPATIAL BINS")
+            plt.show()
+
+    def summarize(self, type):
+
+        selection = True
+
+        dic = self.check_and_create_dic()
+
+        # check how many cells contribute how much to the difference between two conditions (e.g. RULES)
+        spat_pos = np.arange(0, 200, self.param_dic["spatial_bin_size"])
+        spat_pos = spat_pos[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
+
+        remap_combined_result = [[] for i in range(spat_pos.shape[0])]
+        diff_combined_result = np.empty((spat_pos.shape[0],0))
+        med_distance =  []
+        med_remapped_cells = []
+        stats_summary = np.zeros(spat_pos.shape[0])
+
+        sessions = 0
+
+        for key in dic:
+            param_dic = dic[key]["PARAMETERS"]
+
+            if selection:
+
+                if param_dic["data_descr"][0] == "RULE LIGHT" and param_dic["data_descr"][1] == "RULE WEST":
+                    sessions += 1
+                else:
+                    continue
+
+            else:
+                sessions += 1
+
+            if type == "COMPARISON":
+
+                distance_result = dic[key]["COMP"]["CROSS_DIFF"]
+                remap_result = dic[key]["COMP"]["REMAPPING_LIST"]
+                stats_array = dic[key]["COMP"]["STATS_ARRAY"]
+
+
+            elif type == "TRANSITION":
+                distance_result = dic[key]["TRANS"]["CROSS_DIFF"]
+                remap_result = dic[key]["TRANS"]["REMAPPING_LIST"]
+                stats_array = dic[key]["TRANS"]["STATS_ARRAY"]
+
+            # go through stats array
+            for i, p_v in enumerate(stats_array[:,1]):
+                if p_v < param_dic["stats_alpha"]:
+                    stats_summary[i] += 1
+
+            diff_combined_result= np.hstack((diff_combined_result,distance_result))
+
+            temp_for_plotting = []
+            for i,bin in enumerate(remap_result):
+                remap_combined_result[i].append(bin)
+                temp_for_plotting.append(bin)
+
+            # plot remapped cells and cross diff in scatter plot
+
+            c = np.random.rand(3,1)
+            for_corr_coeff = np.zeros((17,2))
+
+            for i,bin in enumerate(temp_for_plotting):
+                plt.scatter(np.nanmedian(bin),np.nanmedian(distance_result[i,:]), color=(c[0][0], c[1][0], c[2][0]))
+                for_corr_coeff[i,0] = np.nanmedian(bin)
+                for_corr_coeff[i,1] = np.nanmedian(distance_result[i,:])
+
+            med_distance.append(for_corr_coeff[:,1])
+            med_remapped_cells.append(for_corr_coeff[:,0])
+
+
+        med_distance = np.array([y for x in med_distance for y in x])
+        med_remapped_cells = np.array([y for x in med_remapped_cells for y in x])
+
+        cor_coeff = np.corrcoef(med_distance,med_remapped_cells)
+
+        plt.title(type +": CORRELATION COS DISTANCE - #CELLS FOR REMAPPING\n"+
+                  "CORR.COEFF = " +str(cor_coeff[0,1]))
+        plt.ylabel("COS DISTANCE")
+        plt.xlabel("#REMAPPED CELLS")
+        plt.show()
+
+        # plot how many remapped significantly
+        plt.title(type+": FRACTION OF SESSIONS THAT REMAPPED SIGNIFICANTLY\n"+param_dic["stats_method"]+
+                  ", alpha = "+ str(param_dic["stats_alpha"])+" ,#SESSIONS: "+str(sessions) )
+        plt.plot(spat_pos, stats_summary/sessions*100, "o")
+        plt.xlabel("SPATIAL BINS")
+        plt.ylabel("%SESSIONS THAT REMAPPED STAT. SIGNIFICANTLY")
+        plt.show()
+
+        for i, bin in enumerate(remap_combined_result):
+            combined_bin = [y for x in bin for y in x]
+            # plt.hist(combined_bin)
+            # plt.show()
+            # exit()
+            plt.errorbar(spat_pos[i], np.median(combined_bin), yerr=robust.mad(combined_bin), fmt='-o',ecolor="white")
+
+        plt.title(type + " #CELLS TO ACHIEVE " + str(
+            param_dic["percent_of_total_distance"] * 100) + "% OF THE TOTAL COS DISTANCE\n"
+                  + "(PERMUTING THE ORDER " + str(param_dic["nr_order_permutations"]) + " TIMES)")
+        plt.ylabel("#CELLS - MED/MAD")
+        plt.xlabel("SPATIAL BINS")
+        plt.show()
+
+        for i, diff in enumerate(diff_combined_result):
+            plt.errorbar(spat_pos[i], np.nanmedian(diff), yerr=robust.mad(diff[~np.isnan(diff)]), fmt='-o', ecolor="white")
+
+        plt.title(type + ": COSINE DISTANCE")
+        plt.ylabel("COSINE DISTANCE - MED/MAD")
+        plt.xlabel("SPATIAL BINS")
+        plt.show()
+
+        print(sessions)

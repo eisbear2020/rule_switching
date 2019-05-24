@@ -57,11 +57,17 @@ if __name__ == '__main__':
     data_selection_dictionary = {
         "data_dir": "../02 Data",
         # define session name
-        "session_name": "mjc189-1905-0517",
-        # "session_name": "mjc190-1307-0517",
+        # "session_name": "mjc189-1905-0517",
+        "session_name": "mjc190-1307-0517",
         # "session_name": "mjc190-1407-0617",
         # "session_name": "mjc189-1705-0622",
         # "session_name": "mjc189-2005-0517",
+        # "session_name": "mjc190-1507-0517",
+        # "session_name": "mjc190-1607-0515",
+        # "session_name": "mjc196-1002-0617",
+        # "session_name": "mjc196-1202-0517",
+        # "session_name": "mjc196-1302-0416",
+        # "session_name": "mjc200-3003-0521",
         # select cell type:
         # p1: pyramidal cells of the HPC, p2 - p3: pyramidal cells of the PFC ,b1: inter-neurons of HPC
         # b2 - b3: inter-neurons of HPC
@@ -246,16 +252,19 @@ if __name__ == '__main__':
 
     # create binned dictionaries
     # ------------------------------------------------------------------------------------------------------------------
+
     # dic = BinDictionary(param_dic)
     # dic.create_spatial_bin_dictionary(res_data_set_2, whl_lin_data_set_2, param_dic["data_descr"][0])
     # dic.create_spatial_bin_dictionary(res_data_set_6, whl_lin_data_set_6, param_dic["data_descr"][1])
     # dic.create_spatial_bin_dictionaries_transition(res_data_set_4, whl_lin_data_set_4, new_rule_trial,
     #                                                param_dic["data_descr"][0], param_dic["data_descr"][1])
-    # dic.combine_bin_dictionaries("RULE LIGHT", "SWITCH_RULE LIGHT", "RULE LIGHT_2_4")
+    #
+    # dic.combine_bin_dictionaries(param_dic["data_descr"][0], "SWITCH_"+param_dic["data_descr"][0]
+    #                              ,param_dic["data_descr"][0]+"_2_4")
 
     # compare RULE A and RULE B
     # ------------------------------------------------------------------------------------------------------------------
-    # new_compare = Analysis("RULE LIGHT_2_4", "SWITCH_RULE WEST", param_dic)
+    # new_compare = Analysis("RULE LIGHT_2_4", "RULE WEST", param_dic)
     # new_compare.plot_spatial_information()
     # new_compare.cross_cos_diff()
     # new_compare.cross_cos_diff_spat_trials()
@@ -324,5 +333,8 @@ if __name__ == '__main__':
 #######################################################################################################################
 
     new_results = ResultsDictionary(param_dic)
-    new_results.collect_and_save_data()
-    new_results.read_results()
+    # new_results.collect_and_save_data()
+    # new_results.read_results()
+    # new_results.plot_results()
+    # new_results.summarize("COMPARISON")
+    new_results.summarize("TRANSITION")
