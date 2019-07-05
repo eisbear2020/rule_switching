@@ -1,8 +1,18 @@
 ########################################################################################################################
 #
+#
 #   NEURAL ACTIVITY ANALYSIS
 #
-#   Description: main file for analysing neural activity data
+#
+#   Description:    main file for analyzing neural activity data
+#
+#                   1) data from the data_dir directory is selected according to the specifications in the
+#                      data_selection_dictionary and stored in the temp_data directory
+#
+#                   2) in the param_dic dictionary all necessary parameters for the analysis are defined
+#
+#                   3) the file is split into 4 main sections for different analysis methods (see Structure)
+#
 #
 #   Author: Lars Bollmann
 #
@@ -10,12 +20,17 @@
 #
 #   Structure:
 #
-#       - Manifold analysis
-#           - transition analysis (RULE A --> RULE B)
-#           - comparison analysis (RULE A vs. RULE B)
-#           - state transition analysis (difference vectors between population states)
+#       (a) COMPARISON ANALYSIS:    comparison between data before the rule switch (_2,_4 first part)
+#                                   and data after the sleep (_6)
 #
-#   TODO: think about parameter dictionary --> maybe split into two: one for manifold and one for quantitative
+#       (b) TRANSITION ANALYSIS:    looks at the transition from rule A to rule B (_4 first part vs.
+#                                   _4 second part after rule switch)
+#
+#       (c) STATE TRANSITION ANALYSIS:  evaluates the transition between states (population vectors)
+#
+#
+#       (d) COLLECT RESULTS FOR MULTIPLE SESSIONS: collects results of previously computed results
+#
 #
 ########################################################################################################################
 
@@ -38,7 +53,7 @@ from manifold_methods import ManifoldCompare
 from quantification_methods import BinDictionary
 from quantification_methods import Analysis
 from quantification_methods import StateTransitionAnalysis
-from quantification_methods import ResultsDictionary
+from quantification_methods import ResultsMultipleSessions
 
 # data description dictionary
 data_description_dictionary = {
@@ -57,8 +72,8 @@ if __name__ == '__main__':
     data_selection_dictionary = {
         "data_dir": "../02 Data",
         # define session name
-        # "session_name": "mjc189-1905-0517",
-        "session_name": "mjc190-1307-0517",
+        "session_name": "mjc189-1905-0517",
+        # "session_name": "mjc190-1307-0517",
         # "session_name": "mjc190-1407-0617",
         # "session_name": "mjc189-1705-0622",
         # "session_name": "mjc189-2005-0517",
@@ -71,7 +86,7 @@ if __name__ == '__main__':
         # select cell type:
         # p1: pyramidal cells of the HPC, p2 - p3: pyramidal cells of the PFC ,b1: inter-neurons of HPC
         # b2 - b3: inter-neurons of HPC
-        "cell_type_array": ["p1"],
+        "cell_type_array": ["p2","p3"],
         "start_arm": [1],
         "goal_arm": [3],
         # select rule type:
@@ -227,7 +242,7 @@ if __name__ == '__main__':
     param_dic["axis_lim"] =[]
 
 ########################################################################################################################
-#   COMPARISON ANALYSIS
+# (a)  COMPARISON ANALYSIS (RULE A vs. RULE B)
 ########################################################################################################################
 
     # MANIFOLD ANALYSIS
@@ -269,14 +284,14 @@ if __name__ == '__main__':
     # new_compare.cross_cos_diff()
     # new_compare.cross_cos_diff_spat_trials()
     # new_compare.characterize_cells()
-    # new_compare.cell_contribution_average_over_trials("cos")
+    # new_compare.cell_contribution_leave_one_out("cos")
     # new_compare.remove_cells([69])
-    # new_compare.cell_contribution_average_over_trials_random("cos",500)
+    # new_compare.cell_contribution_subset_size("cos", 500)
     # new_compare.cell_contribution_cohen()
     # new_compare.estimate_remapped_cell_number_cosine(True)
 
 ########################################################################################################################
-#   TRANSITION ANALYSIS (RULE A --> RULE B)
+# (b)  TRANSITION ANALYSIS (RULE A --> RULE B)
 ########################################################################################################################
 
     # MANIFOLD ANALYSIS
@@ -294,13 +309,13 @@ if __name__ == '__main__':
     # new_transition.cross_cos_diff()
     # new_transition.cross_cos_diff_spat_trials()
     # new_transition.characterize_cells()
-    # new_transition.cell_contribution()
+    # new_transition.estimate_remapped_cell_number_cosine(True)
     # new_transition.remove_cells([69])
     # new_transition.remove_cells(np.arange(0, 60))
 
 
 #######################################################################################################################
-#   STATE TRANSITION ANALYSIS
+# (c)  STATE TRANSITION ANALYSIS
 ########################################################################################################################
 
     # MANIFOLD ANALYSIS
@@ -313,7 +328,8 @@ if __name__ == '__main__':
 
     # comparing two rules
     # ------------------------------------------------------------------------------------------------------------------
-    # new_comparison = ManifoldCompare([res_data_set_1, res_data_set_2],[whl_lin_data_set1, whl_lin_data_set2], param_dic)
+    # new_comparison = ManifoldCompare([res_data_set_1, res_data_set_2],[whl_lin_data_set1,
+    # whl_lin_data_set2], param_dic)
     # new_comparison.state_transition_analysis()
 
     # QUANTITATIVE ANALYSIS
@@ -329,12 +345,12 @@ if __name__ == '__main__':
     # new_state_transition.compare_operations()
 
 #######################################################################################################################
-#   COLLECT RESULTS FOR MULTIPLE SESSIONS
+# (d)  COLLECT RESULTS FOR MULTIPLE SESSIONS
 #######################################################################################################################
 
-    new_results = ResultsDictionary(param_dic)
+    # new_results = ResultsMultipleSessions(param_dic)
     # new_results.collect_and_save_data()
     # new_results.read_results()
     # new_results.plot_results()
-    # new_results.summarize("COMPARISON")
-    new_results.summarize("TRANSITION")
+    # new_results.summarize("COMPARISON", False)
+    # new_results.summarize("TRANSITION", False)

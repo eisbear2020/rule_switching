@@ -587,7 +587,8 @@ def plot_operations_comparison(x_axis, operation_dics, nr_of_cells_arr, param_di
         ax1.set_title("SILENCED CELLS")
         ax1.set_ylabel("% OF CELLS")
         ax1.set_xlabel("MAZE POSITION / CM")
-        ax1.legend()
+        ax1.set_ylim(5, 30)
+        ax1.legend(loc=1)
 
         med = np.full(x_axis.shape[0], np.nan)
         all_values = np.empty((1, 0))
@@ -602,7 +603,8 @@ def plot_operations_comparison(x_axis, operation_dics, nr_of_cells_arr, param_di
         ax2.set_title("UNCHANGED CELLS")
         ax2.set_ylabel("% OF CELLS")
         ax2.set_xlabel("MAZE POSITION / CM")
-        ax2.legend()
+        ax2.set_ylim(60, 95)
+        ax2.legend(loc=1)
 
         med = np.full(x_axis.shape[0], np.nan)
         all_values = np.empty((1, 0))
@@ -617,6 +619,7 @@ def plot_operations_comparison(x_axis, operation_dics, nr_of_cells_arr, param_di
         ax3.set_title("ACTIVATED CELLS")
         ax3.set_ylabel("% OF CELLS")
         ax3.set_xlabel("MAZE POSITION / CM")
-        ax3.legend()
+        ax3.set_ylim(5,30)
+        ax3.legend(loc=1)
 
     plt.show()
