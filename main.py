@@ -44,6 +44,7 @@ from select_data import save_selected_data
 
 # manifold methods
 # ----------------------------------------------------------------------------------------------------------------------
+from manifold_methods import Manifold
 from manifold_methods import SingleManifold
 from manifold_methods import ManifoldTransition
 from manifold_methods import ManifoldCompare
@@ -72,21 +73,28 @@ if __name__ == '__main__':
     data_selection_dictionary = {
         "data_dir": "../02 Data",
         # define session name
-        "session_name": "mjc189-1905-0517",
+
+        # trajectory: 1 --> 3, rule: light --> west
+        # -----------------------------------------
+        # "session_name": "mjc189-1905-0517",
         # "session_name": "mjc190-1307-0517",
         # "session_name": "mjc190-1407-0617",
-        # "session_name": "mjc189-1705-0622",
-        # "session_name": "mjc189-2005-0517",
-        # "session_name": "mjc190-1507-0517",
-        # "session_name": "mjc190-1607-0515",
-        # "session_name": "mjc196-1002-0617",
+        "session_name": "mjc189-2005-0517",
         # "session_name": "mjc196-1202-0517",
         # "session_name": "mjc196-1302-0416",
         # "session_name": "mjc200-3003-0521",
+
+        # trajectory: 1 --> 2, rule: light --> east
+        # -----------------------------------------
+        # "session_name": "mjc189-1705-0622",
+        # "session_name": "mjc190-1507-0517",
+        # "session_name": "mjc190-1607-0515",
+        # "session_name": "mjc196-1002-0617",
+
         # select cell type:
         # p1: pyramidal cells of the HPC, p2 - p3: pyramidal cells of the PFC ,b1: inter-neurons of HPC
         # b2 - b3: inter-neurons of HPC
-        "cell_type_array": ["p2","p3"],
+        "cell_type_array": ["p2", "p3"],
         "start_arm": [1],
         "goal_arm": [3],
         # select rule type:
@@ -150,34 +158,41 @@ if __name__ == '__main__':
     # ANALYSIS PARAMETERS
     # ------------------------------------------------------------------------------------------------------------------
 
-    # binning with "temporal","spatial" --> only for manifold analysis
+    # binning with "temporal","spatial"
     param_dic["binning_method"] = "spatial"
 
+    # z-score bins
+    param_dic["z_score"] = True
+
     # interval for temporal binning in s
-    param_dic["time_bin_size"] = 0.1
+    param_dic["time_bin_size"] = 2
+
+    # number of temporal bins
+    param_dic["nr_time_bins"] = 12
 
     # interval for spatial binning in cm
-    param_dic["spatial_bin_size"] = 10
+    param_dic["spatial_bin_size"] = 50
 
     # spatial bins to exclude: e.g. first 2 (e.g 0-10cm and 10-20cm) and last (190-200cm) --> [2,-1]
-    param_dic["spat_bins_excluded"] = [2, -1]
+    param_dic["spat_bins_excluded"] = []
 
     # filter high synchrony events/immobility using the speed in cm/s --> cm/2
-    # without filter --> set to []
-    param_dic["speed_filter"] = 5
+    # without filter --> set to -np.inf
+    param_dic["speed_filter"] = -np.inf
     # exclude population vectors with all zero values
-    param_dic["zero_filter"] = True
+    param_dic["zero_filter"] = False
 
     # define method for dimensionality reduction
     # "MDS" multi dimensional scaling
     # "PCA" principal component analysis
     # "TSNE"
+    # "isomap"
     param_dic["dr_method"] = "MDS"
 
     # first parameter of method:
     # MDS --> p1: difference measure ["jaccard","cos","euclidean"]
     # PCA --> p1 does not exist --> ""
-    param_dic["dr_method_p1"] = "cos"
+    param_dic["dr_method_p1"] = "euclidean"
 
     # second parameter of method:
     # MDS --> p2: number of components
@@ -268,14 +283,14 @@ if __name__ == '__main__':
     # create binned dictionaries
     # ------------------------------------------------------------------------------------------------------------------
 
-    # dic = BinDictionary(param_dic)
-    # dic.create_spatial_bin_dictionary(res_data_set_2, whl_lin_data_set_2, param_dic["data_descr"][0])
-    # dic.create_spatial_bin_dictionary(res_data_set_6, whl_lin_data_set_6, param_dic["data_descr"][1])
-    # dic.create_spatial_bin_dictionaries_transition(res_data_set_4, whl_lin_data_set_4, new_rule_trial,
-    #                                                param_dic["data_descr"][0], param_dic["data_descr"][1])
-    #
-    # dic.combine_bin_dictionaries(param_dic["data_descr"][0], "SWITCH_"+param_dic["data_descr"][0]
-    #                              ,param_dic["data_descr"][0]+"_2_4")
+    dic = BinDictionary(param_dic)
+    dic.create_spatial_bin_dictionary(res_data_set_2, whl_lin_data_set_2, param_dic["data_descr"][0])
+    dic.create_spatial_bin_dictionary(res_data_set_6, whl_lin_data_set_6, param_dic["data_descr"][1])
+    dic.create_spatial_bin_dictionaries_transition(res_data_set_4, whl_lin_data_set_4, new_rule_trial,
+                                                   param_dic["data_descr"][0], param_dic["data_descr"][1])
+
+    dic.combine_bin_dictionaries(param_dic["data_descr"][0], "SWITCH_"+param_dic["data_descr"][0]
+                                 , param_dic["data_descr"][0]+"_2_4")
 
     # compare RULE A and RULE B
     # ------------------------------------------------------------------------------------------------------------------
@@ -354,3 +369,15 @@ if __name__ == '__main__':
     # new_results.plot_results()
     # new_results.summarize("COMPARISON", False)
     # new_results.summarize("TRANSITION", False)
+
+    # dic = BinDictionary(param_dic)
+    # dic.create_temporal_bin_dictionary(res_data_set_2, whl_lin_data_set_2, param_dic["data_descr"][0], param_dic["nr_time_bins"])
+    # dic.create_temporal_bin_dictionary(res_data_set_6, whl_lin_data_set_6, param_dic["data_descr"][1], param_dic["nr_time_bins"])
+    # dic.create_temporal_bin_dictionaries_transition(res_data_set_4, whl_lin_data_set_4, new_rule_trial,
+    #                                             param_dic["data_descr"][0], param_dic["data_descr"][1], param_dic["nr_time_bins"])
+
+    new_compare = Analysis("RULE LIGHT", "SWITCH_RULE LIGHT", param_dic, "SWITCH_RULE WEST", "RULE WEST")
+    # new_compare.gradual_transition("cos")
+    # new_compare.cross_cos_diff_temp_trials()
+    # new_compare.plot_spatial_information()
+    new_compare.cross_cos_diff_trials_all_sessions()

@@ -39,6 +39,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy import stats
 from collections import OrderedDict
 from comp_functions import get_activity_mat_time
 from comp_functions import get_activity_mat_spatial
@@ -46,6 +47,9 @@ from comp_functions import multi_dim_scaling
 from comp_functions import pop_vec_diff
 from comp_functions import perform_PCA
 from comp_functions import perform_TSNE
+from comp_functions import perform_isomap
+
+from spike_data import SpikeData
 
 import matplotlib.cm as cm
 from plotting_functions import plot_2D_scatter
@@ -115,6 +119,26 @@ class Manifold():
             self.result_dr, self.dr_method_p1 = perform_PCA(dat_mat, self.param_dic)
         elif self.dr_method == "TSNE":
             self.result_dr = perform_TSNE(dat_mat, self.param_dic)
+        elif self.dr_method == "isomap":
+            self.result_dr = perform_isomap(dat_mat, self.param_dic)
+
+    def plot_results(self, loc_vec):
+        loc_vec = loc_vec.astype(int)
+        if self.param_dic["dr_method_p2"] == 3:
+            # create figure instance
+            fig = plt.figure()
+            ax = fig.add_subplot(111, projection='3d')
+            for i,_ in enumerate(self.result_dr):
+                ax.plot(self.result_dr[i:i + 2, 0], self.result_dr[i:i + 2, 1], self.result_dr[i:i + 2, 2])
+            ax.scatter(self.result_dr[:, 0], self.result_dr[:, 1], self.result_dr[:, 2], color="grey")
+        else:
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            plot_2D_scatter(ax, self.result_dr, self.param_dic, None, loc_vec)
+        handles, labels = ax.get_legend_handles_labels()
+        by_label = OrderedDict(zip(labels, handles))
+        ax.legend(by_label.values(), by_label.keys())
+        plt.show()
 
     def plot_in_one_fig(self,rule_sep = []):
         # plots results as scatter plot separating either trials (default) or rules
@@ -179,10 +203,16 @@ class SingleManifold(Manifold):
                 break
             else:
                 if self.binning_method == "temporal":
-                    act_mat, loc_vec_part = get_activity_mat_time(self.data_set[key], self.param_dic,self.loc_set[key])
+                    new_spike_data = SpikeData(self.data_set[key], self.loc_set[key])
+                    act_mat, loc_vec_part = new_spike_data.time_binning(self.param_dic["time_bin_size"],
+                                                                              self.param_dic["speed_filter"],
+                                                                              self.param_dic["zero_filter"])
                 elif self.binning_method == "spatial":
                     act_mat, loc_vec_part = get_activity_mat_spatial(self.data_set[key], self.param_dic,
                                                                      self.loc_set[key])
+
+                else:
+                    raise Exception("Specified binning method is not implemented")
                 # concatenate spike matrices
                 dat_mat = np.hstack((dat_mat, act_mat))
                 # concatenate location vectors
@@ -391,6 +421,9 @@ class ManifoldCompare(Manifold):
         # initialize data matrix
         dat_mat = np.array([]).reshape(self.nr_cells, 0)
 
+        # keep track of cells that dont fire during a trial for z-scoring
+        non_firing_cells_array = np.empty(0)
+
         trial_counter = 0
         # go through all data sets
         for data_set_ID, (data_set,loc_set) in enumerate(zip(self.data_sets,self.loc_sets)):
@@ -401,16 +434,28 @@ class ManifoldCompare(Manifold):
             self.data_sep = np.vstack((self.data_sep, np.expand_dims(data_set_data_sep, 1)))
             for i, key in enumerate(data_set):
                 if self.binning_method == "temporal":
-                    act_mat, loc_vec_part = get_activity_mat_time(data_set[key], self.param_dic,loc_set[key])
+                    new_spike_data = SpikeData(data_set[key], loc_set[key])
+                    act_mat, loc_vec_part = new_spike_data.time_binning(self.param_dic["time_bin_size"],
+                                                                              self.param_dic["speed_filter"],
+                                                                              self.param_dic["zero_filter"])
                 elif self.binning_method == "spatial":
                     act_mat, loc_vec_part = get_activity_mat_spatial(data_set[key], self.param_dic,
                                                                      loc_set[key])
+                else:
+                    raise Exception("Specified binning method is not implemented")
+
+
                 # concatenate spike matrices
                 dat_mat = np.hstack((dat_mat, act_mat))
                 # concatenate location vectors
                 self.loc_vec = np.vstack((self.loc_vec, np.expand_dims(loc_vec_part, 1)))
                 self.data_sep[trial_counter + 1] = int(self.data_sep[trial_counter] + act_mat.shape[1])
                 trial_counter += 1
+
+        if self.param_dic["z_score"]:
+            dat_mat = stats.zscore(dat_mat, 1)
+            # remove nans (cells that do not fire at all)
+            dat_mat = dat_mat[~np.isnan(dat_mat).any(axis=1)]
 
         # remove last elements --> only contain zero
         self.data_sep = self.data_sep[:-1]
@@ -562,7 +607,7 @@ class ManifoldCompare(Manifold):
             for data_ID in range(self.data_sep.shape[0]-1):
                 data_subset = self.result_dr[int(self.data_sep[data_ID]):int(self.data_sep[data_ID+1]), :]
                 loc_vec_subset = self.loc_vec[int(self.data_sep[data_ID]):int(self.data_sep[data_ID+1])]
-                plot_2D_scatter(ax, data_subset, self.param_dic,None,loc_vec_subset)
+                plot_2D_scatter(ax, data_subset, self.param_dic, None, loc_vec_subset)
 
             # data_sep = self.data_sep[self.rule_sep[0]+1]+1
             # plot_2D_scatter(ax, self.result_dr, self.param_dic,data_sep,self.loc_vec)

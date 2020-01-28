@@ -143,6 +143,7 @@ from comp_functions import calc_diff
 from comp_functions import pop_vec_dist
 from comp_functions import calc_cohens_d
 from comp_functions import angle_between_col_vectors
+from spike_data import SpikeData
 import matplotlib.cm as cm
 from plotting_functions import plot_remapping_summary
 from plotting_functions import plot_cell_charact
@@ -191,7 +192,8 @@ class BinDictionary:
         if not os.path.isfile(self.saving_dir + self.file_name):
             dic = {
                 "spatial": {},
-                "temporal": {}
+                "temporal": {},
+                "temporal_spat_info":{}
             }
 
         # if dictionary exists --> return
@@ -221,7 +223,7 @@ class BinDictionary:
         dic_spat_int_2 = {}
 
         for spat_int in range(nr_intervals):
-            dic_spat_int_1["INT"+str(spat_int)] = dic_spat_int_2["INT"+str(spat_int)] = \
+            dic_spat_int_1["BIN"+str(spat_int)] = dic_spat_int_2["BIN"+str(spat_int)] = \
                 np.array([]).reshape(nr_cells,0)
 
         for trial, key_data_set in enumerate(data_set):
@@ -269,7 +271,7 @@ class BinDictionary:
         dic_spat_int = {}
 
         for spat_int in range(nr_intervals):
-            dic_spat_int["INT" + str(spat_int)] = np.array([]).reshape(nr_cells, 0)
+            dic_spat_int["BIN" + str(spat_int)] = np.array([]).reshape(nr_cells, 0)
 
         # go through all trials
         for trial, key in enumerate(data_set):
@@ -280,6 +282,108 @@ class BinDictionary:
                 dic_spat_int[key] = np.hstack((dic_spat_int[key], np.expand_dims(act_mat[:, int_count], 1)))
 
         dic["spatial"][dic_name] = dic_spat_int
+
+        # save first dictionary as pickle
+        filename = self.saving_dir+self.file_name
+        outfile = open(filename, 'wb')
+        pickle.dump(dic, outfile)
+        outfile.close()
+
+    def create_temporal_bin_dictionaries_transition(self, data_set, loc_set, new_rule_trial, dic_1_name, dic_2_name,
+                                                    nr_intervals):
+        # separates one data set into two binned dictionaries depending on the new rule trial
+        # create "activity matrices" consisting of population vectors for each rule
+
+        # check if dictionary exists already
+        dic = self.check_and_create_dic()
+
+        # how many cells are in the data set
+        nr_cells = len(next(iter(data_set.values())))
+
+        # act_mat, _ = get_activity_mat_spatial(next(iter(data_set.values())),
+        #                                       self.param_dic, next(iter(loc_set.values())))
+        # # how many intervals
+        # nr_intervals = act_mat.shape[1]
+        act_mat = []
+
+        # initialize dictionaries --> each entry in dictionary is a spatial bin --> contains all population vectors
+        # (from different trials) for this spatial interval
+        dic_spat_int_1 = {}
+        dic_spat_int_2 = {}
+
+        for spat_int in range(nr_intervals):
+            dic_spat_int_1["BIN"+str(spat_int)] = dic_spat_int_2["BIN"+str(spat_int)] = \
+                np.array([]).reshape(nr_cells,0)
+
+        for trial, key_data_set in enumerate(data_set):
+            new_spike_data = SpikeData(data_set[key_data_set], loc_set[key_data_set])
+            act_mat, loc_vec_part = new_spike_data.time_binning(self.param_dic["time_bin_size"],
+                                                                      self.param_dic["speed_filter"],
+                                                                      self.param_dic["zero_filter"])
+
+            # separate both rules
+            if trial < (new_rule_trial-1):
+                # rule 1
+                # write elements in dictionary
+                for int_count, key in enumerate(dic_spat_int_1):
+                    dic_spat_int_1[key] = np.hstack((dic_spat_int_1[key], np.expand_dims(act_mat[:, int_count], 1)))
+            else:
+                # write elements in dictionary
+                for int_count, key in enumerate(dic_spat_int_2):
+                    dic_spat_int_2[key] = np.hstack((dic_spat_int_2[key], np.expand_dims(act_mat[:, int_count], 1)))
+
+        # save to dictionary
+        dic["temporal"]["SWITCH_" + dic_1_name] = dic_spat_int_1
+        dic["temporal"]["SWITCH_" + dic_2_name] = dic_spat_int_2
+
+        # save first dictionary as pickle
+        filename = self.saving_dir+self.file_name
+        outfile = open(filename, 'wb')
+        pickle.dump(dic, outfile)
+        outfile.close()
+
+    def create_temporal_bin_dictionary(self, data_set, loc_set, dic_name, nr_intervals):
+        # create "activity matrices" consisting of population vectors for each rule
+
+        # check if dictionary exists already
+        dic = self.check_and_create_dic()
+
+        # how many cells are in the data set
+        nr_cells = len(next(iter(data_set.values())))
+
+        # new_spike_data = SpikeData(next(iter(data_set.values())), next(iter(loc_set.values())))
+        #
+        # act_mat, _ = new_spike_data.rate_map_time_bins(self.param_dic["time_bin_size"],self.param_dic["speed_filter"],
+        #                                                self.param_dic["zero_filter"])
+        #
+        # # how many intervals
+        # nr_intervals = act_mat.shape[1]
+        act_mat = []
+
+        # initialize dictionary --> each entry in dictionary is a temporal bin --> contains all population vectors
+        # (from different trials) for this temporal interval
+        dic_temp_int = {}
+        dic_temp_int_spat_info = {}
+
+        for temp_int in range(nr_intervals):
+            dic_temp_int["BIN" + str(temp_int)] = np.array([]).reshape(nr_cells, 0)
+            dic_temp_int_spat_info["BIN" + str(temp_int)] = np.array([]).reshape(1, 0)
+
+        # go through all trials
+        for trial, key in enumerate(data_set):
+
+            new_spike_data = SpikeData(data_set[key], loc_set[key])
+            act_mat, loc_vec_part = new_spike_data.time_binning(self.param_dic["time_bin_size"],
+                        self.param_dic["speed_filter"], self.param_dic["zero_filter"])
+            # write elements in dictionary
+            for int_count, key in enumerate(dic_temp_int):
+                dic_temp_int[key] = np.hstack((dic_temp_int[key], np.expand_dims(act_mat[:, int_count], 1)))
+                dic_temp_int_spat_info[key] = np.append(dic_temp_int_spat_info[key],loc_vec_part[int_count])
+                print(dic_temp_int_spat_info[key])
+
+
+        dic["temporal"][dic_name] = dic_temp_int
+        dic["temporal_spat_info"][dic_name] = dic_temp_int_spat_info
 
         # save first dictionary as pickle
         filename = self.saving_dir+self.file_name
@@ -324,14 +428,21 @@ class BinDictionary:
 class Analysis:
     """Base class for quantitative analysis """
 
-    def __init__(self, dic_1_name, dic_2_name, param_dic):
+    def __init__(self, dic_1_name, dic_2_name, param_dic, dic_3_name = None, dic_4_name = None):
 
         self.saving_dir = param_dic["saving_dir_bin_dic"]
         self.file_name = param_dic["file_name"]
 
         # bin dictionaries
-        self.bin_dic_1 = pickle.load(open(self.saving_dir + self.file_name, "rb"))["spatial"][dic_1_name]
-        self.bin_dic_2 = pickle.load(open(self.saving_dir + self.file_name, "rb"))["spatial"][dic_2_name]
+        self.bin_dic_1 = pickle.load(open(self.saving_dir + self.file_name, "rb"))[param_dic["binning_method"]][dic_1_name]
+        self.bin_dic_2 = pickle.load(open(self.saving_dir + self.file_name, "rb"))[param_dic["binning_method"]][dic_2_name]
+
+        if dic_3_name:
+            self.bin_dic_3 = pickle.load(open(self.saving_dir + self.file_name, "rb"))[param_dic["binning_method"]][
+                dic_3_name]
+        if dic_4_name:
+            self.bin_dic_4 = pickle.load(open(self.saving_dir + self.file_name, "rb"))[param_dic["binning_method"]][
+                dic_4_name]
 
         # binning method
         self.binning_method = param_dic["binning_method"]
@@ -401,8 +512,9 @@ class Analysis:
         # length of linearized path: 200 cm
         nr_intervals = int(200 / bin_interval)
 
-        x_axis = np.arange(0,200,self.param_dic["spatial_bin_size"])
-        x_axis = x_axis[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
+        x_axis = np.arange(0,200+self.param_dic["spatial_bin_size"],self.param_dic["spatial_bin_size"])
+        if len(self.param_dic["spat_bins_excluded"]):
+            x_axis = x_axis[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
 
         nr_cells = next(iter(self.bin_dic_1.values())).shape[0]
         nr_bins = len(self.bin_dic_1.keys())
@@ -518,6 +630,7 @@ class Analysis:
                 stats_array[i, 0], stats_array[i, 1] = stats.mannwhitneyu(w_d, c_d, alternative="less")
 
         if plot_results:
+
             plot_remapping_summary(cross_diff, within_diff_1, within_diff_2, stats_array, self.param_dic)
 
             # plot distributions for each bin
@@ -535,7 +648,7 @@ class Analysis:
                 ax[c_r, c_p].hist(c_d, label="CROSS DIFF", bins=40)
                 ax[c_r, c_p].vlines(np.median(c_d), 0, 10, label="MEDIAN CROSS", colors="red")
                 ax[c_r, c_p].legend()
-                ax[c_r, c_p].set_title("INT "+str(i))
+                ax[c_r, c_p].set_title("BIN "+str(i))
 
                 c_p += 1
             plt.show()
@@ -552,6 +665,304 @@ class Analysis:
         # if separate dictionaries are used --> returned values
         else:
             return cross_diff, within_diff_1, within_diff_2, stats_array
+
+    def cross_cos_diff_temp_trials(self, bin_dic_1=None, bin_dic_2=None):
+        # calculates within vs. across using all trials from both dictionaries separating the data of single trials
+        own_dic = False
+
+        # if no dictionaries are provided use dictionaries of instance
+        if not (bin_dic_1 and bin_dic_2):
+            bin_dic_1 = self.bin_dic_1
+            bin_dic_2 = self.bin_dic_2
+            own_dic = True
+
+        if len(bin_dic_1.keys()) != len(bin_dic_2.keys()):
+            print("Number of spatial bins in both dictionaries don't match")
+            exit()
+
+        nr_trials_rule_1 = next(iter(bin_dic_1.values())).shape[1]
+        nr_trials_rule_2 = next(iter(bin_dic_2.values())).shape[1]
+        nr_intervals = len(bin_dic_1.keys())
+        x_axis = np.arange(0, 4 ,1)
+
+        nr_comparisons = next(iter(bin_dic_1.values())).shape[1] * next(iter(bin_dic_2.values())).shape[1]
+
+        overal_cross_diff = np.zeros((nr_intervals, nr_comparisons))
+        col_map = cm.rainbow(np.linspace(0, 1, nr_trials_rule_2))
+
+        # calculate within diff to plot
+        med_within_diff = np.zeros(nr_intervals)
+
+        # go through each bin
+        for i, key in enumerate(bin_dic_2):
+            overal_cross_diff[i, :] = calc_diff(bin_dic_1[key], bin_dic_2[key], "cos").flatten()
+            temp1 = calc_diff(bin_dic_1[key], bin_dic_1[key], "cos")
+            within_diff_1 = temp1[np.triu_indices(temp1.shape[0], 1)]
+            temp2 = calc_diff(bin_dic_2[key], bin_dic_2[key], "cos")
+            within_diff_2 = temp2[np.triu_indices(temp2.shape[0], 1)]
+            med_within_diff[i] = np.median(np.hstack((within_diff_1, within_diff_2)))
+
+        # if own dictionary of instance is used
+        if own_dic:
+            # get stats results
+            self.cross_cos_diff(False)
+            stats_result = self.stats_array
+        else:
+            _, _, _, stats_result = self.cross_cos_diff(False,bin_dic_1,bin_dic_2)
+
+        # go through all trials for rule 1 and compare each trial with all trials for rule 2
+        # --> each entry in dictionary is a spatial bin --> contains all population vectors
+
+        for trial_rule_2 in range(nr_trials_rule_2):
+            cross_diff = np.zeros((nr_intervals,nr_trials_rule_1))
+
+            # go through all spatial bins and calculate difference --> rows: spatial bins, columns: cos distances
+            for i, key in enumerate(bin_dic_2):
+                cross_diff[i, :] = calc_diff(bin_dic_1[key], np.expand_dims(bin_dic_2[key]
+                                                                                 [:,trial_rule_2],1),"cos").flatten()
+
+            #plt.subplot(2,1,1)
+            plt.plot(x_axis, np.median(cross_diff,1), color= "grey", marker= "o")
+            #plt.grid()
+            plt.xlim([min(x_axis), max(x_axis)])
+            plt.title("DISTANCE BETWEEN EACH TRIAL OF RULE B AND ALL TRIALS OF RULE A")
+            plt.xlabel("TEMPORAL BIN")
+            plt.ylabel("MEDIAN COS DISTANCE")
+
+        plt.ylim([0.05, 0.95])
+        plt.plot(x_axis,np.median(overal_cross_diff,1), color= "red", marker= "o", label="ACROSS")
+        plt.plot(x_axis, med_within_diff, color= "white", marker= "o", label="WITHIN")
+        plt.legend(loc='upper left',ncol=1)
+
+        # add significance marker
+        for i, p_v in enumerate(stats_result[:, 1]):
+            if p_v < self.param_dic["stats_alpha"]:
+                plt.scatter(x_axis[i]+0.05, np.median(overal_cross_diff,1)[i]+0.05, marker="*", edgecolors="yellow",
+                            label=self.param_dic["stats_method"] + ", " + str(self.param_dic["stats_alpha"]),zorder=10)
+        handles, labels = plt.gca().get_legend_handles_labels()
+        by_label = OrderedDict(zip(labels, handles))
+        plt.legend(by_label.values(), by_label.keys())
+
+        plt.show()
+        # go through all spatial bins and see how the difference changes with trials after rule switch
+        # --> each entry in dictionary is a spatial bin --> contains all population vectors
+
+        col_map = cm.tab20b(np.linspace(0, 1, len(x_axis)))
+        spat_position = x_axis
+        x_axis = np.arange(nr_trials_rule_2)
+
+        for i, key in enumerate(bin_dic_2):
+            cross_diff = np.zeros((nr_trials_rule_2, nr_trials_rule_1))
+            for trial_after_switch in range(nr_trials_rule_2):
+                cross_diff[trial_after_switch, :] = calc_diff(bin_dic_1[key],
+                        np.expand_dims(bin_dic_2[key][:,trial_after_switch],1),"cos").flatten()
+
+            # plt.subplot(2, 1, 2)
+            plt.plot(x_axis, np.median(cross_diff,1), color= col_map[i,:],
+                     marker= "o", label="TEMP BIN"+str(spat_position[i]))
+            plt.legend()
+            plt.title("DISTANCE BETWEEN EACH TRIAL OF RULE B AND ALL TRIALS OF RULE A")
+            plt.xlabel("TRIAL ID RULE B")
+            plt.xlim([1, nr_trials_rule_2])
+            plt.ylabel("MEDIAN COS DISTANCE")
+            #plt.grid()
+
+        plt.show()
+
+    def cross_cos_diff_spat_trials_all_sessions(self):
+        # calculates within vs. across using all trials from both dictionaries separating the data of single trials
+        own_dic = True
+
+        # if no dictionaries are provided use dictionaries of instance
+
+        bin_dic_1 = self.bin_dic_1
+
+        bin_dic_list = [self.bin_dic_2, self.bin_dic_3, self.bin_dic_4]
+
+        nr_trials_previous_session = 0
+
+        for session, temp_bin_dic in enumerate(bin_dic_list):
+            bin_dic_2 = temp_bin_dic
+
+            nr_trials_rule_1 = next(iter(bin_dic_1.values())).shape[1]
+            nr_trials_rule_2 = next(iter(bin_dic_2.values())).shape[1]
+            nr_intervals = len(bin_dic_1.keys())
+            x_axis = np.arange(0, 200, self.param_dic["spatial_bin_size"])
+            if len(self.param_dic["spat_bins_excluded"]):
+                x_axis = x_axis[self.param_dic["spat_bins_excluded"][0]:self.param_dic["spat_bins_excluded"][-1]]
+
+            nr_comparisons = next(iter(bin_dic_1.values())).shape[1] * next(iter(bin_dic_2.values())).shape[1]
+
+            overal_cross_diff = np.zeros((nr_intervals, nr_comparisons))
+            col_map = cm.rainbow(np.linspace(0, 1, nr_trials_rule_2))
+
+            # calculate within diff to plot
+            med_within_diff = np.zeros(nr_intervals)
+
+            # go through each bin
+            for i, key in enumerate(bin_dic_2):
+                overal_cross_diff[i, :] = calc_diff(bin_dic_1[key], bin_dic_2[key], "cos").flatten()
+                temp1 = calc_diff(bin_dic_1[key], bin_dic_1[key], "cos")
+                within_diff_1 = temp1[np.triu_indices(temp1.shape[0], 1)]
+                temp2 = calc_diff(bin_dic_2[key], bin_dic_2[key], "cos")
+                within_diff_2 = temp2[np.triu_indices(temp2.shape[0], 1)]
+                med_within_diff[i] = np.median(np.hstack((within_diff_1, within_diff_2)))
+
+            # if own dictionary of instance is used
+            if own_dic:
+                # get stats results
+                self.cross_cos_diff(False)
+                stats_result = self.stats_array
+            else:
+                _, _, _, stats_result = self.cross_cos_diff(False, bin_dic_1, bin_dic_2)
+
+            col_map = cm.rainbow(np.linspace(0, 1, len(x_axis)))
+            if session:
+                x_axis = np.arange(nr_trials_rule_2) + nr_trials_previous_session
+            else:
+                x_axis = np.arange(nr_trials_rule_2)
+                plt.axvline(nr_trials_rule_2 - 0.5, label="RULE SWITCH")
+
+            for i, key in enumerate(bin_dic_2):
+                cross_diff = np.zeros((nr_trials_rule_2, nr_trials_rule_1))
+                for trial_after_switch in range(nr_trials_rule_2):
+                    cross_diff[trial_after_switch, :] = calc_diff(bin_dic_1[key],
+                                                                  np.expand_dims(
+                                                                      bin_dic_2[key][:, trial_after_switch],
+                                                                      1), "cos").flatten()
+
+                # plt.subplot(2, 1, 2)
+                plt.plot(x_axis, np.median(cross_diff, 1), color=col_map[i, :],
+                         marker="o", label=key)
+
+                plt.title("DISTANCE BETWEEN EACH TRIAL STARTING FROM _4 \n AND ALL TRIALS FROM _2"
+                          + " (binning: "+self.param_dic["binning_method"]+")")
+                plt.xlabel("TRIAL ID")
+
+                plt.ylabel("MEDIAN COS DISTANCE")
+                # plt.grid()
+
+            nr_trials_previous_session = nr_trials_rule_2 + nr_trials_previous_session
+
+        handles, labels = plt.gca().get_legend_handles_labels()
+        by_label = OrderedDict(zip(labels, handles))
+        plt.legend(by_label.values(), by_label.keys())
+        plt.show()
+
+    def cross_cos_diff_trials_all_sessions(self):
+        # calculates within vs. across using all trials from both dictionaries separating the data of single trials
+        own_dic = True
+
+        # if no dictionaries are provided use dictionaries of instance
+
+        bin_dic_1 = self.bin_dic_1
+
+        bin_dic_list = [self.bin_dic_2, self.bin_dic_3, self.bin_dic_4]
+
+        nr_trials_previous_session = 0
+
+        for session, temp_bin_dic in enumerate(bin_dic_list):
+            bin_dic_2 = temp_bin_dic
+
+            nr_trials_rule_1 = next(iter(bin_dic_1.values())).shape[1]
+            nr_trials_rule_2 = next(iter(bin_dic_2.values())).shape[1]
+            nr_intervals = len(bin_dic_1.keys())
+            temp_bin = np.arange(0,nr_intervals, 1)
+
+            nr_comparisons = next(iter(bin_dic_1.values())).shape[1] * next(iter(bin_dic_2.values())).shape[1]
+
+            overal_cross_diff = np.zeros((nr_intervals, nr_comparisons))
+            col_map = cm.rainbow(np.linspace(0, 1, nr_trials_rule_2))
+
+            # calculate within diff to plot
+            med_within_diff = np.zeros(nr_intervals)
+
+            # go through each bin
+            for i, key in enumerate(bin_dic_2):
+                overal_cross_diff[i, :] = calc_diff(bin_dic_1[key], bin_dic_2[key], "cos").flatten()
+                temp1 = calc_diff(bin_dic_1[key], bin_dic_1[key], "cos")
+                within_diff_1 = temp1[np.triu_indices(temp1.shape[0], 1)]
+                temp2 = calc_diff(bin_dic_2[key], bin_dic_2[key], "cos")
+                within_diff_2 = temp2[np.triu_indices(temp2.shape[0], 1)]
+                med_within_diff[i] = np.median(np.hstack((within_diff_1, within_diff_2)))
+
+            # if own dictionary of instance is used
+            if own_dic:
+                # get stats results
+                self.cross_cos_diff(False)
+                stats_result = self.stats_array
+            else:
+                _, _, _, stats_result = self.cross_cos_diff(False, bin_dic_1, bin_dic_2)
+
+            # go through all trials for rule 1 and compare each trial with all trials for rule 2
+            # --> each entry in dictionary is a spatial bin --> contains all population vectors
+
+            # for trial_rule_2 in range(nr_trials_rule_2):
+            #     cross_diff = np.zeros((nr_intervals, nr_trials_rule_1))
+            #
+            #     # go through all spatial bins and calculate difference --> rows: spatial bins, columns: cos distances
+            #     for i, key in enumerate(bin_dic_2):
+            #         cross_diff[i, :] = calc_diff(bin_dic_1[key], np.expand_dims(bin_dic_2[key]
+            #                                                                     [:, trial_rule_2], 1), "cos").flatten()
+            #
+            #     # plt.subplot(2,1,1)
+            #     plt.plot(x_axis, np.median(cross_diff, 1), color="grey", marker="o")
+            #     # plt.grid()
+            #     plt.xlim([min(x_axis), max(x_axis)])
+            #     plt.title("DISTANCE BETWEEN EACH TRIAL OF RULE B AND ALL TRIALS OF RULE A")
+            #     plt.xlabel("TEMPORAL BIN")
+            #     plt.ylabel("MEDIAN COS DISTANCE")
+            #
+            # plt.ylim([0.05, 0.95])
+            # plt.plot(x_axis, np.median(overal_cross_diff, 1), color="red", marker="o", label="ACROSS")
+            # plt.plot(x_axis, med_within_diff, color="white", marker="o", label="WITHIN")
+            # plt.legend(loc='upper left', ncol=1)
+
+            # add significance marker
+            # for i, p_v in enumerate(stats_result[:, 1]):
+            #     if p_v < self.param_dic["stats_alpha"]:
+            #         plt.scatter(x_axis[i] + 0.05, np.median(overal_cross_diff, 1)[i] + 0.05, marker="*",
+            #                     edgecolors="yellow",
+            #                 label=self.param_dic["stats_method"] + ", " + str(self.param_dic["stats_alpha"]), zorder=10)
+            # handles, labels = plt.gca().get_legend_handles_labels()
+            # by_label = OrderedDict(zip(labels, handles))
+            # plt.legend(by_label.values(), by_label.keys())
+            #
+            # plt.show()
+            # go through all spatial bins and see how the difference changes with trials after rule switch
+            # --> each entry in dictionary is a spatial bin --> contains all population vectors
+
+            col_map = cm.rainbow(np.linspace(0, 1, len(temp_bin)))
+            if session:
+                x_axis = np.arange(nr_trials_rule_2) + nr_trials_previous_session
+            else:
+                x_axis = np.arange(nr_trials_rule_2)
+                plt.axvline(nr_trials_rule_2-0.5, label = "RULE SWITCH")
+
+            for i, key in enumerate(bin_dic_2):
+                cross_diff = np.zeros((nr_trials_rule_2, nr_trials_rule_1))
+                for trial_after_switch in range(nr_trials_rule_2):
+                    cross_diff[trial_after_switch, :] = calc_diff(bin_dic_1[key],
+                                                                  np.expand_dims(bin_dic_2[key][:, trial_after_switch],
+                                                                                 1), "cos").flatten()
+
+                # plt.subplot(2, 1, 2)
+                plt.plot(x_axis, np.median(cross_diff, 1), color=col_map[i, :],
+                         marker="o", label="BIN" + str(temp_bin[i]))
+
+                plt.title("DISTANCE BETWEEN EACH TRIAL STARTING FROM _4 \n AND ALL TRIALS FROM _2, BINNING: "+
+                          self.param_dic["binning_method"])
+                plt.xlabel("TRIAL ID")
+
+                plt.ylabel("MEDIAN COS DISTANCE")
+                # plt.grid()
+
+            nr_trials_previous_session = nr_trials_rule_2 + nr_trials_previous_session
+
+        handles, labels = plt.gca().get_legend_handles_labels()
+        by_label = OrderedDict(zip(labels, handles))
+        plt.legend(by_label.values(), by_label.keys())
+        plt.show()
 
     def cross_cos_diff_spat_trials(self, spat_bin_dic_1=None, spat_bin_dic_2=None):
         # calculates within vs. across using all trials from both dictionaries separating the data of single trials
@@ -656,6 +1067,49 @@ class Analysis:
             #plt.grid()
 
         plt.show()
+
+    def gradual_transition(self, distance_measure):
+
+        # go through each bin
+        for i, key in enumerate(self.bin_dic_1):
+            switch = self.bin_dic_1[key].shape[1] + self.bin_dic_2[key].shape[1] - 1
+            plt.axvline(self.bin_dic_1[key].shape[1])
+            plt.axvline(self.bin_dic_1[key].shape[1] + self.bin_dic_2[key].shape[1] + self.bin_dic_3[key].shape[1])
+
+            stacked = np.hstack((self.bin_dic_1[key], self.bin_dic_2[key], self.bin_dic_3[key], self.bin_dic_4[key]))
+
+            if self.param_dic["z_score"]:
+                stacked = stats.zscore(stacked, 1)
+                # remove nans (cells that do not fire at all)
+                stacked = stacked[~np.isnan(stacked).any(axis=1)]
+
+
+            in_distance = np.zeros(stacked.shape[1])
+            for i in range(stacked.shape[1]-1):
+                if distance_measure == "cos":
+                    in_distance[i] = distance.cosine(stacked[:,i],stacked[:,i+1])
+                elif distance_measure == "euclidean":
+                    in_distance[i] = distance.euclidean(stacked[:, i], stacked[:, i + 1])
+
+            # calculate distance between
+
+            plt.plot(in_distance[:-1], label = key)
+        plt.axvline(switch, c = "red", label = "RULE SWITCH")
+
+        plt.xlabel("TRIAL ID")
+        plt.title("BETWEEN TRIAL DISTANCE, BINNING: "+ self.param_dic["binning_method"])
+        plt.ylabel("DISTANCE (" +distance_measure+")")
+        plt.legend()
+        plt.show()
+
+
+
+
+
+
+
+
+
 
     # (3) Methods to analyze remapping characteristics (cell contribution):
     # ------------------------------------------------------------------------------------------------------------------
@@ -1078,8 +1532,8 @@ class StateTransitionAnalysis:
         distance_dic = {}
         rel_distance_dic = {}
         for i in range(nr_intervals):
-            distance_dic["INT"+str(i)] = np.empty((1, 0))
-            rel_distance_dic["INT" + str(i)] = np.empty((1, 0))
+            distance_dic["BIN"+str(i)] = np.empty((1, 0))
+            rel_distance_dic["BIN" + str(i)] = np.empty((1, 0))
 
         non_zero_indices = self.filter_cells(data_set, loc_set)
 
@@ -1101,11 +1555,11 @@ class StateTransitionAnalysis:
                 start_interval = int_counter * bin_interval
                 end_interval = (int_counter + 1) * bin_interval
                 # find entries that are within interval
-                distance_dic["INT"+str(int_counter)] = np.hstack((distance_dic["INT"+str(int_counter)],
+                distance_dic["BIN"+str(int_counter)] = np.hstack((distance_dic["BIN"+str(int_counter)],
                     np.expand_dims(dist_array[(start_interval <= loc_mat) & (loc_mat < end_interval)],axis=0)))
 
                 # find entries that are within interval
-                rel_distance_dic["INT"+str(int_counter)] = np.hstack((rel_distance_dic["INT"+str(int_counter)],
+                rel_distance_dic["BIN"+str(int_counter)] = np.hstack((rel_distance_dic["BIN"+str(int_counter)],
                     np.expand_dims(rel_dist_array[(start_interval <= rel_loc_mat) & (rel_loc_mat < end_interval)],axis=0)))
 
             x_axis = np.linspace(bin_interval, bin_interval * nr_intervals, nr_intervals)
@@ -1123,8 +1577,8 @@ class StateTransitionAnalysis:
         angle_dic = {}
         rel_angle_dic = {}
         for i in range(nr_intervals):
-            angle_dic["INT"+str(i)] = np.empty((1, 0))
-            rel_angle_dic["INT" + str(i)] = np.empty((1, 0))
+            angle_dic["BIN"+str(i)] = np.empty((1, 0))
+            rel_angle_dic["BIN" + str(i)] = np.empty((1, 0))
 
         non_zero_indices = self.filter_cells(data_set, loc_set)
 
@@ -1147,11 +1601,11 @@ class StateTransitionAnalysis:
                 start_interval = int_counter * bin_interval
                 end_interval = (int_counter + 1) * bin_interval
                 # find entries that are within interval
-                angle_dic["INT"+str(int_counter)] = np.hstack((angle_dic["INT"+str(int_counter)],
+                angle_dic["BIN"+str(int_counter)] = np.hstack((angle_dic["BIN"+str(int_counter)],
                     np.expand_dims(angle_array[(start_interval <= loc_mat) & (loc_mat < end_interval)],axis=0)))
 
                 # find entries that are within interval
-                rel_angle_dic["INT"+str(int_counter)] = np.hstack((rel_angle_dic["INT"+str(int_counter)],
+                rel_angle_dic["BIN"+str(int_counter)] = np.hstack((rel_angle_dic["BIN"+str(int_counter)],
                     np.expand_dims(rel_angle_array[(start_interval <= rel_loc_mat) & (rel_loc_mat < end_interval)],axis=0)))
 
             x_axis = np.linspace(bin_interval, bin_interval * nr_intervals, nr_intervals)
@@ -1169,7 +1623,7 @@ class StateTransitionAnalysis:
         # initialize dictionary with positions
         operation_dic = {}
         for i in range(nr_intervals):
-            operation_dic["INT"+str(i)] = np.empty((3, 0))
+            operation_dic["BIN"+str(i)] = np.empty((3, 0))
 
         non_zero_indices = self.filter_cells(data_set, loc_set)
         nr_of_cells = len(non_zero_indices)
@@ -1200,7 +1654,7 @@ class StateTransitionAnalysis:
                 start_interval = int_counter * bin_interval
                 end_interval = (int_counter + 1) * bin_interval
                 # find entries that are within interval
-                operation_dic["INT"+str(int_counter)] = np.hstack((operation_dic["INT"+str(int_counter)],
+                operation_dic["BIN"+str(int_counter)] = np.hstack((operation_dic["BIN"+str(int_counter)],
                     count_operations[:,np.squeeze((start_interval <= loc_mat) & (loc_mat < end_interval))]))
 
         x_axis = np.linspace(bin_interval, bin_interval * nr_intervals, nr_intervals)

@@ -32,6 +32,7 @@ from scipy.spatial import distance
 from scipy import signal
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
+from sklearn.manifold import Isomap
 
 
 def get_activity_mat_spatial(firing_times,param_dic,location):
@@ -114,8 +115,9 @@ def get_activity_mat_spatial(firing_times,param_dic,location):
                 # write population vectors
                 act_mat[cell_iter, i] = len(cell_spikes_interval_array)
 
-    act_mat = act_mat[:, bin_to_exc[0]:bin_to_exc[1]]
-    occ_vec = occ_vec[bin_to_exc[0]:bin_to_exc[1]]
+    if len(bin_to_exc):
+        act_mat = act_mat[:, bin_to_exc[0]:bin_to_exc[1]]
+        occ_vec = occ_vec[bin_to_exc[0]:bin_to_exc[1]]
 
     # normalize by time
     act_mat = (act_mat * 20e3) / occ_vec
@@ -123,12 +125,14 @@ def get_activity_mat_spatial(firing_times,param_dic,location):
     # replace NANs with zeros
     act_mat = np.nan_to_num(act_mat)
     loc_vec = np.arange(0, 200, bin_interval)
-    loc_vec = loc_vec[bin_to_exc[0]:bin_to_exc[1]]
+
+    if len(bin_to_exc):
+        loc_vec = loc_vec[bin_to_exc[0]:bin_to_exc[1]]
 
     return act_mat, loc_vec
 
 
-def get_activity_mat_time(firing_times,param_dic,location=[]):
+def get_activity_mat_time(firing_times,param_dic,location=[], plot_vel_and_data = False):
     # computes activity matrix: bin_interval in seconds --> sums up the activity within one time interval
     # rows: cells
     # columns: time bins
@@ -143,57 +147,71 @@ def get_activity_mat_time(firing_times,param_dic,location=[]):
             first_firing = int(np.amin([first_firing, np.amin(value)]))
             last_firing = int(np.amax([last_firing, np.amax(value)]))
 
+    # calculate location and speed for each interval
+    loc, speed = calc_loc_and_speed(location)
+
+    # trim location to same length as firing data --> remove last location entries
+    loc = loc[:(last_firing-first_firing)]
+
+    # trim speed to same length as firing data --> remove last location entries
+    speed = speed[:(last_firing-first_firing)]
+
+    if plot_vel_and_data:
+        plt.plot(speed)
+        plt.plot(loc)
+        plt.hlines(5,0,loc.shape[0])
+        # plt.show()
+        len_after_filtering = len([x for x in speed if x > param_dic["speed_filter"]])
+        print("duration before speed filtering: "+str((last_firing/512 - first_firing/512)*0.0256)+"s")
+        print("duration after speed filtering: "+str(len_after_filtering/512*0.0256)+"s")
+
     # duration of trial (one time bin: 0.05ms --> 20kHz)
     dur_trial = (last_firing-first_firing)* 0.05*1e-3
     nr_intervals = int(dur_trial/bin_interval)
     size_intervals = int((last_firing-first_firing)/nr_intervals)
+    size_interval_sec = size_intervals* 0.05*1e-3
 
     # matrix with population vectors
     act_mat = np.zeros([len(firing_times.keys()),nr_intervals])
+    # loc vector
+    loc_vec = np.zeros(nr_intervals)
+    # speed vector
+    speed_vec = np.zeros(nr_intervals)
 
     # go through all cells: cell_ID is not used --> only firing times
     for cell_iter, (cell_ID, cell) in enumerate(firing_times.items()):
-        # go through all time intervals
+        # go through all temporal intervals
         for i in range(nr_intervals):
-            start_intv = first_firing+i*size_intervals
-            end_intv = first_firing+(i+1)*size_intervals
-            # write population vectors
-            cell_spikes_intv = [x for x in cell if start_intv <= x < end_intv]
-            act_mat[cell_iter, i] = len(cell_spikes_intv)
+            start_interval = first_firing+i*size_intervals
+            end_interval = first_firing+(i+1)*size_intervals
+            cell_spikes_interval = 0
+            if plot_vel_and_data:
+                plt.axvline(end_interval- first_firing - 1)
+            # with speed filtering
+            if param_dic["speed_filter"]:
+                # go through all spikes and check if they are in the interval and above the speed threshold
+                for cell_firing_time in cell:
 
-    # write locations & speed for each interval if location file is provided
-    if len(location):
-        # vector with locations
-        loc_vec = np.zeros(nr_intervals)
-        # vector with speeds
-        speed_vec = np.zeros(nr_intervals)
+                    if (start_interval <= cell_firing_time < end_interval) and \
+                            speed[(cell_firing_time - first_firing - 1)] > param_dic["speed_filter"]:
+                        if plot_vel_and_data:
+                            plt.scatter(cell_firing_time - first_firing - 1, 1, edgecolors="red")
+                        cell_spikes_interval += 1
+                act_mat[cell_iter, i] = cell_spikes_interval/size_interval_sec
+            # without speed filter
+            else:
+                # write population vectors
+                cell_spikes_intv = [x for x in cell if start_interval <= x < end_interval]
+                act_mat[cell_iter, i] = len(cell_spikes_intv)/size_interval_sec
+                # for cell_firing_time in cell:
+                #     plt.scatter(cell_firing_time - first_firing - 1, 1, edgecolors="red")
 
-        # calculate location and speed for each interval
-        loc, speed = calc_loc_and_speed(location)
-        for i in range(nr_intervals):
-            start_intv = i * size_intervals
-            end_intv = (i + 1) * size_intervals
-            loc_vec[i] = np.mean(loc[start_intv:end_intv])
-            speed_vec[i] = np.mean(speed[start_intv:end_intv])
+            loc_vec[i] = np.mean(loc[(start_interval-first_firing):(end_interval-first_firing)])
+            speed_vec[i] = np.mean(speed[(start_interval - first_firing):(end_interval - first_firing)])
 
-    # filter time bins with low velocity (high synchrony events)
-    #-------------------------------------------------------------------------------------------------------------------
-    if param_dic["speed_filter"]:
-        if not len(location):
-            raise Exception("No location data for speed filtering provided")
+    if plot_vel_and_data:
+        plt.show()
 
-        int_sel = np.full(nr_intervals, False)
-
-        # check speed for each time bin (interval), if above threshold --> include time bin
-        for i in range(nr_intervals):
-            if speed_vec[i] > param_dic["speed_filter"]:
-                int_sel[i] = True
-        act_mat = act_mat[:,int_sel]
-        loc_vec = loc_vec[int_sel]
-        speed_vec = speed_vec[int_sel]
-
-    # filter all zero population vectors
-    #-------------------------------------------------------------------------------------------------------------------
     if param_dic["zero_filter"]:
         # set all to vectors to False
         int_sel = np.full(act_mat.shape[1], False)
@@ -203,7 +221,6 @@ def get_activity_mat_time(firing_times,param_dic,location=[]):
                 int_sel[i] = True
         act_mat = act_mat[:, int_sel]
         loc_vec = loc_vec[int_sel]
-        speed_vec = speed_vec[int_sel]
 
     return act_mat, loc_vec
 
@@ -294,6 +311,11 @@ def perform_TSNE(act_mat,param_dic):
     return TSNE(n_components=param_dic["dr_method_p2"]).fit_transform(act_mat.T)
 
 
+def perform_isomap(act_mat,param_dic):
+    # performs isomap on data set
+    return Isomap(n_components=param_dic["dr_method_p2"]).fit_transform(act_mat.T)
+
+
 def calc_diff(a, b, diff_meas):
 
     # calculates column-wise difference between two matrices a and b
@@ -313,7 +335,7 @@ def calc_diff(a, b, diff_meas):
         # plt.colorbar()
         # plt.show()
     elif diff_meas == "cos":
-    # calculates column-wise difference between two matrices a and b
+        # calculates column-wise difference between two matrices a and b
 
         # cosine
         for i, pop_vec_ref in enumerate(a.T):

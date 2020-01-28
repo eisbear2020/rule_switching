@@ -14,6 +14,14 @@
 #           - criteria for selection: directory, experiment, cell type, environment, trial conditions (e.g
 #             success/fail)
 #
+#   Output file (temp_data directory):
+#
+#       - naming convention for output file:
+#           ct: cell type
+#           sa: start arm
+#           ga: goal arm
+#           et: error trial --> 1: success, 0: error
+#
 #
 #   Author: Lars Bollmann
 #
@@ -230,6 +238,12 @@ def save_selected_data(data_selection_dictionary):
             "res": data,
             "info": {"new_rule_trial": new_rule_trial, "rule_order": rule_identifier}
         }
+
+    # naming convention for output file:
+    # ct: cell type
+    # sa: start arm
+    # ga: goal arm
+    # et: error trial --> 1: success, 0: error
 
     filename = "temp_data/"+s_exp+"_"+"ct_"+str(cell_type_array)+"_sa_"+str(startarm)+"_ga_"+\
                str(goalarm)+"_et_"+str(errortrial)

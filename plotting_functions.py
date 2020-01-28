@@ -33,6 +33,7 @@ from matplotlib.colors import LogNorm
 from statsmodels import robust
 plt.style.use('dark_background')
 
+
 def plot_act_mat(act_mat,bin_interval):
     # plot activation matrix (matrix of population vectors)
     plt.imshow(act_mat, vmin=0, vmax=act_mat.max(), cmap='jet', aspect='auto')
@@ -106,10 +107,9 @@ def plot_2D_scatter(ax,mds,param_dic,data_sep = None, loc_vec = []):
                 col_map = cm.rainbow(np.linspace(0, 1, nr_seg))
                 # linearized track is 200 cm long
                 norm_loc_vec = loc_vec / s_l
-
                 for i in range(0, mds.shape[0] - 1):
-                    ax.plot(mds[i:i + 2, 0], mds[i:i + 2, 1], color=col_map[int(np.ceil(norm_loc_vec[i+1][0]))-1, :],
-                            label=str(int(np.ceil(norm_loc_vec[i+1][0]))*s_l)+" cm")
+                    ax.plot(mds[i:i + 2, 0], mds[i:i + 2, 1], color=col_map[int(np.ceil(norm_loc_vec[i+1]))-1, :],
+                            label=str(int(np.ceil(norm_loc_vec[i+1]))*s_l)+" cm")
 
             else:
                 colors = cm.cool(np.linspace(0, 1, mds.shape[0] - 1))
@@ -131,8 +131,8 @@ def plot_2D_scatter(ax,mds,param_dic,data_sep = None, loc_vec = []):
                 # linearized track is 200 cm long
                 norm_loc_vec = loc_vec / s_l
                 for i in range(mds.shape[0]):
-                    ax.scatter(mds[i, 0], mds[i, 1], color=col_map[int(np.ceil(norm_loc_vec[i][0]))-1, :],
-                            label=str(int(np.ceil(norm_loc_vec[i][0]))*s_l)+" cm")
+                    ax.scatter(mds[i, 0], mds[i, 1], color=col_map[int(np.ceil(norm_loc_vec[i]))-1, :],
+                            label=str(int(np.ceil(norm_loc_vec[i]))*s_l)+" cm")
             else:
                 colors = cm.cool(np.linspace(0, 1, mds.shape[0] - 1))
                 for i, c in zip(range(0, mds.shape[0] - 1), colors):
@@ -174,7 +174,7 @@ def plot_3D_scatter(ax, mds, param_dic, data_sep=None, loc_vec=[]):
             # check if positions are provided
             if len(loc_vec):
                 # length of track
-                s_l = param_dic["spat_seg_plotting"]
+                s_l = param_dic["spatial_bin_size"]
                 l_track = 200
                 nr_seg = int(l_track/s_l)
                 col_map_blue = cm.Reds(np.linspace(0, 1, nr_seg + 2))
@@ -198,7 +198,7 @@ def plot_3D_scatter(ax, mds, param_dic, data_sep=None, loc_vec=[]):
             # use locations for line coloring if location vector is provided
             if len(loc_vec):
                 # length of track
-                s_l = param_dic["spat_seg_plotting"]
+                s_l = param_dic["spatial_bin_size"]
                 l_track = 200
                 nr_seg = int(l_track/s_l)
                 col_map = cm.rainbow(np.linspace(0, 1, nr_seg))
@@ -587,7 +587,7 @@ def plot_operations_comparison(x_axis, operation_dics, nr_of_cells_arr, param_di
         ax1.set_title("SILENCED CELLS")
         ax1.set_ylabel("% OF CELLS")
         ax1.set_xlabel("MAZE POSITION / CM")
-        ax1.set_ylim(5, 30)
+        ax1.set_ylim(0, 30)
         ax1.legend(loc=1)
 
         med = np.full(x_axis.shape[0], np.nan)
@@ -619,7 +619,7 @@ def plot_operations_comparison(x_axis, operation_dics, nr_of_cells_arr, param_di
         ax3.set_title("ACTIVATED CELLS")
         ax3.set_ylabel("% OF CELLS")
         ax3.set_xlabel("MAZE POSITION / CM")
-        ax3.set_ylim(5,30)
+        ax3.set_ylim(0,30)
         ax3.legend(loc=1)
 
     plt.show()
